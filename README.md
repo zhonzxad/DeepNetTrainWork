@@ -1,5 +1,4 @@
-# UNet 3+
-Code for ICASSP 2020 paper ‘UNet 3+: A full-scale connected unet for medical image segmentation’
+# UNet 
 
 ## Requirements
 * python 3.6.2
