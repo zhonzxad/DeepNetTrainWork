@@ -89,7 +89,7 @@ def fit_one_epoch(model, epoch, dataloaders, optimizer, scheduler):
         ce_loss   = CELoss2d()(output, png)
         bce_loss  = BCELoss2d()(output, label)
         dice_loss = DiceLoss()(output, label)
-        loss = ce_loss + dice_loss
+        loss = bce_loss#ce_loss + dice_loss
         
         with torch.no_grad():
             _f_score = f_score(output, label)
@@ -126,7 +126,7 @@ def fit_one_epoch(model, epoch, dataloaders, optimizer, scheduler):
         #设置进度条右边显示的信息
         tqdmbar.set_postfix(Loss=("{:5f}".format(total_loss)),
                             CEloss=("{:5f}".format(total_ce_loss)),
-                            #BCEloss=("{:5f}".format(total_bce_loss)),
+                            BCEloss=("{:5f}".format(total_bce_loss)),
                             Diceloss=("{:5f}".format(total_dice_loss)),
                             F_SOCRE=("{:5f}".format(total_f_score)),
                             lr=("{:7f}".format(get_lr(optimizer))))
@@ -206,7 +206,7 @@ def get_args():
     parser.add_argument('--root_path', type=str, help='Root path for dataset',
                         default=r'dataset/')
     parser.add_argument('--nclass', type=int,
-                        help='Number of classes', default=2)
+                        help='Number of classes', default=1)
     parser.add_argument('--batch_size', type=int,
                         help='batch size', default=2)
     parser.add_argument('--load_tread', type=int,
@@ -253,7 +253,7 @@ if __name__ == '__main__':
     torch.manual_seed(SEED)
 
     # 不同损失函数之间的调整系数，默认是均衡的
-    cls_weights = np.ones([CLASSNUM], np.float32)
+    # cls_weights = np.ones([CLASSNUM], np.float32)
 
     # 加载日志对象
     writer   = WriteLog(writerpath=r"log/log/")
@@ -267,7 +267,7 @@ if __name__ == '__main__':
     gen, gen_val = loader.makedata(backbone="User")
     writer.write("数据集加载完毕")
 
-    modelClass = GetModel(args, writer)
+    modelClass = GetModel((IMGSIZE, CLASSNUM), writer)
     model = modelClass.Createmodel(is_train=True)
     writer.write("模型创建及初始化完毕")
 
@@ -276,8 +276,7 @@ if __name__ == '__main__':
         # os.environ["CUDA_VISIBLE_DEVICES"] = "cuda:0"
         torch.cuda.manual_seed(SEED)
         model = torch.nn.DataParallel(model)
-        # cudnn.benchmark = True
-        #torch.cuda().manual_seed_all(SEED)
+        cudnn.benchmark = True
         # # 那么cuDNN使用的非确定性算法就会自动寻找最适合当前配置的高效算法，来达到优化运行效率的问题
         # torch.backends.cudnn.deterministic = True
         # torch.backends.cudnn.benchmark = False
@@ -287,7 +286,7 @@ if __name__ == '__main__':
     writer.write("模型初始化完毕")
 
     # 测试网络结构
-    # summary(model, input_size=(3, 384, 384))
+    # summary(model, input_size=(IMGSIZE[2], IMGSIZE[0], IMGSIZE[1]))
 
     # 创建优化器
     optimizer, scheduler = CreateOptim(model, lr=args.lr[0])

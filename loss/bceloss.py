@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-06-24 10:10:02
-LastEditTime: 2021-11-23 12:20:32
+LastEditTime: 2021-11-23 20:40:15
 LastEditors: zhonzxad
 '''
 import torch
@@ -46,17 +46,17 @@ def AchieveBCE_4(pred, label):
     #print("bce_loss:", bce_out.data.cpu().numpy())
     return bce_loss
 
-def AchieveBCE_5(logits, target):
-    # chanel  = logits.shape[1]
-    # logits  = torch.sigmoid(logits)      # 二分类问题，sigmoid等价于softmax
+def AchieveBCE_5(predict, target):
+    # chanel  = predict.shape[1]
+    # predict  = torch.sigmoid(predict)      # 二分类问题，sigmoid等价于softmax
     # 断开这两个变量之间的依赖,深拷贝
-    # logits  = logits.transpose(1, 2).transpose(2, 3).contiguous().view(-1, chanel)
+    # predict  = predict.transpose(1, 2).transpose(2, 3).contiguous().view(-1, chanel)
     # targets = torch.stack([targets, targets.clone()], dim=1)
     # targets = targets.view(-1, chanel)
-    logits = logits.squeeze(dim=1)
+    # predict = predict.squeeze(dim=1)
     target = target.permute([0, 3, 1, 2])
 
-    bceloss = nn.BCELoss()(logits, target)
+    bceloss = nn.BCELoss()(predict, target)
 
     return bceloss
 
@@ -77,6 +77,6 @@ class BCELoss2d(nn.Module):
     # BCEWithLogitsLoss函数包括了 Sigmoid 层和 BCELoss 层. 适用于多标签分类任务
     # 如果你的网络的最后一层不是sigmoid，你需要把BCELoss换成BCEWithLogitsLoss
  
-    def forward (self, logits, target):
+    def forward (self, predict, target):
         
-        return AchieveBCE_5(logits.contiguous(), target.contiguous())
+        return AchieveBCE_5(predict, target)

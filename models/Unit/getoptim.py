@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-11-22 20:22:53
-LastEditTime: 2021-11-22 21:42:44
+LastEditTime: 2021-11-23 22:12:12
 LastEditors: zhonzxad
 '''
 import torch
@@ -37,11 +37,12 @@ def UserOptim1(model, lr):
 
 def UserOptim2(model, lr):
     optimizer       = torch.optim.Adam(model.parameters(), lr=lr)
-    scheduler    = torch.optim.lr_scheduler.StepLR(optimizer, step_size = 1, gamma = 0.96)
+    scheduler    = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.96)
 
     return optimizer, scheduler
 
 def CreateOptim(model, lr):
+
     return UserOptim2(model, lr)
 
 

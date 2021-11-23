@@ -1,8 +1,14 @@
+'''
+Author: zhonzxad
+Date: 2021-10-26 10:34:44
+LastEditTime: 2021-11-23 20:59:43
+LastEditors: zhonzxad
+'''
 # -*- coding: UTF-8 -*- 
 '''
 Author: zhonzxad
 Date: 2021-10-26 10:34:44
-LastEditTime: 2021-11-23 10:14:00
+LastEditTime: 2021-11-23 19:55:47
 LastEditors: zhonzxad
 '''
 import math
@@ -141,7 +147,7 @@ if __name__ == '__main__':
         model = model.to(this_device)
     writer.write("网络创建完毕")
     
-    path = "./savepoint/model_data/UNet_2Class_NewLoss_1.pth"            # 本机权重
+    path = "./savepoint/model_data/UNet_2Class_NewLoss_Online.pth"            # 本机权重
     # path = "./savepoint/model_data/UNET-2Class-NewData-checkpoint.pth"      # 服务器权重
     if os.path.isfile(path):
         model_data = torch.load(path, map_location="cuda:0" if GPU else "cpu")

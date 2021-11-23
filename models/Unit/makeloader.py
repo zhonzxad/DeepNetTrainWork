@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-11-22 17:29:29
-LastEditTime: 2021-11-23 14:18:53
+LastEditTime: 2021-11-23 14:27:27
 LastEditors: zhonzxad
 '''
 import os
@@ -54,13 +54,6 @@ class MakeLoader():
 
         self.VOCdevkit_path = r"G:/Py_Debug/UNet-Version-master/Data/BXG/"
 
-        with open(os.path.join(self.VOCdevkit_path, "VOC2007/ImageSets/Segmentation/train.txt"), "r") as f:
-            self.train_lines = f.readlines()
-
-        with open(os.path.join(self.VOCdevkit_path, "VOC2007/ImageSets/Segmentation/val.txt"), "r") as f:
-            self.val_lines = f.readlines()
-        
-
     def makedataUser(self):
 
         train_dataset = UserDataLoader(self.tra_img, self.tra_leb, image_size=self.imgsize, num_classes=self.nclass)
@@ -80,6 +73,13 @@ class MakeLoader():
         return gen, gen_val
     
     def makedataVoc(self):
+        
+        with open(os.path.join(self.VOCdevkit_path, "VOC2007/ImageSets/Segmentation/train.txt"), "r") as f:
+            self.train_lines = f.readlines()
+
+        with open(os.path.join(self.VOCdevkit_path, "VOC2007/ImageSets/Segmentation/val.txt"), "r") as f:
+            self.val_lines = f.readlines()
+
         train_dataset   = UnetDataset(self.train_lines, self.imgsize, self.nclass, True, self.VOCdevkit_path)
         val_dataset     = UnetDataset(self.val_lines,   self.imgsize, self.nclass, False, self.VOCdevkit_path)
 

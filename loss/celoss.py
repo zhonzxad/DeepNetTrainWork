@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-10-25 13:18:03
-LastEditTime: 2021-11-23 12:30:07
+LastEditTime: 2021-11-23 22:07:09
 LastEditors: zhonzxad
 '''
 
@@ -13,6 +13,7 @@ import torch.nn.functional as F
 
 
 def AchieveCE_1(inputs, target):
+    target = target.long()
     try:
         n, c, h, w = inputs.size()
         nt, ht, wt = target.size()
@@ -40,7 +41,7 @@ def AchieveCE_2(inputs, target, num_classes=2):
 
 def AchieveCE_3(pred, target, num_classes=2):
     chanel = pred.shape[1]
-    # pred = torch.sigmoid(pred)
+    pred = torch.sigmoid(pred)
     pred = pred.transpose(1, 2).transpose(2, 3).contiguous().view(-1, chanel)
     target = target.long()
     target = target.view(-1)
@@ -48,6 +49,16 @@ def AchieveCE_3(pred, target, num_classes=2):
     CE_loss = nn.CrossEntropyLoss()(pred, target)
 
     return CE_loss
+
+def AchieveCE_4(pred, target):
+    n, c, h, w = pred.size()
+    nt, ht, wt, ct = target.size()
+
+    pred = pred.permute(0, 2, 3, 1).view(n, -1, c)
+    pred = torch.softmax(pred, dim=-1)
+    target = target.view(nt, -1, ct)
+
+    return torch.nn.CrossEntropyLoss()(pred, target)
 
 def CELOSS(pred, targets):
     # pred = torch.sigmoid(pred)
@@ -75,7 +86,7 @@ class CELoss2d(nn.Module):
  
     def forward(self, pred, target):
 
-        return AchieveCE_3(pred.contiguous(), target.contiguous())
+        return AchieveCE_1(pred, target)
 
         # 对于二分类问题，sigmoid等价于softmax
         pred = torch.sigmoid(pred)

@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-10-21 22:26:30
-LastEditTime: 2021-11-22 11:58:42
+LastEditTime: 2021-11-23 22:02:34
 LastEditors: zhonzxad
 '''
 import math
@@ -53,8 +53,9 @@ class UserDataLoader(Dataset):
         '''
         将一维列表转换为独热编码
         '''
+
         self.batch_size = 2
-        lab = torch.from_numpy(lab)
+        lab = torch.from_numpy(np.array(lab))
         lab = lab.view(-1)
         label = lab.resize_(self.batch_size, 1).long()
         m_zeros = torch.zeros(self.batch_size, self.num_classes)
@@ -74,34 +75,35 @@ class UserDataLoader(Dataset):
         jpg = Image.open(imgfilepath).convert("RGB")    # 统一转为三通道格式读取
         png = Image.open(labelfilepath).convert('L')    # 统一转为单通道格式读取
 
-        jpg = jpg.resize((384, 384), Image.BILINEAR)
-        png = png.resize((384, 384), Image.BILINEAR)
-        seg_labels = png.copy()
+        jpg = jpg.resize((self.image_size[0], self.image_size[1]), Image.BILINEAR)
+        png = png.resize((self.image_size[0], self.image_size[1]), Image.BILINEAR)
 
         # 处理jpg格式变换
-        jpg = np.transpose(np.array(jpg), [2,0,1])
+        jpg = np.transpose(np.array(jpg), [2, 0, 1])
         # jpg = np.array(jpg)
         # jpg = torch.from_numpy(jpg)
 
         # 处理png格式变化
         # 产生数组
         png = np.array(png)
+        png[png >= self.num_classes] = self.num_classes
+        seg_labels = png.copy()
         # png = np.transpose(np.array(png), [2,0,1])
         # png = png.unsqueeze(dim=-1)
-        png[png >= self.num_classes] = self.num_classes
         # png = torch.from_numpy(png)
         # png = png.unsqueeze(dim=0)
         # png = torch.cat([png, png.clone()],dim=0)
         
         # 转化成one_hot的形式
-        seg_labels = np.eye(self.num_classes)[np.array(seg_labels).reshape([-1])]
-        seg_labels = seg_labels.reshape(int(self.image_size[0]), int(self.image_size[1]), self.num_classes)
+        # seg_labels = np.eye(self.num_classes)[np.array(seg_labels).reshape([-1])]
+        # seg_labels = seg_labels.reshape(int(self.image_size[0]), int(self.image_size[1]), self.num_classes)
         # seg_labels = torch.from_numpy(seg_labels).permute(2, 0, 1)
         
         # seg_labels 在创建的时候被赋值为int64
-        # seg_labels = np.array(seg_labels).astype(np.int64)
-        # seg_labels = torch.from_numpy(seg_labels)
-        # seg_labels = F.one_hot(seg_labels, num_classes=self.num_classes)
+        seg_labels = seg_labels.astype(np.int64)
+        seg_labels = torch.from_numpy(seg_labels)
+        seg_labels = F.one_hot(seg_labels, num_classes=self.num_classes)
+        seg_labels = seg_labels.numpy()
         # seg_labels = seg_labels.permute(2, 0, 1)
 
         # seg_labels = np.transpose(np.array(jpg), [2,0,1])
@@ -109,6 +111,11 @@ class UserDataLoader(Dataset):
         # seg_labels = torch.from_numpy(seg_labels)
         # seg_labels = self.makeonehotlab(png)
         # seg_labels = seg_labels.transpose(1, 3).transpose(2, 3).contiguous()
+
+        # seg_labels = torch.nn.functional.one_hot(t, num_classes=self.num_classes)
+
+        # seg_labels = seg_labels.reshape(self.image_size[0], self.image_size[1], 1)
+
 
         return jpg, png, seg_labels
 

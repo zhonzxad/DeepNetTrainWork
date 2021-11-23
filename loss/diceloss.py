@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-06-24 12:51:18
-LastEditTime: 2021-11-23 12:34:42
+LastEditTime: 2021-11-23 20:48:59
 LastEditors: zhonzxad
 '''
 import torch
@@ -62,10 +62,10 @@ def AchieveDice_3(pred, label, eps=1e-8, c=2):
     dices_bs = torch.zeros(bs, c)
 
     for idx in range(bs):
-        y_pred  = pred[idx]   # [num_classes,768,1024]
-        y_truth = label[idx]   # [num_classes,768,1024]
-        intersection = torch.sum(torch.mul(y_pred, y_truth), dim=(1,2)) + eps / 2
-        union = torch.sum(torch.mul(y_pred, y_pred), dim=(1, 2)) + torch.sum(torch.mul(y_truth, y_truth), dim=(1, 2)) + eps
+        y_pred  = pred[idx]    # [768,1024,num_classes]
+        y_truth = label[idx]   # [768,1024,num_classes]
+        intersection = torch.sum(torch.mul(y_pred, y_truth), dim=(0 , 1)) + eps / 2
+        union = torch.sum(torch.mul(y_pred, y_pred), dim=(0, 1)) + torch.sum(torch.mul(y_truth, y_truth), dim=(0, 1)) + eps
 
         # 在实现的时候，往往会加上一个smooth，防止分母为0的情况出现
         dices_sub = 2 * (intersection + 1) / (union + 1)
@@ -98,4 +98,4 @@ class DiceLoss(nn.Module):
  
     def forward(self, pred, label):
 
-        return AchieveDice_1(pred.contiguous(), label.contiguous())
+        return AchieveDice_3(pred, label)
