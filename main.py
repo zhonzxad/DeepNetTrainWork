@@ -20,15 +20,10 @@ from loss.bceloss import BCELoss2d
 from loss.celoss import CELOSS, CELoss2d
 from loss.diceloss import Dice_Loss, DiceLoss
 from loss.iouloss import bbox_overlaps_ciou
-from models.Net.FCN.fcn import FCN
-from models.Net.SegNet.SegNet import SegNet
-from models.Net.UNet.resnet18 import RestNet18
-from models.Net.UNet.UNet import UNet
-from models.Net.UNet.UNet_2Plus import UNet_2Plus
-from models.Net.UNet.UNetBili import UNetVGG16
+from models.Unit.getmodel import GetModel
 from models.Unit.getoptim import CreateOptim
 from models.Unit.makeloader import MakeLoader
-from models.Unit.pytorchtools import EarlyStopping, weights_init
+from models.Unit.pytorchtools import EarlyStopping
 from models.Unit.writelog import WriteLog
 
 # 在Windows下使用vscode运行时 添加上这句话就会使用正确的相对路径设置
@@ -89,7 +84,7 @@ def fit_one_epoch(model, epoch, dataloaders, optimizer, scheduler):
         # print("\n output shape is {} || png shape is {}".format(output.shape, png.shape))
         # ce_loss   = CELOSS(output, png)
         ce_loss   = CELoss2d()(output, png)
-        # bce_loss  = BCELoss2d()(output, label)
+        bce_loss  = 0#BCELoss2d()(output, label)
         dice_loss = DiceLoss()(output, label)
         loss = ce_loss + dice_loss
 
@@ -99,33 +94,44 @@ def fit_one_epoch(model, epoch, dataloaders, optimizer, scheduler):
         optimizer.step()
 
         total_ce_loss   += ce_loss.item()
-        # total_bce_loss  += bce_loss.item()
+        total_bce_loss  += bce_loss.item()
         total_dice_loss += dice_loss.item()
         total_loss      += loss.item()
-        
-        # 判断是否满足早停
-        # early_stopping(loss, model_train)
+
+        total_ce_loss   /= (batch_idx + 1)
+        total_bce_loss  /= (batch_idx + 1)
+        total_dice_loss /= (batch_idx + 1)
+        total_loss      /= (batch_idx + 1)
 
         # 写tensorboard
         tags = ["train_loss", "CEloss", "BCEloss", "Diceloss", "lr", "accuracy"]
         if tfwriter != None:
-            tfwriter.add_scalar(tags[0], loss / (batch_idx + 1), epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[1], ce_loss / (batch_idx + 1), epoch*(batch_idx + 1))
-            # tfwriter.add_scalar(tags[2], bce_loss / (batch_idx + 1), epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[3], dice_loss / (batch_idx + 1), epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[4], get_lr(optimizer), epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[0],        total_loss)#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[1],     total_ce_loss)#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[2],    total_bce_loss)#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[3],         dice_loss)#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[4], get_lr(optimizer))#, epoch*(batch_idx + 1))
 
         #设置进度条左边显示的信息
         tqdmbar.set_description("Epoch in Range")
         #设置进度条右边显示的信息
-        tqdmbar.set_postfix(Loss=("{:5f}".format(total_loss / (batch_idx + 1))),
-                            CEloss=("{:5f}".format(total_ce_loss / (batch_idx + 1))),
-                            #BCEloss=("{:5f}".format(total_bce_loss / (batch_idx + 1))),
-                            Diceloss=("{:5f}".format(total_dice_loss / (batch_idx + 1))),
+        tqdmbar.set_postfix(Loss=("{:5f}".format(total_loss)),
+                            CEloss=("{:5f}".format(total_ce_loss)),
+                            #BCEloss=("{:5f}".format(total_bce_loss)),
+                            Diceloss=("{:5f}".format(total_dice_loss)),
                             lr=("{:7f}".format(get_lr(optimizer))))
+
+    return loss, ce_loss, bce_loss, dice_loss, get_lr(optimizer)
+
 
 # 测试方法
 def test(model, val_loader):
+
+    total_ce_loss   = 0
+    total_bce_loss  = 0
+    total_dice_loss = 0
+    total_loss      = 0
+
     model_eval = model.eval()
 
     tqdmbar = tqdm(val_loader)
@@ -149,20 +155,32 @@ def test(model, val_loader):
         # 输入测试图像
         output    = model_eval(img)
 
-        ce_loss   = CELOSS(output, png)
-        # ce_loss   = CELoss2d()(output, png)
-        bce_loss  = BCELoss2d()(output, png)
+        # ce_loss   = CELOSS(output, png)
+        ce_loss   = CELoss2d()(output, png)
+        bce_loss  = 0#BCELoss2d()(output, png)
         dice_loss = DiceLoss()(output, label)
+
         loss = ce_loss + bce_loss + dice_loss
+
+        total_ce_loss   += ce_loss.item()
+        total_bce_loss  += bce_loss.item()
+        total_dice_loss += dice_loss.item()
+        total_loss      += loss.item()
+
+        total_ce_loss   /= (batch_idx + 1)
+        total_bce_loss  /= (batch_idx + 1)
+        total_dice_loss /= (batch_idx + 1)
+        total_loss      /= (batch_idx + 1)
 
         #设置进度条左边显示的信息
         tqdmbar.set_description("Vaild_Epoch_size")
         #设置进度条右边显示的信息
-        tqdmbar.set_postfix(valloss=("{:.5f}".format(loss.items())),
-                            celoss=("{:.5f}".format(ce_loss.items())),
-                            bceloss=("{:.5f}".format(bce_loss.items())),
-                            diceloss=("{:.5f}".format(dice_loss.items())))
+        tqdmbar.set_postfix(Loss=("{:5f}".format(total_loss)),
+                            CEloss=("{:5f}".format(total_ce_loss)),
+                            BCEloss=("{:5f}".format(total_bce_loss)),
+                            Diceloss=("{:5f}".format(total_dice_loss)))
 
+    return loss, ce_loss, bce_loss, dice_loss
 
 
 # 定义命令行参数
@@ -202,6 +220,7 @@ def get_args():
 
 if __name__ == '__main__':
     args        = get_args()
+    print(type(args))
     start_epoch = 0                   # 起始的批次
     LoadThread  = args.load_tread     # 加载数据线程数
     SaveMode    = args.save_mode      # 保存模型加参数还是只保存参数
@@ -210,6 +229,7 @@ if __name__ == '__main__':
     CLASSNUM    = args.nclass
     IMGSIZE     = [384, 384, 3]
     this_device = torch.device("cuda:0" if torch.cuda.is_available() and args.UseGPU else "cpu")
+    
     # 为CPU设定随机种子使结果可靠，就是每个人的随机结果都尽可能保持一致
     np.random.seed(SEED)
     torch.manual_seed(SEED)
@@ -229,16 +249,8 @@ if __name__ == '__main__':
     gen, gen_val = loader.makedataVoc()
     writer.write("数据集加载完毕")
 
-    # 加载模型
-    model = UNet(input_channels=IMGSIZE[2], num_class=CLASSNUM).train()
-    # model = UNetVGG16(num_classes=CLASSNUM, in_channels=IMGSIZE[2]).train()
-    # model = UNet_2Plus(in_channels=IMGSIZE[2], n_classes=CLASSNUM).train()
-    # model = RestNet18(in_channels=IMGSIZE[2], n_classes=CLASSNUM).train()
-    # model   = SegNet(input_channels=IMGSIZE[2], num_class=CLASSNUM).train()
-    # model   = FCN(input_channels=IMGSIZE[2], num_class=CLASSNUM).train()
-
-    # 初始化网络相关权重
-    weights_init(model, loger=writer)
+    model = GetModel(args, writer).Createmodel(is_train=True)
+    writer.write("模型创建及初始化完毕")
 
     if this_device.type == "cuda":
         # 为GPU设定随机种子，以便确信结果是可靠的
@@ -253,7 +265,7 @@ if __name__ == '__main__':
         model = model.to(this_device)
     
     # tfwriter.add_graph(model=model, input_to_model=IMGSIZE)
-    writer.write("模型加载完毕")
+    writer.write("模型初始化完毕")
 
     # 测试网络结构
     # summary(model, input_size=(3, 384, 384))
@@ -265,7 +277,6 @@ if __name__ == '__main__':
     patience = args.early_stop # 当验证集损失在连续20次训练周期中都没有得到降低时，停止模型训练，以防止模型过拟合
     early_stopping = EarlyStopping(patience, path="./savepoint/early_stopp/checkpoint.pth", 
                                     verbose=True, savemode=SaveMode)
-
     writer.write("优化器及早停模块加载完毕")
 
     if Resume:
@@ -290,10 +301,14 @@ if __name__ == '__main__':
         #t_correct = test(model, test_dataloader)
         
         # 训练
-        fit_one_epoch(model, epoch, gen, optimizer, scheduler)
+        loss, ce_loss, bce_loss, dice_loss, getLr = \
+            fit_one_epoch(model, epoch, gen, optimizer, scheduler)
         
-        # 单测
-        # test(model, gen_val)
+        # 进行测试
+        test(model, gen_val)
+        
+        # 判断是否满足早停
+        early_stopping(loss, model.train)
 
         # 学习率逐步变小
         scheduler.step()

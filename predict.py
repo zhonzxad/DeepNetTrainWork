@@ -2,7 +2,7 @@
 '''
 Author: zhonzxad
 Date: 2021-10-26 10:34:44
-LastEditTime: 2021-11-20 15:37:06
+LastEditTime: 2021-11-23 10:14:00
 LastEditors: zhonzxad
 '''
 import math
@@ -18,7 +18,7 @@ import torch.nn.functional as F
 from PIL import Image
 from torchvision import transforms
 
-from models.Net.UNet import UNet
+from models.Unit.getmodel import GetModel
 from models.Unit.writelog import WriteLog
 
 # 在Windows下使用vscode运行时 添加上这句话就会使用正确的相对路径设置
@@ -37,10 +37,11 @@ def test(model, image):
 
     with torch.no_grad():
         image = torch.from_numpy(image).type(torch.FloatTensor)
-        if this_device.type == "cuda":
+        if GPU:
             image = image.to(this_device)
 
-    retimg = model(image)   # 模型预测
+    # 模型预测
+    retimg = model(image)
 
     # 最终返回结果已去掉bitch维度
     return retimg[0] 
@@ -124,8 +125,8 @@ if __name__ == '__main__':
     # 为CPU设定随机种子使结果可靠，就是每个人的随机结果都尽可能保持一致
     np.random.seed(SEED)
     torch.manual_seed(SEED)
-    # this_device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    this_device = torch.device("cuda:0" if UseGPU else "cpu")
+    this_device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    GPU = True if this_device.type == "cuda" and True else False
 
     # 加载日志对象
     writer = WriteLog(writerpath=r'./log/')
@@ -134,21 +135,22 @@ if __name__ == '__main__':
     IMGSIZE  = [384, 384, 3]
 
     # 加载模型
-    model = UNet(in_channels=IMGSIZE[2], n_classes=CLASSNUM)
-    if this_device.type == "cuda":
+    model = GetModel([IMGSIZE, CLASSNUM], writer).Createmodel(is_train=False)
+    # UNet(input_channels=IMGSIZE[2], num_class=CLASSNUM)
+    if GPU:
         model = model.to(this_device)
     writer.write("网络创建完毕")
     
-    # path = "./savepoint/model_data/UNEt_2Class_checkpoint.pth"            # 本机权重
-    path = "./savepoint/model_data/UNET-2Class-NewData-checkpoint.pth"      # 服务器权重
+    path = "./savepoint/model_data/UNet_2Class_NewLoss_1.pth"            # 本机权重
+    # path = "./savepoint/model_data/UNET-2Class-NewData-checkpoint.pth"      # 服务器权重
     if os.path.isfile(path):
-        model_data = torch.load(path, map_location='cpu')
+        model_data = torch.load(path, map_location="cuda:0" if GPU else "cpu")
         model = model_data['model']
         writer.write("加载参数完成")
     else:
         raise RuntimeError
 
-    image = Image.open(r"C:/Users/zxuan/Desktop/zx1-0003.jpg")
+    image = Image.open(r"C:/Users/zxuan/Desktop/color_0022.jpg")
     print(image.size)
     # img = cv2.cvtColor(np.asarray(image),cv2.COLOR_RGB2BGR)
     # cv2.imshow("Ori", img)
@@ -165,7 +167,7 @@ if __name__ == '__main__':
 
     RetImg = ImgMerge(RetImgList)
 
-    savepath = r"C:/Users/zxuan/Desktop/UNEt-2Class-zx1-0003.jpg"
+    savepath = r"C:/Users/zxuan/Desktop/UNet-2Class-NewLoss-zx1-0001.jpg"
     RetImg.save(savepath)
     print("预测完成，预测结果保存在{}".format(savepath))
 
