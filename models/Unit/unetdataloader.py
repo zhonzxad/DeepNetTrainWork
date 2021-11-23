@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-11-22 17:25:31
-LastEditTime: 2021-11-22 19:32:05
+LastEditTime: 2021-11-22 21:42:47
 LastEditors: zhonzxad
 '''
 import os
@@ -80,7 +80,7 @@ class UnetDataset(Dataset):
                                             self.num_classes))
 
         # png = png.transpose(2, 0, 1)
-        seg_label = seg_label.transpose(2, 0, 1)
+        # seg_label = seg_label.transpose(2, 0, 1)
 
         return jpg, png, seg_label
 

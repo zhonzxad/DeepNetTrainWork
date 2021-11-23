@@ -25,6 +25,7 @@ def weights_init(net, loger, init_type='normal', init_gain=0.02):
         elif classname.find('BatchNorm2d') != -1:
             torch.nn.init.normal_(m.weight.data, 1.0, 0.02)
             torch.nn.init.constant_(m.bias.data, 0.0)
+            
     net.apply(init_func)
 
     if loger is not None:

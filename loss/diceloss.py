@@ -78,6 +78,56 @@ def Dice_Loss(pred, label):
     dice_loss = AchieveDice_3(pred, label)
     return dice_loss
 
+def AchieveDice_1(input, target, beta=1, smooth=1e-5, num_classes=2):
+    b, c, h, w = input.size()
+    bt, ht, wt, ct = target.size()
+    if h != ht and w != wt:
+        input = F.interpolate(input, size=(ht, wt), mode="bilinear", align_corners=True)
+        
+    temp_inputs = torch.softmax(input.transpose(1, 2).transpose(2, 3).contiguous().view(b, -1, c), -1)
+    temp_target = target.view(bt, -1, ct)
+
+    #--------------------------------------------#
+    #   计算dice loss
+    #--------------------------------------------#
+    tp = torch.sum(temp_target[...,:-1] * temp_inputs, axis=[0,1])
+    fp = torch.sum(temp_inputs                       , axis=[0,1]) - tp
+    fn = torch.sum(temp_target[...,:-1]              , axis=[0,1]) - tp
+
+    score = ((1 + beta ** 2) * tp + smooth) / ((1 + beta ** 2) * tp + beta ** 2 * fn + fp + smooth)
+    dice_loss = 1 - torch.mean(score)
+
+    # 最后越小越好
+    return dice_loss
+
+def AchieveDice_2(pred, label, eps=1e-8, num_classes=2):
+    '''
+    :param y_preds: [bs,num_classes,768,1024]
+    :param y_truths: [bs,num_calsses,768,1024]
+    :param eps:
+    :return:
+    '''
+    pred = torch.sigmoid(pred)
+    bs = pred.size(0)
+    num_classes = pred.size(1)
+    dices_bs = torch.zeros(bs,num_classes)
+    for idx in range(bs):
+        y_pred  = pred[idx]   # [num_classes,768,1024]
+        y_truth = label[idx]   # [num_classes,768,1024]
+        intersection = torch.sum(torch.mul(y_pred, y_truth), dim=(1,2)) + eps / 2
+        union = torch.sum(torch.mul(y_pred, y_pred), dim=(1, 2)) + torch.sum(torch.mul(y_truth, y_truth), dim=(1, 2)) + eps
+
+        # 在实现的时候，往往会加上一个smooth，防止分母为0的情况出现
+        dices_sub = 2 * (intersection + 1) / (union + 1)
+        dices_bs[idx] = dices_sub
+
+    dices = torch.mean(dices_bs, dim=0)
+    dice  = torch.mean(dices)
+    dice_loss = 1 - dice
+
+    # 最后越小越好
+    return dice_loss
+
 class DiceLoss(nn.Module):
     '''
     Soft_Dice = 2*|dot(A, B)| / (|dot(A, A)| + |dot(B, B)| + eps)
@@ -86,30 +136,5 @@ class DiceLoss(nn.Module):
     def __init__(self, weight=None, num_class=2):
         super(DiceLoss, self).__init__()
  
-    def forward(self, preds, label, eps=1e-8):
-        '''
-        :param y_preds: [bs,num_classes,768,1024]
-        :param y_truths: [bs,num_calsses,768,1024]
-        :param eps:
-        :return:
-        '''
-        preds = torch.sigmoid(preds)
-        bs = preds.size(0)
-        num_classes = preds.size(1)
-        dices_bs = torch.zeros(bs,num_classes)
-        for idx in range(bs):
-            y_pred  = preds[idx]   # [num_classes,768,1024]
-            y_truth = label[idx]   # [num_classes,768,1024]
-            intersection = torch.sum(torch.mul(y_pred, y_truth), dim=(1,2)) + eps / 2
-            union = torch.sum(torch.mul(y_pred, y_pred), dim=(1, 2)) + torch.sum(torch.mul(y_truth, y_truth), dim=(1, 2)) + eps
- 
-            # 在实现的时候，往往会加上一个smooth，防止分母为0的情况出现
-            dices_sub = 2 * (intersection + 1) / (union + 1)
-            dices_bs[idx] = dices_sub
- 
-        dices = torch.mean(dices_bs, dim=0)
-        dice  = torch.mean(dices)
-        dice_loss = 1 - dice
-
-        # 最后越小越好
-        return dice_loss
+    def forward(self, pred, label, eps=1e-8):
+        return AchieveDice_1(pred, label)

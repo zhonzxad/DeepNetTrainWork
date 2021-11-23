@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-10-25 13:18:03
-LastEditTime: 2021-11-22 19:31:24
+LastEditTime: 2021-11-22 21:52:30
 LastEditors: zhonzxad
 '''
 
@@ -28,13 +28,24 @@ def AchieveCE_1(inputs, target):
 
     return CE_loss
 
-def AchieveCE_2(inputs, target, num_classes=1):
+def AchieveCE_2(inputs, target, num_classes=2):
     n, c, h, w = inputs.size()
     nt, ht, wt = target.size()
     temp_inputs = inputs.transpose(1, 2).transpose(2, 3).contiguous().view(-1, c)
     temp_target = target.view(-1)
     # print("\n temp_inputs shape is {} || temp_target shape is {}".format(temp_inputs.shape, temp_target.shape))
     CE_loss  = nn.NLLLoss(ignore_index=num_classes)(F.log_softmax(temp_inputs, dim = -1), temp_target)
+
+    return CE_loss
+
+def AchieveCE_3(pred, target, num_classes=2):
+    chanel = pred.shape[1]
+    pred = torch.sigmoid(pred)
+    pred = pred.transpose(1, 2).transpose(2, 3).contiguous().view(-1, chanel)
+    target = target.long()
+    target = target.view(-1)
+    
+    CE_loss = nn.CrossEntropyLoss()(pred, target)
 
     return CE_loss
 
@@ -62,13 +73,9 @@ class CELoss2d(nn.Module):
     def __init__(self):
           super(CELoss2d, self).__init__()
  
-    def forward(self, pred, targets):
-        chanel = pred.shape[1]
-        pred = torch.sigmoid(pred)
-        pred = pred.transpose(1, 2).transpose(2, 3).contiguous().view(-1, chanel)
-        targets = targets.long()
-        targets = targets.view(-1)
-        return nn.CrossEntropyLoss()(pred, targets)
+    def forward(self, pred, target):
+
+        return AchieveCE_3(pred, target)
 
         # 对于二分类问题，sigmoid等价于softmax
         pred = torch.sigmoid(pred)

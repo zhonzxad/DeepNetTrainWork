@@ -40,6 +40,20 @@ def AchieveBCE_4(pred, label):
     #print("bce_loss:", bce_out.data.cpu().numpy())
     return bce_loss
 
+def AchieveBCE_5(logits, target):
+    # chanel  = logits.shape[1]
+    # logits  = torch.sigmoid(logits)      # 二分类问题，sigmoid等价于softmax
+    # 断开这两个变量之间的依赖,深拷贝
+    # logits  = logits.transpose(1, 2).transpose(2, 3).contiguous().view(-1, chanel)
+    # targets = torch.stack([targets, targets.clone()], dim=1)
+    # targets = targets.view(-1, chanel)
+    logits = logits.squeeze(dim=1)
+    target = target.contiguous().permute([0, 3, 1, 2])
+
+    bceloss = nn.BCELoss()(logits, target)
+
+    return bceloss
+
 # BCELOSS适用于多标签问题，比如有猫有狗之类 ??不确定
 def BCE_loss(pred, label):
     '''
@@ -54,11 +68,6 @@ class BCELoss2d(nn.Module):
     def __init__(self, weight=None, size_average=True):
         super(BCELoss2d, self).__init__()
  
-    def forward (self, logits, targets):
-        chanel  = logits.shape[1]
-        logits  = torch.sigmoid(logits)      # 二分类问题，sigmoid等价于softmax
-        logits  = logits.transpose(1, 2).transpose(2, 3).contiguous().view(-1, chanel)
-        targets = torch.stack([targets, targets.clone()], dim=1)
-        targets = targets.view(-1, chanel)
-        bceloss = nn.BCELoss(size_average=True)(logits, targets)
-        return bceloss
+    def forward (self, logits, target):
+        
+        return AchieveBCE_5(logits, target)

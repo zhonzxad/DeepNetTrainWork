@@ -35,9 +35,10 @@ from models.Unit.writelog import WriteLog
 # 需要import os和sys两个库
 os.chdir(sys.path[0])
 
-# 创建全局写日志对象
+# 创建全局对象
 global writer
 global tfwriter
+global this_device
 
 # 获取学习率
 def get_lr(optimizer):
@@ -73,10 +74,10 @@ def fit_one_epoch(model, epoch, dataloaders, optimizer, scheduler):
             # seg_labels = seg_labels.transpose(1, 3).transpose(2, 3)
             # writer.write("\n img shape is {} || png shape is {} || seg_labels shape is {}".format(img.shape, png.shape, seg_labels.shape))
 
-            if args.UseGPU:
-                img = img.cuda()
-                png = png.cuda()
-                label = label.cuda()
+            if this_device.type == "cuda":
+                img = img.to(this_device)
+                png = png.to(this_device)
+                label = label.to(this_device)
 
         # 所有梯度为0
         optimizer.zero_grad()
@@ -86,19 +87,19 @@ def fit_one_epoch(model, epoch, dataloaders, optimizer, scheduler):
 
         # 计算损失
         # print("\n output shape is {} || png shape is {}".format(output.shape, png.shape))
-        ce_loss   = CELOSS(output, png)
-        # ce_loss   = CELoss2d()(output, png)
-        bce_loss  = BCELoss2d()(output, png)
+        # ce_loss   = CELOSS(output, png)
+        ce_loss   = CELoss2d()(output, png)
+        # bce_loss  = BCELoss2d()(output, label)
         dice_loss = DiceLoss()(output, label)
         loss = ce_loss + dice_loss
 
         # 误差反向传播
-        ce_loss.backward()
+        loss.backward()
         # 优化梯度
         optimizer.step()
 
         total_ce_loss   += ce_loss.item()
-        total_bce_loss  += bce_loss.item()
+        # total_bce_loss  += bce_loss.item()
         total_dice_loss += dice_loss.item()
         total_loss      += loss.item()
         
@@ -106,19 +107,20 @@ def fit_one_epoch(model, epoch, dataloaders, optimizer, scheduler):
         # early_stopping(loss, model_train)
 
         # 写tensorboard
-        tags = ["train_loss", "CEloss", "Diceloss", "lr", "accuracy"]
+        tags = ["train_loss", "CEloss", "BCEloss", "Diceloss", "lr", "accuracy"]
         if tfwriter != None:
-            tfwriter.add_scalar(tags[0], loss, epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[1], ce_loss, epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[2], dice_loss, epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[3], get_lr(optimizer), epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[0], loss / (batch_idx + 1), epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[1], ce_loss / (batch_idx + 1), epoch*(batch_idx + 1))
+            # tfwriter.add_scalar(tags[2], bce_loss / (batch_idx + 1), epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[3], dice_loss / (batch_idx + 1), epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[4], get_lr(optimizer), epoch*(batch_idx + 1))
 
         #设置进度条左边显示的信息
         tqdmbar.set_description("Epoch in Range")
         #设置进度条右边显示的信息
         tqdmbar.set_postfix(Loss=("{:5f}".format(total_loss / (batch_idx + 1))),
                             CEloss=("{:5f}".format(total_ce_loss / (batch_idx + 1))),
-                            BCEloss=("{:5f}".format(total_bce_loss / (batch_idx + 1))),
+                            #BCEloss=("{:5f}".format(total_bce_loss / (batch_idx + 1))),
                             Diceloss=("{:5f}".format(total_dice_loss / (batch_idx + 1))),
                             lr=("{:7f}".format(get_lr(optimizer))))
 
@@ -139,10 +141,10 @@ def test(model, val_loader):
             # seg_labels = torch.autograd.Variable(seg_labels).type(torch.FloatTensor)
             # seg_labels = seg_labels.transpose(1, 3).transpose(2, 3)
 
-            if args.UseGPU:
-                img = img.cuda()
-                png = png.cuda()
-                label = label.cuda()
+            if this_device.type == "cuda":
+                img = img.to(this_device)
+                png = png.to(this_device)
+                label = label.to(this_device)
 
         # 输入测试图像
         output    = model_eval(img)
@@ -207,16 +209,17 @@ if __name__ == '__main__':
     SEED        = args.seed           # 设置随机种子
     CLASSNUM    = args.nclass
     IMGSIZE     = [384, 384, 3]
+    this_device = torch.device("cuda:0" if torch.cuda.is_available() and args.UseGPU else "cpu")
     # 为CPU设定随机种子使结果可靠，就是每个人的随机结果都尽可能保持一致
     np.random.seed(SEED)
     torch.manual_seed(SEED)
 
     # 不同损失函数之间的调整系数，默认是均衡的
-    cls_weights     = np.ones([CLASSNUM], np.float32)
+    cls_weights = np.ones([CLASSNUM], np.float32)
 
     # 加载日志对象
     writer   = WriteLog(writerpath=r'./log/log/')
-    tfwriter = None#SummaryWriter(logdir=r"./log/tfboard/", comment="unet")
+    tfwriter = SummaryWriter(logdir=r"./log/tfboard/", comment="unet")
 
     # 打印列表参数
     # print(vars(args))
@@ -227,8 +230,8 @@ if __name__ == '__main__':
     writer.write("数据集加载完毕")
 
     # 加载模型
-    # model = UNet(input_channels=IMGSIZE[2], num_class=CLASSNUM).train()
-    model = UNetVGG16(num_classes=CLASSNUM, in_channels=IMGSIZE[2]).train()
+    model = UNet(input_channels=IMGSIZE[2], num_class=CLASSNUM).train()
+    # model = UNetVGG16(num_classes=CLASSNUM, in_channels=IMGSIZE[2]).train()
     # model = UNet_2Plus(in_channels=IMGSIZE[2], n_classes=CLASSNUM).train()
     # model = RestNet18(in_channels=IMGSIZE[2], n_classes=CLASSNUM).train()
     # model   = SegNet(input_channels=IMGSIZE[2], num_class=CLASSNUM).train()
@@ -237,7 +240,7 @@ if __name__ == '__main__':
     # 初始化网络相关权重
     weights_init(model, loger=writer)
 
-    if args.UseGPU:
+    if this_device.type == "cuda":
         # 为GPU设定随机种子，以便确信结果是可靠的
         os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
         torch.cuda.manual_seed(SEED)
@@ -247,7 +250,7 @@ if __name__ == '__main__':
         # # 那么cuDNN使用的非确定性算法就会自动寻找最适合当前配置的高效算法，来达到优化运行效率的问题
         # torch.backends.cudnn.deterministic = True
         # torch.backends.cudnn.benchmark = False
-        model = model.cuda()
+        model = model.to(this_device)
     
     # tfwriter.add_graph(model=model, input_to_model=IMGSIZE)
     writer.write("模型加载完毕")
@@ -266,7 +269,7 @@ if __name__ == '__main__':
     writer.write("优化器及早停模块加载完毕")
 
     if Resume:
-        path = "./savepoint/model_data/UNEt_2Class_checkpoint_____.pth"
+        path = "./savepoint/model_data/UNet_2Class_NewLoss_1.pth"
         if os.path.isfile(path):
             checkpoint = torch.load(path)
             start_epoch = checkpoint['epoch']
