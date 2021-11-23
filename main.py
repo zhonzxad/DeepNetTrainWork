@@ -273,7 +273,7 @@ if __name__ == '__main__':
         # 为GPU设定随机种子，以便确信结果是可靠的
         # os.environ["CUDA_VISIBLE_DEVICES"] = "cuda:0"
         torch.cuda.manual_seed(SEED)
-        # model = torch.nn.DataParallel(model)
+        model = torch.nn.DataParallel(model)
         # cudnn.benchmark = True
         #torch.cuda().manual_seed_all(SEED)
         # # 那么cuDNN使用的非确定性算法就会自动寻找最适合当前配置的高效算法，来达到优化运行效率的问题

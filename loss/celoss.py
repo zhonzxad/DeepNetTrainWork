@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-10-25 13:18:03
-LastEditTime: 2021-11-22 21:52:30
+LastEditTime: 2021-11-23 12:30:07
 LastEditors: zhonzxad
 '''
 
@@ -40,7 +40,7 @@ def AchieveCE_2(inputs, target, num_classes=2):
 
 def AchieveCE_3(pred, target, num_classes=2):
     chanel = pred.shape[1]
-    pred = torch.sigmoid(pred)
+    # pred = torch.sigmoid(pred)
     pred = pred.transpose(1, 2).transpose(2, 3).contiguous().view(-1, chanel)
     target = target.long()
     target = target.view(-1)
@@ -75,7 +75,7 @@ class CELoss2d(nn.Module):
  
     def forward(self, pred, target):
 
-        return AchieveCE_3(pred, target)
+        return AchieveCE_3(pred.contiguous(), target.contiguous())
 
         # 对于二分类问题，sigmoid等价于softmax
         pred = torch.sigmoid(pred)

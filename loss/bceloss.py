@@ -1,3 +1,9 @@
+'''
+Author: zhonzxad
+Date: 2021-06-24 10:10:02
+LastEditTime: 2021-11-23 12:20:32
+LastEditors: zhonzxad
+'''
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -48,7 +54,7 @@ def AchieveBCE_5(logits, target):
     # targets = torch.stack([targets, targets.clone()], dim=1)
     # targets = targets.view(-1, chanel)
     logits = logits.squeeze(dim=1)
-    target = target.contiguous().permute([0, 3, 1, 2])
+    target = target.permute([0, 3, 1, 2])
 
     bceloss = nn.BCELoss()(logits, target)
 
@@ -67,7 +73,10 @@ def BCE_loss(pred, label):
 class BCELoss2d(nn.Module):
     def __init__(self, weight=None, size_average=True):
         super(BCELoss2d, self).__init__()
+
+    # BCEWithLogitsLoss函数包括了 Sigmoid 层和 BCELoss 层. 适用于多标签分类任务
+    # 如果你的网络的最后一层不是sigmoid，你需要把BCELoss换成BCEWithLogitsLoss
  
     def forward (self, logits, target):
         
-        return AchieveBCE_5(logits, target)
+        return AchieveBCE_5(logits.contiguous(), target.contiguous())

@@ -105,5 +105,5 @@ class UNet(nn.Module):
         # print("\n outconv1 shape is {}".format(d1.shape))
 
         # 激活函数常用于全连接层之后，增加全连接层之后的非线性特征，全连接就是将两个层之间权值之类的全部联系在一起
-        # return torch.sigmoid(d1) 
-        return d1
+        return torch.sigmoid(d1) 
+        # return d1

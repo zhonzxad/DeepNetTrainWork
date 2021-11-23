@@ -29,4 +29,5 @@ def f_score(inputs, target, beta=1, smooth = 1e-5, threhold = 0.5):
 
     score = ((1 + beta ** 2) * tp + smooth) / ((1 + beta ** 2) * tp + beta ** 2 * fn + fp + smooth)
     score = torch.mean(score)
+    
     return score
