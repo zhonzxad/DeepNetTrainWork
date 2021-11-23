@@ -81,7 +81,7 @@ class UserDataLoader(Dataset):
         # 处理jpg格式变换
         jpg = np.transpose(np.array(jpg), [2,0,1])
         # jpg = np.array(jpg)
-        jpg = torch.from_numpy(jpg)
+        # jpg = torch.from_numpy(jpg)
 
         # 处理png格式变化
         # 产生数组
@@ -89,14 +89,14 @@ class UserDataLoader(Dataset):
         # png = np.transpose(np.array(png), [2,0,1])
         # png = png.unsqueeze(dim=-1)
         png[png >= self.num_classes] = self.num_classes
-        png = torch.from_numpy(png)
+        # png = torch.from_numpy(png)
         # png = png.unsqueeze(dim=0)
         # png = torch.cat([png, png.clone()],dim=0)
         
         # 转化成one_hot的形式
         seg_labels = np.eye(self.num_classes)[np.array(seg_labels).reshape([-1])]
         seg_labels = seg_labels.reshape(int(self.image_size[0]), int(self.image_size[1]), self.num_classes)
-        seg_labels = torch.from_numpy(seg_labels).permute(2, 0, 1)
+        # seg_labels = torch.from_numpy(seg_labels).permute(2, 0, 1)
         
         # seg_labels 在创建的时候被赋值为int64
         # seg_labels = np.array(seg_labels).astype(np.int64)

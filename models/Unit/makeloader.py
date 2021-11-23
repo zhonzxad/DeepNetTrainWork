@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-11-22 17:29:29
-LastEditTime: 2021-11-22 19:13:15
+LastEditTime: 2021-11-23 13:21:44
 LastEditors: zhonzxad
 '''
 import os
@@ -70,10 +70,10 @@ class MakeLoader():
         # 另外：在Windows环境下，设置num_workers>1会及容易产生报错的现象（使用裸语句 没有被写在函数中），所以不建议在Windows下设置次参数，
         gen = DataLoader(train_dataset, shuffle=True, batch_size=self.batchsize, num_workers = 1,
                             pin_memory=True if torch.cuda.is_available() else False,
-                            drop_last=True)#, collate_fn=UserDataLoader.dataset_collate)
+                            drop_last=True, collate_fn=dataset_collate)
         gen_val = DataLoader(val_dataset, shuffle=False, batch_size=self.batchsize, num_workers = 1,
                             pin_memory=True if torch.cuda.is_available() else False,
-                            drop_last=True)#, collate_fn=UserDataLoader.dataset_collate)
+                            drop_last=True, collate_fn=dataset_collate)
 
         return gen, gen_val
     
@@ -89,3 +89,9 @@ class MakeLoader():
                                     drop_last = True, collate_fn=dataset_collate)
 
         return gen, gen_val
+
+    def makedata(self, backbone="User"):
+        if backbone == "User":
+            return self.makedataUser()
+        else:
+            return self.makedataVoc()

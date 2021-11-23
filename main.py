@@ -213,7 +213,7 @@ def get_args():
     parser.add_argument('--nepoch', type=int,
                         help='Total epoch num', default=200)
     parser.add_argument('--IMGSIZE', type=list, 
-                        help='IMGSIZE', default=[384, 384, 384])
+                        help='IMGSIZE', default=[384, 384, 3])
     parser.add_argument('--lr', type=list, 
                         help='Learning rate', default=[0.001, 0.01])
     parser.add_argument('--early_stop', type=int,
@@ -263,10 +263,11 @@ if __name__ == '__main__':
     writer.write(vars(args))
 
     loader = MakeLoader(IMGSIZE, CLASSNUM, args.batch_size)
-    gen, gen_val = loader.makedataVoc()
+    gen, gen_val = loader.makedata(backbone="User")
     writer.write("数据集加载完毕")
 
-    model = GetModel(args, writer).Createmodel(is_train=True)
+    modelClass = GetModel(args, writer)
+    model = modelClass.Createmodel(is_train=True)
     writer.write("模型创建及初始化完毕")
 
     if this_device.type == "cuda":
@@ -297,7 +298,7 @@ if __name__ == '__main__':
     writer.write("优化器及早停模块加载完毕")
 
     if Resume:
-        path = "./savepoint/model_data/UNet_2Class_NewLoss_1.pth"
+        path = "./savepoint/model_data/UNet_2Class_NewLoss_1___.pth"
         if os.path.isfile(path):
             checkpoint = torch.load(path)
             start_epoch = checkpoint['epoch']

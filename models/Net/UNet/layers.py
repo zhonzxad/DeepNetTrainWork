@@ -1,3 +1,9 @@
+'''
+Author: zhonzxad
+Date: 2021-06-24 10:10:02
+LastEditTime: 2021-11-23 13:25:41
+LastEditors: zhonzxad
+'''
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -15,7 +21,7 @@ class unetConv2(nn.Module):
         s = stride
         p = padding
         if is_batchnorm:
-            for i in range(1, n + 1):
+            for i in range(1, n + 1):  # 左闭右开区间
                 conv = nn.Sequential(nn.Conv2d(in_size, out_size, kernel_size, s, p),
                                      nn.BatchNorm2d(out_size),
                                      nn.ReLU(inplace=True), )
