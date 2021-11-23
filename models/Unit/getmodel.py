@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-11-23 09:49:29
-LastEditTime: 2021-11-23 10:16:17
+LastEditTime: 2021-11-23 10:51:45
 LastEditors: zhonzxad
 '''
 import argparse
@@ -18,14 +18,14 @@ from models.Unit.pytorchtools import weights_init
 class  GetModel():
     def __init__(self, args, loger):
         if type(args) == argparse.Namespace:
-            self.args   = args
+            self.args    = args
             self.IMGSIZE = self.args.IMGSIZE
-            self.NCLASS = self.args.CLASSNUM
+            self.NCLASS  = self.args.nclass
         else:
             self.IMGSIZE = args[0]
-            self.NCLASS = args[1]
+            self.NCLASS  = args[1]
+            
         self.writer = loger
-        pass
 
     def Createmodel(self, is_train=True):
         # 加载模型
@@ -39,5 +39,8 @@ class  GetModel():
         # 初始化网络相关权重
         if is_train:
             weights_init(model, loger=self.writer)
+            model = model.train()
+        else:
+            model = model.eval()
 
-        return model.train() if is_train else model.eval()
+        return model

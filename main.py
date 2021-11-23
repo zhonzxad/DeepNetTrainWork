@@ -19,6 +19,7 @@ from tqdm import tqdm
 from loss.bceloss import BCELoss2d
 from loss.celoss import CELOSS, CELoss2d
 from loss.diceloss import Dice_Loss, DiceLoss
+from loss.fscore import f_score
 from loss.iouloss import bbox_overlaps_ciou
 from models.Unit.getmodel import GetModel
 from models.Unit.getoptim import CreateOptim
@@ -46,6 +47,7 @@ def fit_one_epoch(model, epoch, dataloaders, optimizer, scheduler):
     total_ce_loss   = 0
     total_bce_loss  = 0
     total_dice_loss = 0
+    total_f_score   = 0
     total_loss      = 0
 
     model_train = model.train()
@@ -84,9 +86,12 @@ def fit_one_epoch(model, epoch, dataloaders, optimizer, scheduler):
         # print("\n output shape is {} || png shape is {}".format(output.shape, png.shape))
         # ce_loss   = CELOSS(output, png)
         ce_loss   = CELoss2d()(output, png)
-        bce_loss  = 0#BCELoss2d()(output, label)
+        bce_loss  = BCELoss2d()(output, label)
         dice_loss = DiceLoss()(output, label)
         loss = ce_loss + dice_loss
+        
+        with torch.no_grad():
+            _f_score = f_score(output, label)
 
         # 误差反向传播
         loss.backward()
@@ -96,21 +101,24 @@ def fit_one_epoch(model, epoch, dataloaders, optimizer, scheduler):
         total_ce_loss   += ce_loss.item()
         total_bce_loss  += bce_loss.item()
         total_dice_loss += dice_loss.item()
+        total_f_score   += _f_score.item()
         total_loss      += loss.item()
 
         total_ce_loss   /= (batch_idx + 1)
         total_bce_loss  /= (batch_idx + 1)
         total_dice_loss /= (batch_idx + 1)
+        total_f_score   /= (batch_idx + 1)
         total_loss      /= (batch_idx + 1)
 
         # 写tensorboard
-        tags = ["train_loss", "CEloss", "BCEloss", "Diceloss", "lr", "accuracy"]
+        tags = ["train_loss", "CEloss", "BCEloss", "Diceloss", "f_score", "lr", "accuracy"]
         if tfwriter != None:
             tfwriter.add_scalar(tags[0],        total_loss)#, epoch*(batch_idx + 1))
             tfwriter.add_scalar(tags[1],     total_ce_loss)#, epoch*(batch_idx + 1))
             tfwriter.add_scalar(tags[2],    total_bce_loss)#, epoch*(batch_idx + 1))
             tfwriter.add_scalar(tags[3],         dice_loss)#, epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[4], get_lr(optimizer))#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[4],     total_f_score)#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[5], get_lr(optimizer))#, epoch*(batch_idx + 1))
 
         #设置进度条左边显示的信息
         tqdmbar.set_description("Epoch in Range")
@@ -119,6 +127,7 @@ def fit_one_epoch(model, epoch, dataloaders, optimizer, scheduler):
                             CEloss=("{:5f}".format(total_ce_loss)),
                             #BCEloss=("{:5f}".format(total_bce_loss)),
                             Diceloss=("{:5f}".format(total_dice_loss)),
+                            F_SOCRE=("{:5f}".format(total_f_score)),
                             lr=("{:7f}".format(get_lr(optimizer))))
 
     return loss, ce_loss, bce_loss, dice_loss, get_lr(optimizer)
@@ -130,6 +139,7 @@ def test(model, val_loader):
     total_ce_loss   = 0
     total_bce_loss  = 0
     total_dice_loss = 0
+    total_f_score   = 0
     total_loss      = 0
 
     model_eval = model.eval()
@@ -157,19 +167,24 @@ def test(model, val_loader):
 
         # ce_loss   = CELOSS(output, png)
         ce_loss   = CELoss2d()(output, png)
-        bce_loss  = 0#BCELoss2d()(output, png)
+        bce_loss  = BCELoss2d()(output, png)
         dice_loss = DiceLoss()(output, label)
+
+        with torch.no_grad():
+            _f_score = f_score(output, label)
 
         loss = ce_loss + bce_loss + dice_loss
 
         total_ce_loss   += ce_loss.item()
         total_bce_loss  += bce_loss.item()
         total_dice_loss += dice_loss.item()
+        total_f_score   += _f_score.item()
         total_loss      += loss.item()
 
         total_ce_loss   /= (batch_idx + 1)
         total_bce_loss  /= (batch_idx + 1)
         total_dice_loss /= (batch_idx + 1)
+        total_f_score   /= (batch_idx + 1)
         total_loss      /= (batch_idx + 1)
 
         #设置进度条左边显示的信息
@@ -178,6 +193,7 @@ def test(model, val_loader):
         tqdmbar.set_postfix(Loss=("{:5f}".format(total_loss)),
                             CEloss=("{:5f}".format(total_ce_loss)),
                             BCEloss=("{:5f}".format(total_bce_loss)),
+                            F_SOCRE=("{:5f}".format(total_f_score)),
                             Diceloss=("{:5f}".format(total_dice_loss)))
 
     return loss, ce_loss, bce_loss, dice_loss
@@ -196,6 +212,8 @@ def get_args():
                         help='load data thread', default=1)
     parser.add_argument('--nepoch', type=int,
                         help='Total epoch num', default=200)
+    parser.add_argument('--IMGSIZE', type=list, 
+                        help='IMGSIZE', default=[384, 384, 384])
     parser.add_argument('--lr', type=list, 
                         help='Learning rate', default=[0.001, 0.01])
     parser.add_argument('--early_stop', type=int,
@@ -220,14 +238,13 @@ def get_args():
 
 if __name__ == '__main__':
     args        = get_args()
-    print(type(args))
     start_epoch = 0                   # 起始的批次
     LoadThread  = args.load_tread     # 加载数据线程数
     SaveMode    = args.save_mode      # 保存模型加参数还是只保存参数
     Resume      = args.resume         # 是否使用断点续训
     SEED        = args.seed           # 设置随机种子
     CLASSNUM    = args.nclass
-    IMGSIZE     = [384, 384, 3]
+    IMGSIZE     = args.IMGSIZE
     this_device = torch.device("cuda:0" if torch.cuda.is_available() and args.UseGPU else "cpu")
     
     # 为CPU设定随机种子使结果可靠，就是每个人的随机结果都尽可能保持一致
@@ -254,10 +271,10 @@ if __name__ == '__main__':
 
     if this_device.type == "cuda":
         # 为GPU设定随机种子，以便确信结果是可靠的
-        os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
+        # os.environ["CUDA_VISIBLE_DEVICES"] = "cuda:0"
         torch.cuda.manual_seed(SEED)
-        model = torch.nn.DataParallel(model)
-        cudnn.benchmark = True
+        # model = torch.nn.DataParallel(model)
+        # cudnn.benchmark = True
         #torch.cuda().manual_seed_all(SEED)
         # # 那么cuDNN使用的非确定性算法就会自动寻找最适合当前配置的高效算法，来达到优化运行效率的问题
         # torch.backends.cudnn.deterministic = True
@@ -318,7 +335,7 @@ if __name__ == '__main__':
             'model': model,
             'optimizer': optimizer,
         }
-        saveparafilepath = "./savepoint/model_data/UNEt_2Class_checkpoint.pth"
+        saveparafilepath = "./savepoint/model_data/UNEt_2Class_NewLoss_checkpoint.pth"
         torch.save(checkpoint, saveparafilepath)
         writer.write("保存检查点完成，当前批次{}, 当然权重文件保存地址{}".format(epoch, saveparafilepath))
 
