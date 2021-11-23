@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-11-22 17:29:29
-LastEditTime: 2021-11-23 13:21:44
+LastEditTime: 2021-11-23 14:18:53
 LastEditors: zhonzxad
 '''
 import os
@@ -16,6 +16,8 @@ from torch.utils.data import DataLoader
 # 在Windows下使用vscode运行时 添加上这句话就会使用正确的相对路径设置
 # 需要import os和sys两个库
 os.chdir(sys.path[0])
+sys.path.append("..")
+
 """
 train_dataser = MakeVOCDataSet.MakeVOCDataSet(args.root_path.join("train"))
 val_dataset   = MakeVOCDataSet.MakeVOCDataSet(args.root_path.join("val"))
@@ -36,19 +38,19 @@ class MakeLoader():
         self.imgsize = IMGSIZE
         self.nclass  = CLASSNUM
         self.batchsize = BatchSize
+
         self.tra_img = r"G:/DataBase/userdata/BXG/CutFromData-4/train/img-resize-3/"
         self.tra_leb = r"G:/DataBase/userdata/BXG/CutFromData-4/train/label-resize-3/"
         self.val_img = r"G:/DataBase/userdata/BXG/CutFromData-4/val/img-resize-3/"
         self.val_leb = r"G:/DataBase/userdata/BXG/CutFromData-4/val/label-resize-3/"
-
-        # tra_img = r"G:/DataBase/userdata/BXG/CutFromData-4/train/img-resize-3/"
-        # tra_leb = r"G:/DataBase/userdata/BXG/CutFromData-4/train/label-resize-3/"
-        # val_img = r"G:/DataBase/userdata/BXG/CutFromData-4/val/img-resize-3/"
-        # val_leb = r"G:/DataBase/userdata/BXG/CutFromData-4/val/label-resize-3/"
-        # # tra_img = r"/mnt/work/database/train/image-3"
-        # # tra_leb = r"/mnt/work/database/train/label"
-        # # val_img = r"/mnt/work/database/val/image-3"
-        # # val_leb = r"/mnt/work/database/val/label"
+        # self.tra_img = r"G:/DataBase/userdata/BXG/CutFromData-4/train/img-resize-3/"
+        # self.tra_leb = r"G:/DataBase/userdata/BXG/CutFromData-4/train/label-resize-3/"
+        # self.val_img = r"G:/DataBase/userdata/BXG/CutFromData-4/val/img-resize-3/"
+        # self.val_leb = r"G:/DataBase/userdata/BXG/CutFromData-4/val/label-resize-3/"
+        # self.tra_img = r"/mnt/work/database/train/image-3"
+        # self.tra_leb = r"/mnt/work/database/train/label"
+        # self.val_img = r"/mnt/work/database/val/image-3"
+        # self.val_leb = r"/mnt/work/database/val/label"
 
         self.VOCdevkit_path = r"G:/Py_Debug/UNet-Version-master/Data/BXG/"
 

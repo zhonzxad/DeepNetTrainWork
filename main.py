@@ -30,6 +30,7 @@ from models.Unit.writelog import WriteLog
 # 在Windows下使用vscode运行时 添加上这句话就会使用正确的相对路径设置
 # 需要import os和sys两个库
 os.chdir(sys.path[0])
+sys.path.append("..")
 
 # 创建全局对象
 global writer
@@ -255,8 +256,8 @@ if __name__ == '__main__':
     cls_weights = np.ones([CLASSNUM], np.float32)
 
     # 加载日志对象
-    writer   = WriteLog(writerpath=r'./log/log/')
-    tfwriter = SummaryWriter(logdir=r"./log/tfboard/", comment="unet")
+    writer   = WriteLog(writerpath=r"log/log/")
+    tfwriter = SummaryWriter(logdir=r"log/tfboard/", comment="unet")
 
     # 打印列表参数
     # print(vars(args))

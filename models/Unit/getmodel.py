@@ -1,18 +1,21 @@
 '''
 Author: zhonzxad
 Date: 2021-11-23 09:49:29
-LastEditTime: 2021-11-23 10:51:45
+LastEditTime: 2021-11-23 14:18:58
 LastEditors: zhonzxad
 '''
 import argparse
+import sys
 
-from models.Net.FCN.fcn import FCN
-from models.Net.SegNet.SegNet import SegNet
-from models.Net.UNet.resnet18 import RestNet18
-from models.Net.UNet.UNet import UNet
-from models.Net.UNet.UNet_2Plus import UNet_2Plus
-from models.Net.UNet.UNetBili import UNetVGG16
-from models.Unit.pytorchtools import weights_init
+sys.path.append("..")
+
+from ..Net.FCN.fcn import FCN
+from ..Net.SegNet.SegNet import SegNet
+from ..Net.UNet.resnet18 import RestNet18
+from ..Net.UNet.UNet import UNet
+from ..Net.UNet.UNet_2Plus import UNet_2Plus
+from ..Net.UNet.UNetBili import UNetVGG16
+from ..Unit.pytorchtools import weights_init
 
 
 class  GetModel():
