@@ -9,8 +9,8 @@ import sys
 
 import torch
 #from models.Unit.MakeVOCDataSet import MakeVOCDataSet
-from models.Unit.unetdataloader import UnetDataset, dataset_collate
-from models.Unit.userdataset import UserDataLoader
+from models.Unit.unetdataloader import UnetDataset
+from models.Unit.userdataset import UserDataLoader, dataset_collate
 from torch.utils.data import DataLoader
 
 # 在Windows下使用vscode运行时 添加上这句话就会使用正确的相对路径设置

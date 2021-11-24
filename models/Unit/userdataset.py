@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-10-21 22:26:30
-LastEditTime: 2021-11-23 22:02:34
+LastEditTime: 2021-11-24 13:35:14
 LastEditors: zhonzxad
 '''
 import math
@@ -25,6 +25,24 @@ transforms_train = transforms.Compose([
                     transforms.ToPILImage(),             
                     transforms.ToTensor(),                                  # 将数据转换成Tensor型
                     transforms.Normalize((0.5,0.5,0.5),(0.5,0.5,0.5))])     # 标准化
+
+# DataLoader中collate_fn使用
+def dataset_collate(batch):
+    images = []
+    pngs = []
+    seg_labels = []
+
+    for img, png, labels in batch:
+        images.append(img)
+        pngs.append(png)
+        seg_labels.append(labels)
+
+    # 产生数组
+    images     = np.array(images)
+    pngs       = np.array(pngs)
+    seg_labels = np.array(seg_labels)
+
+    return images, pngs, seg_labels
 
 
 class UserDataLoader(Dataset):
@@ -70,6 +88,7 @@ class UserDataLoader(Dataset):
         imgfilepath = self.imgpath + "/" + self.imgpath_list[index]  # 组合原始图片路径
         filetitle = os.path.split(imgfilepath)[1]
         shotname, extension = os.path.splitext(filetitle)
+        assert self.labelpath_list.count(shotname + ".png") == 1
         labelfilepath = self.labelpath + "/" + shotname + ".png"   # 取出对应标签图片路径
 
         jpg = Image.open(imgfilepath).convert("RGB")    # 统一转为三通道格式读取
@@ -95,15 +114,15 @@ class UserDataLoader(Dataset):
         # png = torch.cat([png, png.clone()],dim=0)
         
         # 转化成one_hot的形式
-        # seg_labels = np.eye(self.num_classes)[np.array(seg_labels).reshape([-1])]
-        # seg_labels = seg_labels.reshape(int(self.image_size[0]), int(self.image_size[1]), self.num_classes)
+        seg_labels = np.eye(self.num_classes)[np.array(seg_labels).reshape([-1])]
+        seg_labels = seg_labels.reshape(int(self.image_size[0]), int(self.image_size[1]), self.num_classes)
         # seg_labels = torch.from_numpy(seg_labels).permute(2, 0, 1)
         
         # seg_labels 在创建的时候被赋值为int64
-        seg_labels = seg_labels.astype(np.int64)
-        seg_labels = torch.from_numpy(seg_labels)
-        seg_labels = F.one_hot(seg_labels, num_classes=self.num_classes)
-        seg_labels = seg_labels.numpy()
+        # seg_labels = seg_labels.astype(np.int64)
+        # seg_labels = torch.from_numpy(seg_labels)
+        # seg_labels = F.one_hot(seg_labels, num_classes=self.num_classes)
+        # seg_labels = seg_labels.numpy()
         # seg_labels = seg_labels.permute(2, 0, 1)
 
         # seg_labels = np.transpose(np.array(jpg), [2,0,1])
@@ -119,22 +138,5 @@ class UserDataLoader(Dataset):
 
         return jpg, png, seg_labels
 
-    # DataLoader中collate_fn使用
-    def dataset_collate(batch):
-        images = []
-        pngs = []
-        seg_labels = []
-
-        for img, png, labels in batch:
-            images.append(img)
-            pngs.append(png)
-            seg_labels.append(labels)
-
-        # 产生数组
-        images     = np.array(images)
-        pngs       = np.array(pngs)
-        seg_labels = np.array(seg_labels)
-
-        return images, pngs, seg_labels
 
 

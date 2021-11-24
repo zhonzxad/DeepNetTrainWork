@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-10-25 20:59:11
-LastEditTime: 2021-11-23 14:18:41
+LastEditTime: 2021-11-24 10:17:03
 LastEditors: zhonzxad
 '''
 # -*- coding: UTF-8 -*- 
@@ -22,7 +22,7 @@ class WriteLog:
     def init(self):
         assert (self.writerpath is not "")
 
-        creat_time = dt.datetime.now().strftime("%F_%H-%M-%S") # 2021-10-25_15:08:03
+        creat_time = dt.datetime.now().strftime("%F_%H-%M") # 2021-10-25_15:08
         # frontpath  = os.path.abspath()
         self.file_name = self.writerpath + creat_time + ".txt"
         # self.file = open(file=self.file_name, mode='w', encoding="utf-8") # 用于读写，且清空文件
@@ -31,10 +31,11 @@ class WriteLog:
         # self.write('这是析构函数')
         self.trace_func('日志对象析构函数')
 
-    def write(self, log, coutprint=True):
-        with open(file=self.file_name, mode='w', encoding="utf-8") as f:
-            time = dt.datetime.now().strftime("%T") # 2021-10-25_15:08:03
-            log = time + " >> " + "{}".format(log)
-            self.trace_func(log)  # 重定向到print
-            if coutprint:
+    def write(self, log, coutprint=False):
+        time = dt.datetime.now().strftime("%F_%H-%M-%S") # 2021-10-25_15:08:03
+        log = time + " >> " + "{}".format(log)
+        self.trace_func(log)  # 重定向到print
+
+        if coutprint == True:
+            with open(file=self.file_name, mode='w', encoding="utf-8") as f:
                 f.write(log + "\n")

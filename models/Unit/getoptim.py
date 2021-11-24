@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-11-22 20:22:53
-LastEditTime: 2021-11-23 22:12:12
+LastEditTime: 2021-11-24 15:17:00
 LastEditors: zhonzxad
 '''
 import torch
@@ -36,14 +36,20 @@ def UserOptim1(model, lr):
     return optimizer, scheduler
 
 def UserOptim2(model, lr):
-    optimizer       = torch.optim.Adam(model.parameters(), lr=lr)
-    scheduler    = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.96)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.96)
+
+    return optimizer, scheduler
+
+def UserOptim3(model, lr):
+    optimizer = torch.optim.RMSprop(model.parameters(), lr=lr, alpha=0.9, eps=1e-08)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.96)
 
     return optimizer, scheduler
 
 def CreateOptim(model, lr):
 
-    return UserOptim2(model, lr)
+    return UserOptim3(model, lr)
 
 
 

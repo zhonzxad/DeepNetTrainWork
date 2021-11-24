@@ -82,7 +82,7 @@ def Imgndim(img):
 
 class CELoss2d(nn.Module):
     def __init__(self):
-          super(CELoss2d, self).__init__()
+        super(CELoss2d, self).__init__()
  
     def forward(self, pred, target):
 

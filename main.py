@@ -16,14 +16,10 @@ from tensorboardX import SummaryWriter
 from torchsummary import summary
 from tqdm import tqdm
 
-from loss.bceloss import BCELoss2d
-from loss.celoss import CELOSS, CELoss2d
-from loss.diceloss import Dice_Loss, DiceLoss
-from loss.fscore import f_score
-from loss.iouloss import bbox_overlaps_ciou
+from models.Unit.getloader import MakeLoader
+from models.Unit.getloss import loss_func
 from models.Unit.getmodel import GetModel
 from models.Unit.getoptim import CreateOptim
-from models.Unit.makeloader import MakeLoader
 from models.Unit.pytorchtools import EarlyStopping
 from models.Unit.writelog import WriteLog
 
@@ -73,9 +69,9 @@ def fit_one_epoch(model, epoch, dataloaders, optimizer, scheduler):
             # writer.write("\n img shape is {} || png shape is {} || seg_labels shape is {}".format(img.shape, png.shape, seg_labels.shape))
 
             if this_device.type == "cuda":
-                img = img.to(this_device)
-                png = png.to(this_device)
-                label = label.to(this_device)
+                img        = img.to(this_device)
+                png        = png.to(this_device)
+                label      = label.to(this_device)
 
         # 所有梯度为0
         optimizer.zero_grad()
@@ -85,51 +81,44 @@ def fit_one_epoch(model, epoch, dataloaders, optimizer, scheduler):
 
         # 计算损失
         # print("\n output shape is {} || png shape is {}".format(output.shape, png.shape))
-        # ce_loss   = CELOSS(output, png)
-        ce_loss   = CELoss2d()(output, png)
-        bce_loss  = BCELoss2d()(output, label)
-        dice_loss = DiceLoss()(output, label)
-        loss = bce_loss#ce_loss + dice_loss
-        
-        with torch.no_grad():
-            _f_score = f_score(output, label)
+        loss = loss_func(output, png, label, this_device)
 
         # 误差反向传播
         loss.backward()
         # 优化梯度
         optimizer.step()
 
-        total_ce_loss   += ce_loss.item()
-        total_bce_loss  += bce_loss.item()
-        total_dice_loss += dice_loss.item()
-        total_f_score   += _f_score.item()
-        total_loss      += loss.item()
+        # total_ce_loss   += ce_loss.item()
+        # total_bce_loss  += bce_loss.item()
+        # total_dice_loss += dice_loss.item()
+        # total_f_score   += _f_score.item()
+        # total_loss      += loss.item()
 
-        total_ce_loss   /= (batch_idx + 1)
-        total_bce_loss  /= (batch_idx + 1)
-        total_dice_loss /= (batch_idx + 1)
-        total_f_score   /= (batch_idx + 1)
-        total_loss      /= (batch_idx + 1)
+        # total_ce_loss   /= (batch_idx + 1)
+        # total_bce_loss  /= (batch_idx + 1)
+        # total_dice_loss /= (batch_idx + 1)
+        # total_f_score   /= (batch_idx + 1)
+        # total_loss      /= (batch_idx + 1)
 
         # 写tensorboard
         tags = ["train_loss", "CEloss", "BCEloss", "Diceloss", "f_score", "lr", "accuracy"]
         if tfwriter != None:
-            tfwriter.add_scalar(tags[0],        total_loss)#, epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[1],     total_ce_loss)#, epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[2],    total_bce_loss)#, epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[3],         dice_loss)#, epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[4],     total_f_score)#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[0],              loss)#, epoch*(batch_idx + 1))
+            # tfwriter.add_scalar(tags[1],         ce_loss)#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[2],          bce_loss)#, epoch*(batch_idx + 1))
+            # tfwriter.add_scalar(tags[3],       dice_loss)#, epoch*(batch_idx + 1))
+            # tfwriter.add_scalar(tags[4],         f_score)#, epoch*(batch_idx + 1))
             tfwriter.add_scalar(tags[5], get_lr(optimizer))#, epoch*(batch_idx + 1))
 
         #设置进度条左边显示的信息
         tqdmbar.set_description("Epoch in Range")
         #设置进度条右边显示的信息
-        tqdmbar.set_postfix(Loss=("{:5f}".format(total_loss)),
-                            CEloss=("{:5f}".format(total_ce_loss)),
-                            BCEloss=("{:5f}".format(total_bce_loss)),
-                            Diceloss=("{:5f}".format(total_dice_loss)),
-                            F_SOCRE=("{:5f}".format(total_f_score)),
-                            lr=("{:7f}".format(get_lr(optimizer))))
+        tqdmbar.set_postfix(Loss=("{:5f}".    format(     loss)),
+                            # CEloss=("{:5f}".  format(  ce_loss)),
+                            BCEloss=("{:5f}". format( bce_loss)),
+                            # Diceloss=("{:5f}".format(dice_loss)),
+                            # F_SOCRE=("{:5f}". format(  f_score)),
+                            lr=("{:7f}".      format(get_lr(optimizer))))
 
     return loss, ce_loss, bce_loss, dice_loss, get_lr(optimizer)
 
@@ -159,43 +148,40 @@ def test(model, val_loader):
             # seg_labels = seg_labels.transpose(1, 3).transpose(2, 3)
 
             if this_device.type == "cuda":
-                img = img.to(this_device)
-                png = png.to(this_device)
-                label = label.to(this_device)
+                img       = img.to(this_device)
+                png       = png.to(this_device)
+                label     = label.to(this_device)
 
         # 输入测试图像
         output    = model_eval(img)
 
+        # 计算损失
+        # print("\n output shape is {} || png shape is {}".format(output.shape, png.shape))
         # ce_loss   = CELOSS(output, png)
-        ce_loss   = CELoss2d()(output, png)
-        bce_loss  = BCELoss2d()(output, png)
-        dice_loss = DiceLoss()(output, label)
+        
 
-        with torch.no_grad():
-            _f_score = f_score(output, label)
+        loss      = bce_loss#ce_loss + dice_loss
 
-        loss = ce_loss + bce_loss + dice_loss
+        # total_ce_loss   += ce_loss.item()
+        # total_bce_loss  += bce_loss.item()
+        # total_dice_loss += dice_loss.item()
+        # total_f_score   += _f_score.item()
+        # total_loss      += loss.item()
 
-        total_ce_loss   += ce_loss.item()
-        total_bce_loss  += bce_loss.item()
-        total_dice_loss += dice_loss.item()
-        total_f_score   += _f_score.item()
-        total_loss      += loss.item()
-
-        total_ce_loss   /= (batch_idx + 1)
-        total_bce_loss  /= (batch_idx + 1)
-        total_dice_loss /= (batch_idx + 1)
-        total_f_score   /= (batch_idx + 1)
-        total_loss      /= (batch_idx + 1)
+        # total_ce_loss   /= (batch_idx + 1)
+        # total_bce_loss  /= (batch_idx + 1)
+        # total_dice_loss /= (batch_idx + 1)
+        # total_f_score   /= (batch_idx + 1)
+        # total_loss      /= (batch_idx + 1)
 
         #设置进度条左边显示的信息
         tqdmbar.set_description("Vaild_Epoch_size")
         #设置进度条右边显示的信息
-        tqdmbar.set_postfix(Loss=("{:5f}".format(total_loss)),
-                            CEloss=("{:5f}".format(total_ce_loss)),
-                            BCEloss=("{:5f}".format(total_bce_loss)),
+        tqdmbar.set_postfix(Loss=("{:5f}".format(loss)),
+                            CEloss=("{:5f}".format(ce_loss)),
+                            BCEloss=("{:5f}".format(bce_loss)),
                             F_SOCRE=("{:5f}".format(total_f_score)),
-                            Diceloss=("{:5f}".format(total_dice_loss)))
+                            Diceloss=("{:5f}".format(dice_loss)))
 
     return loss, ce_loss, bce_loss, dice_loss
 
@@ -206,7 +192,7 @@ def get_args():
     parser.add_argument('--root_path', type=str, help='Root path for dataset',
                         default=r'dataset/')
     parser.add_argument('--nclass', type=int,
-                        help='Number of classes', default=1)
+                        help='Number of classes', default=2)
     parser.add_argument('--batch_size', type=int,
                         help='batch size', default=2)
     parser.add_argument('--load_tread', type=int,
@@ -257,7 +243,7 @@ if __name__ == '__main__':
 
     # 加载日志对象
     writer   = WriteLog(writerpath=r"log/log/")
-    tfwriter = SummaryWriter(logdir=r"log/tfboard/", comment="unet")
+    tfwriter = None#SummaryWriter(logdir=r"log/tfboard/", comment="unet")
 
     # 打印列表参数
     # print(vars(args))
