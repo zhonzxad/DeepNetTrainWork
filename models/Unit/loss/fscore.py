@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-11-23 10:33:48
-LastEditTime: 2021-11-24 15:39:10
+LastEditTime: 2021-11-25 10:18:22
 LastEditors: zhonzxad
 '''
 
@@ -50,8 +50,9 @@ def FScoreLoss(input, target, gamma=2, alpha=0.25):
     
     return loss
 
-def f_score_1(inputs, target):
+def f_score_sklean(inputs, target):
     """
+    sklean的方法, 需要将标签转换为列表
     sklearn.metrics.f1_score(y_true, 
                  y_pred,
                  labels=None, 
@@ -61,16 +62,26 @@ def f_score_1(inputs, target):
     average : [None, ‘binary’ (default), ‘micro’, ‘macro’, ‘samples’, ‘weighted’] 
             多类/多标签目标需要此参数。默认为‘binary’，即二分类
     """
+    prob_all = []
+    lable_all = []
+
     n, c, h, w = inputs.size()
     nt, ht, wt, ct = target.size()
     
-    inputs = inputs.permute(0, 3, 1, 2).view(n*c*h*w)
-    target = target.view(n*c*h*w)
+    inputs = inputs.permute(0, 2, 3, 1)  # 全部转换为 [n,h,w,c]
 
-    inputs = inputs.cpu().detach().numpy()
+    inputs = inputs.cpu().detach().numpy()  # 转换为numpy
     target = target.cpu().detach().numpy()
 
-    return f1_score(target, inputs, average="binary")
+    prob_all.extend(np.argmax(inputs, axis=-1)) #求每一行的最大值索引
+    lable_all.extend(np.argmax(target, axis=-1))
+
+    f1 = []
+    for i in range(n):
+        l = f1_score(lable_all[i], prob_all[i], average="binary")
+        f1.extend(l)
+
+    return f1_score(lable_all, prob_all, average="binary")
 
 
 class FocalLoss(torch.nn.Module):
@@ -85,4 +96,4 @@ class FocalLoss(torch.nn.Module):
 
     def forward(self, input, target):
         
-        return FScoreLoss(input, target)
+        return f_score_sklean(input, target)

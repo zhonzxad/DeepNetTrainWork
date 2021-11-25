@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-06-24 12:51:18
-LastEditTime: 2021-11-24 13:28:25
+LastEditTime: 2021-11-25 15:13:20
 LastEditors: zhonzxad
 '''
 import torch
@@ -130,6 +130,29 @@ def AchieveDice_4(input, target, beta=1, smooth=1e-5, eps=1e-8):
     # 最后越小越好
     return dice_loss
 
+def AchieveDice_5(input, target, n_class=2, smooth = 1., class_weight=None):
+
+    b, c, h, w = input.size()
+    bt, ht, wt, ct = target.size()
+
+    input = input.permute(0, 2, 3, 1)  # 调换成b, h, w, c
+
+    loss = 0.
+    for c in range(n_class):
+        iflat = input[:, c ].contiguous().view(-1)  # 根据对应的class，转换成一维的
+        tflat = target[:, c].contiguous().view(-1)
+        intersection = (iflat * tflat).sum()
+
+        if class_weight == None:
+            w = 0.5                   # 表示两个class分别占比0.5
+        else:
+            w = class_weight[c]
+        
+        loss += w * (1 - ((2. * intersection + smooth) /
+                            (iflat.sum() + tflat.sum() + smooth)))
+    return loss
+
+
 def Dice_Loss(pred, label):
     '''
     dice计算，是一种集合相似度度量函数，通常用于计算两个样本的相似度，是越大越好。
@@ -150,4 +173,4 @@ class DiceLoss(nn.Module):
  
     def forward(self, pred, label):
 
-        return AchieveDice_2(pred, label)
+        return AchieveDice_5(pred, label)

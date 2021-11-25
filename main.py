@@ -105,7 +105,7 @@ def fit_one_epoch(model, epoch, dataloaders, optimizer, scheduler):
         if tfwriter != None:
             tfwriter.add_scalar(tags[0],              loss)#, epoch*(batch_idx + 1))
             # tfwriter.add_scalar(tags[1],         ce_loss)#, epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[2],          bce_loss)#, epoch*(batch_idx + 1))
+            # tfwriter.add_scalar(tags[2],          bce_loss)#, epoch*(batch_idx + 1))
             # tfwriter.add_scalar(tags[3],       dice_loss)#, epoch*(batch_idx + 1))
             # tfwriter.add_scalar(tags[4],         f_score)#, epoch*(batch_idx + 1))
             tfwriter.add_scalar(tags[5], get_lr(optimizer))#, epoch*(batch_idx + 1))
@@ -115,7 +115,7 @@ def fit_one_epoch(model, epoch, dataloaders, optimizer, scheduler):
         #设置进度条右边显示的信息
         tqdmbar.set_postfix(Loss=("{:5f}".    format(     loss)),
                             # CEloss=("{:5f}".  format(  ce_loss)),
-                            BCEloss=("{:5f}". format( bce_loss)),
+                            # BCEloss=("{:5f}". format( bce_loss)),
                             # Diceloss=("{:5f}".format(dice_loss)),
                             # F_SOCRE=("{:5f}". format(  f_score)),
                             lr=("{:7f}".      format(get_lr(optimizer))))
@@ -159,8 +159,7 @@ def test(model, val_loader):
         # print("\n output shape is {} || png shape is {}".format(output.shape, png.shape))
         # ce_loss   = CELOSS(output, png)
         
-
-        loss      = bce_loss#ce_loss + dice_loss
+        loss = loss_func(output, png, label, this_device)
 
         # total_ce_loss   += ce_loss.item()
         # total_bce_loss  += bce_loss.item()
@@ -178,10 +177,11 @@ def test(model, val_loader):
         tqdmbar.set_description("Vaild_Epoch_size")
         #设置进度条右边显示的信息
         tqdmbar.set_postfix(Loss=("{:5f}".format(loss)),
-                            CEloss=("{:5f}".format(ce_loss)),
-                            BCEloss=("{:5f}".format(bce_loss)),
-                            F_SOCRE=("{:5f}".format(total_f_score)),
-                            Diceloss=("{:5f}".format(dice_loss)))
+                            # CEloss=("{:5f}".format(ce_loss)),
+                            # BCEloss=("{:5f}".format(bce_loss)),
+                            # F_SOCRE=("{:5f}".format(total_f_score)),
+                            # Diceloss=("{:5f}".format(dice_loss))
+                            )
 
     return loss, ce_loss, bce_loss, dice_loss
 
@@ -250,7 +250,7 @@ if __name__ == '__main__':
     writer.write(vars(args))
 
     loader = MakeLoader(IMGSIZE, CLASSNUM, args.batch_size)
-    gen, gen_val = loader.makedata(backbone="User")
+    gen, gen_val = loader.makedata()
     writer.write("数据集加载完毕")
 
     modelClass = GetModel((IMGSIZE, CLASSNUM), writer)

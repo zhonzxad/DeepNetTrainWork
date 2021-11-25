@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-10-21 22:26:30
-LastEditTime: 2021-11-24 13:35:14
+LastEditTime: 2021-11-25 15:31:49
 LastEditors: zhonzxad
 '''
 import math
@@ -88,8 +88,9 @@ class UserDataLoader(Dataset):
         imgfilepath = self.imgpath + "/" + self.imgpath_list[index]  # 组合原始图片路径
         filetitle = os.path.split(imgfilepath)[1]
         shotname, extension = os.path.splitext(filetitle)
-        assert self.labelpath_list.count(shotname + ".png") == 1
         labelfilepath = self.labelpath + "/" + shotname + ".png"   # 取出对应标签图片路径
+        if self.labelpath_list.count(shotname + ".png") == 1:
+            raise RuntimeError("未找到原图对应的标签文件")
 
         jpg = Image.open(imgfilepath).convert("RGB")    # 统一转为三通道格式读取
         png = Image.open(labelfilepath).convert('L')    # 统一转为单通道格式读取

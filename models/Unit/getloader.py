@@ -93,7 +93,5 @@ class MakeLoader():
         return gen, gen_val
 
     def makedata(self, backbone="User"):
-        if backbone == "User":
-            return self.makedataUser()
-        else:
-            return self.makedataVoc()
+        
+        return self.makedataVoc()
