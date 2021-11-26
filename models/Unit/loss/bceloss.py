@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-06-24 10:10:02
-LastEditTime: 2021-11-24 13:06:44
+LastEditTime: 2021-11-25 16:10:24
 LastEditors: zhonzxad
 '''
 import torch
@@ -83,9 +83,31 @@ def AchieveBCE_6(pred, label):
     bce_loss = nn.BCELoss()(pred, label)
     return bce_loss
 
+
+def AchieveBCE_7(pred, label):
+    """
+    使用于网络输出结果是四维，但是标签是三维的情况
+    比如标签就是读入的灰度图
+    使用BCEWithLogitsLoss不需要经过softmax
+    """
+    n, c, h, w = pred.size()
+    nt, ht, wt, ct = label.size()
+    # 如果输出结果与原始结果size不同 双线性插值
+    if h != ht and w != wt:
+        pred = F.interpolate(pred, size=(ht, wt), mode="bilinear", align_corners=True)
+
+
+    pred = pred.contiguous().view(n, c, -1)
+    label = label.permute(0, 3, 1, 2)  # 全部调换为 [n, c, h, w]
+    label = label.contiguous().view(n, c, -1)
+
+    bce_loss = nn.BCEWithLogitsLoss()(pred, label)
+
+    return bce_loss
+
 # BCELOSS适用于多标签问题，比如有猫有狗之类 ??不确定
 def BCE_loss(pred, label):
-    '''
+    '''label
     BCEloss外部计算接口
     pred:网络预测图
     label：标签图
@@ -102,4 +124,4 @@ class BCELoss2d(nn.Module):
  
     def forward (self, predict, target):
         
-        return AchieveBCE_1(predict, target)
+        return AchieveBCE_7(predict, target)

@@ -81,12 +81,15 @@ def fit_one_epoch(model, epoch, dataloaders, optimizer, scheduler):
 
         # 计算损失
         # print("\n output shape is {} || png shape is {}".format(output.shape, png.shape))
-        loss = loss_func(output, png, label, this_device)
+        loss, ce_loss = loss_func(output, png, label, this_device)
 
         # 误差反向传播
         loss.backward()
         # 优化梯度
         optimizer.step()
+
+        total_loss += loss.item()
+        total_ce_loss += ce_loss.item()
 
         # total_ce_loss   += ce_loss.item()
         # total_bce_loss  += bce_loss.item()
@@ -103,8 +106,8 @@ def fit_one_epoch(model, epoch, dataloaders, optimizer, scheduler):
         # 写tensorboard
         tags = ["train_loss", "CEloss", "BCEloss", "Diceloss", "f_score", "lr", "accuracy"]
         if tfwriter != None:
-            tfwriter.add_scalar(tags[0],              loss)#, epoch*(batch_idx + 1))
-            # tfwriter.add_scalar(tags[1],         ce_loss)#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[0],     total_loss / (batch_idx + 1))#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[1],     total_ce_loss / (batch_idx + 1))#, epoch*(batch_idx + 1))
             # tfwriter.add_scalar(tags[2],          bce_loss)#, epoch*(batch_idx + 1))
             # tfwriter.add_scalar(tags[3],       dice_loss)#, epoch*(batch_idx + 1))
             # tfwriter.add_scalar(tags[4],         f_score)#, epoch*(batch_idx + 1))
@@ -113,14 +116,14 @@ def fit_one_epoch(model, epoch, dataloaders, optimizer, scheduler):
         #设置进度条左边显示的信息
         tqdmbar.set_description("Epoch in Range")
         #设置进度条右边显示的信息
-        tqdmbar.set_postfix(Loss=("{:5f}".    format(     loss)),
-                            # CEloss=("{:5f}".  format(  ce_loss)),
+        tqdmbar.set_postfix(Loss=("{:5f}".    format(total_loss / (batch_idx + 1))),
+                            CEloss=("{:5f}".  format(total_ce_loss / (batch_idx + 1))),
                             # BCEloss=("{:5f}". format( bce_loss)),
                             # Diceloss=("{:5f}".format(dice_loss)),
                             # F_SOCRE=("{:5f}". format(  f_score)),
                             lr=("{:7f}".      format(get_lr(optimizer))))
 
-    return loss, ce_loss, bce_loss, dice_loss, get_lr(optimizer)
+    return [loss, total_loss / (batch_idx + 1), total_ce_loss / (batch_idx + 1), get_lr(optimizer)]
 
 
 # 测试方法
@@ -161,6 +164,8 @@ def test(model, val_loader):
         
         loss = loss_func(output, png, label, this_device)
 
+        total_loss += loss[0].item()
+
         # total_ce_loss   += ce_loss.item()
         # total_bce_loss  += bce_loss.item()
         # total_dice_loss += dice_loss.item()
@@ -176,14 +181,14 @@ def test(model, val_loader):
         #设置进度条左边显示的信息
         tqdmbar.set_description("Vaild_Epoch_size")
         #设置进度条右边显示的信息
-        tqdmbar.set_postfix(Loss=("{:5f}".format(loss)),
+        tqdmbar.set_postfix(Loss=("{:5f}".format(total_loss / (batch_idx + 1))),
                             # CEloss=("{:5f}".format(ce_loss)),
                             # BCEloss=("{:5f}".format(bce_loss)),
                             # F_SOCRE=("{:5f}".format(total_f_score)),
                             # Diceloss=("{:5f}".format(dice_loss))
-                            )
+                        )
 
-    return loss, ce_loss, bce_loss, dice_loss
+    return [loss]
 
 
 # 定义命令行参数
@@ -243,7 +248,7 @@ if __name__ == '__main__':
 
     # 加载日志对象
     writer   = WriteLog(writerpath=r"log/log/")
-    tfwriter = None#SummaryWriter(logdir=r"log/tfboard/", comment="unet")
+    tfwriter = SummaryWriter(logdir=r"log/tfboard/", comment="unet")
 
     # 打印列表参数
     # print(vars(args))
@@ -261,7 +266,7 @@ if __name__ == '__main__':
         # 为GPU设定随机种子，以便确信结果是可靠的
         # os.environ["CUDA_VISIBLE_DEVICES"] = "cuda:0"
         torch.cuda.manual_seed(SEED)
-        model = torch.nn.DataParallel(model)
+        # model = torch.nn.DataParallel(model) # 需要配合 assert self.labelpath_list.count(shotname + ".png") == 1
         cudnn.benchmark = True
         # # 那么cuDNN使用的非确定性算法就会自动寻找最适合当前配置的高效算法，来达到优化运行效率的问题
         # torch.backends.cudnn.deterministic = True
@@ -305,14 +310,14 @@ if __name__ == '__main__':
         #t_correct = test(model, test_dataloader)
         
         # 训练
-        loss, ce_loss, bce_loss, dice_loss, getLr = \
+        ret = \
             fit_one_epoch(model, epoch, gen, optimizer, scheduler)
         
         # 进行测试
         test(model, gen_val)
         
         # 判断是否满足早停
-        early_stopping(loss, model.train)
+        early_stopping(ret[0], model.train)
 
         # 学习率逐步变小
         scheduler.step()
@@ -322,14 +327,13 @@ if __name__ == '__main__':
             'model': model,
             'optimizer': optimizer,
         }
-        saveparafilepath = "./savepoint/model_data/UNEt_2Class_NewLoss_checkpoint.pth"
+        saveparafilepath = "./savepoint/model_data/UNEt_2Class_NewLoss_Dice_CE.pth"
         torch.save(checkpoint, saveparafilepath)
         writer.write("保存检查点完成，当前批次{}, 当然权重文件保存地址{}".format(epoch, saveparafilepath))
 
         # 若满足 early stopping 要求 且 当前批次>=10
         if early_stopping.early_stop and \
-            epoch >= 20:
-            # print("命中早停模式，当前批次{}".format(epoch))
+            epoch >= 5:
             writer.write("命中早停模式，当前批次{}".format(epoch))
             # os.system('/root/shutdown.sh') 
             break

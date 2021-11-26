@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-11-23 09:49:29
-LastEditTime: 2021-11-23 14:18:58
+LastEditTime: 2021-11-25 21:57:08
 LastEditors: zhonzxad
 '''
 import argparse
@@ -41,7 +41,7 @@ class  GetModel():
 
         # 初始化网络相关权重
         if is_train:
-            weights_init(model, loger=self.writer)
+            weights_init(model, loger=self.writer, init_type="xavier")
             model = model.train()
         else:
             model = model.eval()

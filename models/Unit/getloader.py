@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-11-22 17:29:29
-LastEditTime: 2021-11-23 14:27:27
+LastEditTime: 2021-11-25 16:19:48
 LastEditors: zhonzxad
 '''
 import os
@@ -56,8 +56,10 @@ class MakeLoader():
 
     def makedataUser(self):
 
-        train_dataset = UserDataLoader(self.tra_img, self.tra_leb, image_size=self.imgsize, num_classes=self.nclass)
-        val_dataset   = UserDataLoader(self.val_img, self.val_leb, image_size=self.imgsize, num_classes=self.nclass)
+        train_dataset = UserDataLoader(self.tra_img, self.tra_leb, 
+                                        image_size=self.imgsize, num_classes=self.nclass)
+        val_dataset   = UserDataLoader(self.val_img, self.val_leb, 
+                                        image_size=self.imgsize, num_classes=self.nclass)
 
         # pin_memory:如果设置为True，那么data loader将会在返回它们之前，将tensors拷贝到CUDA中的固定内存
         # collate_fn: 将一个list的sample组成一个mini-batch的函数
@@ -94,4 +96,4 @@ class MakeLoader():
 
     def makedata(self, backbone="User"):
         
-        return self.makedataVoc()
+        return self.makedataUser()

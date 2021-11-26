@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-06-24 12:51:18
-LastEditTime: 2021-11-25 15:13:20
+LastEditTime: 2021-11-25 16:11:00
 LastEditors: zhonzxad
 '''
 import torch
@@ -44,7 +44,8 @@ def AchieveDice_2(logits, targets, smooth=1):
     b, c, h, w = logits.size()
     bt, ht, wt, ct = targets.size()
     
-    probs = torch.sigmoid(logits)
+    probs = torch.softmax(logits, dim=1)
+
     m1 = probs.view(c, -1)
     m2 = targets.view(c, -1)
     intersection = torch.mul(m1, m2)
@@ -62,7 +63,8 @@ def AchieveDice_3(pred, label, eps=1e-8):
     :return:
     '''
     bs, c, h, w = pred.size()
-    pred = torch.sigmoid(pred).permute(0, 2, 3, 1)
+    pred = torch.softmax(pred, dim=1)
+    pred = pred.permute(0, 2, 3, 1)
     dices_bs = torch.zeros(bs, c)
 
     for idx in range(bs):
@@ -135,6 +137,8 @@ def AchieveDice_5(input, target, n_class=2, smooth = 1., class_weight=None):
     b, c, h, w = input.size()
     bt, ht, wt, ct = target.size()
 
+    input = torch.softmax(input, dim=1)
+
     input = input.permute(0, 2, 3, 1)  # 调换成b, h, w, c
 
     loss = 0.
@@ -170,6 +174,9 @@ class DiceLoss(nn.Module):
     '''
     def __init__(self, weight=None, num_class=2):
         super(DiceLoss, self).__init__()
+        pass
+
+    # 对于二分类问题，sigmoid等价于softmax
  
     def forward(self, pred, label):
 

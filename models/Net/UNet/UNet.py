@@ -49,12 +49,12 @@ class UNet(nn.Module):
         #
         self.outconv1 = nn.Conv2d(filters[0], self.nclass, kernel_size=1)
 
-        # 初始化权重
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                init_weight(m, init_type='kaiming')
-            elif isinstance(m, nn.BatchNorm2d):
-                init_weight(m, init_type='kaiming')
+        # # 初始化权重,放到getmodel中统一进行初始化
+        # for m in self.modules():
+        #     if isinstance(m, nn.Conv2d):
+        #         init_weight(m, init_type='kaiming')
+        #     elif isinstance(m, nn.BatchNorm2d):
+        #         init_weight(m, init_type='kaiming')
 
     # 内积
     def dotProduct(self,seg,cls):
@@ -105,5 +105,5 @@ class UNet(nn.Module):
         # print("\n outconv1 shape is {}".format(d1.shape))
 
         # 激活函数常用于全连接层之后，增加全连接层之后的非线性特征，全连接就是将两个层之间权值之类的全部联系在一起
-        return torch.sigmoid(d1) 
-        # return d1
+        # return torch.sigmoid(d1) 
+        return d1
