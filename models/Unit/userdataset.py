@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-10-21 22:26:30
-LastEditTime: 2021-11-25 17:24:38
+LastEditTime: 2021-11-29 19:34:36
 LastEditors: zhonzxad
 '''
 import math
@@ -117,15 +117,15 @@ class UserDataLoader(Dataset):
         # png = torch.cat([png, png.clone()],dim=0)
         
         # 转化成one_hot的形式
-        seg_labels = np.eye(self.num_classes)[np.array(seg_labels).reshape([-1])]
-        seg_labels = seg_labels.reshape(int(self.image_size[0]), int(self.image_size[1]), self.num_classes)
+        # seg_labels = np.eye(self.num_classes)[np.array(seg_labels).reshape([-1])]
+        # seg_labels = seg_labels.reshape(int(self.image_size[0]), int(self.image_size[1]), self.num_classes)
         # seg_labels = torch.from_numpy(seg_labels).permute(2, 0, 1)
         
         # seg_labels 在创建的时候被赋值为int64
-        # seg_labels = seg_labels.astype(np.int64)
-        # seg_labels = torch.from_numpy(seg_labels)
-        # seg_labels = F.one_hot(seg_labels, num_classes=self.num_classes)
-        # seg_labels = seg_labels.numpy()
+        seg_labels = seg_labels.astype(np.int64)
+        seg_labels = torch.from_numpy(seg_labels)
+        seg_labels = F.one_hot(seg_labels, num_classes=self.num_classes)
+        seg_labels = seg_labels.numpy()
         # seg_labels = seg_labels.permute(2, 0, 1)
 
         # seg_labels = np.transpose(np.array(jpg), [2,0,1])

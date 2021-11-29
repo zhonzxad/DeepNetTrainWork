@@ -38,8 +38,19 @@ def get_lr(optimizer):
     for param_group in optimizer.param_groups:
         return param_group['lr']
 
+# 创建文件夹
+def MakeDir(path):
+    workpath = os.getcwd()
+    if not os.path.isabs(path):
+        path = os.path.join(workpath, path)
+
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    return path
+
 # 定义训练每一个epoch的步骤
-def fit_one_epoch(model, epoch, dataloaders, optimizer, scheduler):
+def fit_one_epoch(model, epoch, dataloaders, optimizer, amp):
 
     total_ce_loss   = 0
     total_bce_loss  = 0
@@ -47,7 +58,11 @@ def fit_one_epoch(model, epoch, dataloaders, optimizer, scheduler):
     total_f_score   = 0
     total_loss      = 0
 
+    # 定义网络为训练模式
     model_train = model.train()
+
+    # 创建混合精度训练
+    grad_scaler = torch.cuda.amp.GradScaler(enabled=amp)
 
     tqdmbar = tqdm(dataloaders)
     for batch_idx, batch in enumerate(tqdmbar):
@@ -69,38 +84,34 @@ def fit_one_epoch(model, epoch, dataloaders, optimizer, scheduler):
             # writer.write("\n img shape is {} || png shape is {} || seg_labels shape is {}".format(img.shape, png.shape, seg_labels.shape))
 
             if this_device.type == "cuda":
-                img        = img.to(this_device)
-                png        = png.to(this_device)
-                label      = label.to(this_device)
+                img   = img.to(this_device)
+                png   = png.to(this_device)
+                label = label.to(this_device)
 
         # 所有梯度为0
         optimizer.zero_grad()
 
-        # 网络计算
-        output = model_train(img)
+        # 混合精度计算
+        with torch.cuda.amp.autocast(enabled=amp):
+            # 网络计算
+            output = model_train(img)
+            # 计算损失
+            # print("\n output shape is {} || png shape is {}".format(output.shape, png.shape))
+            # 返回值按照 0/总loss, 1/celoss, 2/bceloss, 3/diceloss, 4/floss排布
+            loss = loss_func(output, png, label, this_device)
 
-        # 计算损失
-        # print("\n output shape is {} || png shape is {}".format(output.shape, png.shape))
-        # 返回值按照 0/总loss, 1/celoss, 2/bceloss, 3/diceloss, 4/floss排布
-        loss = loss_func(output, png, label, this_device)
+            total_loss += loss[0].item()
 
-        total_loss += loss[0].item()
-
-        # 误差反向传播
-        loss[0].backward()
-        # 优化梯度
-        optimizer.step()
+             # 误差反向传播
+            grad_scaler.scale(loss[0]).backward()
+            # 优化梯度
+            grad_scaler.step(optimizer)
+            grad_scaler.update()
 
         total_ce_loss   += loss[1].item()
         total_bce_loss  += loss[2].item()
         total_dice_loss += loss[3].item()
         total_f_score   += loss[4].item()
-
-        # total_ce_loss   /= (batch_idx + 1)
-        # total_bce_loss  /= (batch_idx + 1)
-        # total_dice_loss /= (batch_idx + 1)
-        # total_f_score   /= (batch_idx + 1)
-        # total_loss      /= (batch_idx + 1)
 
         # 写tensorboard
         tags = ["train_loss", "CEloss", "BCEloss", "Diceloss", "f_score", "lr", "accuracy"]
@@ -123,7 +134,7 @@ def fit_one_epoch(model, epoch, dataloaders, optimizer, scheduler):
                             lr=("{:7f}".      format(get_lr(optimizer))))
 
     # 返回值按照 总0/loss, 1/loss_value, 2/celoss_value, 3/bceloss_value, 4/diceloss_value, 5/floss_value, 6/lr
-    return [loss, total_loss / (batch_idx + 1), total_ce_loss / (batch_idx + 1), 
+    return [loss[0], total_loss / (batch_idx + 1), total_ce_loss / (batch_idx + 1), 
             total_bce_loss / (batch_idx + 1), total_dice_loss / (batch_idx + 1), 
             total_f_score / (batch_idx + 1), get_lr(optimizer)]
 
@@ -172,12 +183,6 @@ def test(model, val_loader):
         total_dice_loss += loss[3].item()
         total_f_score   += loss[4].item()
 
-        # total_ce_loss   /= (batch_idx + 1)
-        # total_bce_loss  /= (batch_idx + 1)
-        # total_dice_loss /= (batch_idx + 1)
-        # total_f_score   /= (batch_idx + 1)
-        # total_loss      /= (batch_idx + 1)
-
         #设置进度条左边显示的信息
         tqdmbar.set_description("Vaild_Epoch_size")
         #设置进度条右边显示的信息
@@ -188,7 +193,7 @@ def test(model, val_loader):
                             Diceloss=("{:5f}".format(total_dice_loss / (batch_idx + 1))))
 
     # 返回值按照 总0/loss, 1/loss_value, 2/celoss_value, 3/bceloss_value, 4/diceloss_value, 5/floss_value, 6/lr
-    return [loss, total_loss / (batch_idx + 1), total_ce_loss / (batch_idx + 1), 
+    return [loss[0], total_loss / (batch_idx + 1), total_ce_loss / (batch_idx + 1), 
             total_bce_loss / (batch_idx + 1), total_dice_loss / (batch_idx + 1), 
             total_f_score / (batch_idx + 1), get_lr(optimizer)]
 
@@ -224,6 +229,8 @@ def get_args():
                         help='GPU ID', default='0')
     parser.add_argument('--UseGPU', type=bool,
                         help='is use cuda as env', default=True)
+    parser.add_argument('--amp', action='store_true',
+                        help='Use mixed precision', default=True)
                         
     args = parser.parse_args()
 
@@ -249,8 +256,8 @@ if __name__ == '__main__':
     # cls_weights = np.ones([CLASSNUM], np.float32)
 
     # 加载日志对象
-    writer   = WriteLog(writerpath=r"log/log/")
-    tfwriter = SummaryWriter(logdir=r"log/tfboard/", comment="unet")
+    writer   = WriteLog(writerpath=MakeDir("log/log/"))
+    tfwriter = SummaryWriter(logdir=MakeDir("log/tfboard/"), comment="unet")
 
     # 打印列表参数
     # print(vars(args))
@@ -286,7 +293,8 @@ if __name__ == '__main__':
 
     # 初始化 early_stopping 对象
     patience = args.early_stop # 当验证集损失在连续20次训练周期中都没有得到降低时，停止模型训练，以防止模型过拟合
-    early_stopping = EarlyStopping(patience, path="./savepoint/early_stopp/checkpoint.pth", 
+    path = MakeDir("savepoint/early_stopp/")
+    early_stopping = EarlyStopping(patience, path=path + "checkpoint.pth",
                                     verbose=True, savemode=SaveMode)
     writer.write("优化器及早停模块加载完毕")
 
@@ -315,9 +323,10 @@ if __name__ == '__main__':
         #t_correct = test(model, test_dataloader)
         
         # 训练
-        # 返回值按照 总0/loss, 1/loss_value, 2/celoss_value, 3/bceloss_value, 4/diceloss_value, 5/floss_value, 6/lr
+        # 返回值按照 总0/loss, 1/loss_value, 2/celoss_value, 3/bceloss_value, 
+        # 4/diceloss_value, 5/floss_value, 6/lr
         ret_train = \
-            fit_one_epoch(model, epoch, gen, optimizer, scheduler)
+            fit_one_epoch(model, epoch, gen, optimizer, args.amp)
         
         # 进行测试
         ret_val = \
@@ -335,7 +344,8 @@ if __name__ == '__main__':
             'model': model,
             'optimizer': optimizer,
         }
-        saveparafilepath = "./savepoint/model_data/UNEt_DiceCELoss_KMInit.pth"
+        path = MakeDir("savepoint/model_data/")
+        saveparafilepath = path + "UNEt_DiceCELoss_KMInit.pth"
         # 判断当前损失是否变小，变小才进行保存参数
         # 注意ret[0]是tensor格式，ret[1]才是平均损失（损失累加除以轮次）
         # 使用的是验证集上的损失，如果验证集损失一直在下降也是，说明模型还在训练
@@ -364,7 +374,8 @@ if __name__ == '__main__':
         'model': model,
         'optimizer': optimizer,
     }
-    saveparafilepath = "./savepoint/model_data/checkpoint.pth"
+    path = MakeDir("savepoint/model_data/")
+    saveparafilepath = path + "checkpoint.pth"
     torch.save(checkpoint, saveparafilepath)
     writer.write("保存检查点完成，当前批次{}, 当然权重文件保存地址{}".format(epoch, saveparafilepath))
 

@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-11-22 17:29:29
-LastEditTime: 2021-11-25 16:19:48
+LastEditTime: 2021-11-29 13:23:11
 LastEditors: zhonzxad
 '''
 import os
@@ -47,10 +47,10 @@ class MakeLoader():
         # self.tra_leb = r"G:/DataBase/userdata/BXG/CutFromData-4/train/label-resize-3/"
         # self.val_img = r"G:/DataBase/userdata/BXG/CutFromData-4/val/img-resize-3/"
         # self.val_leb = r"G:/DataBase/userdata/BXG/CutFromData-4/val/label-resize-3/"
-        # self.tra_img = r"/mnt/work/database/train/image-3"
-        # self.tra_leb = r"/mnt/work/database/train/label"
-        # self.val_img = r"/mnt/work/database/val/image-3"
-        # self.val_leb = r"/mnt/work/database/val/label"
+        # self.tra_img = r"/mnt/work/database/BXG/train/img-resize-3/"
+        # self.tra_leb = r"/mnt/work/database/BXG/train/label-resize-3/"
+        # self.val_img = r"/mnt/work/database/BXG/val/img-resize-3/"
+        # self.val_leb = r"/mnt/work/database/BXG/val/label-resize-3/"
 
         self.VOCdevkit_path = r"G:/Py_Debug/UNet-Version-master/Data/BXG/"
 

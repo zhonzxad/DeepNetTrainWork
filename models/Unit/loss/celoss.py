@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-10-25 13:18:03
-LastEditTime: 2021-11-25 21:14:41
+LastEditTime: 2021-11-29 19:46:06
 LastEditors: zhonzxad
 '''
 
@@ -95,7 +95,7 @@ class CELoss2d(nn.Module):
  
     def forward(self, pred, target):
 
-        return AchieveCE_3(pred, target)
+        return AchieveCE_1(pred, target)
 
         
 

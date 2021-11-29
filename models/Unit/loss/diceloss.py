@@ -1,12 +1,65 @@
 '''
 Author: zhonzxad
 Date: 2021-06-24 12:51:18
-LastEditTime: 2021-11-25 16:11:00
+LastEditTime: 2021-11-29 19:56:19
+LastEditors: zhonzxad
+'''
+'''
+Author: zhonzxad
+Date: 2021-06-24 12:51:18
+LastEditTime: 2021-11-29 19:50:59
 LastEditors: zhonzxad
 '''
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch import Tensor
+
+
+def AchieveDice_0(input, target, multiclass = True):
+
+    def dice_coeff(input, target, reduce_batch_first=False, epsilon=1e-6):
+        # Average of Dice coefficient for all batches, or for a single mask
+        assert input.size() == target.size()
+        if input.dim() == 2 and reduce_batch_first:
+            raise ValueError(f'Dice: asked to reduce batch but got tensor without batch dimension (shape {input.shape})')
+
+        if input.dim() == 2 or reduce_batch_first:
+            inter = torch.dot(input.reshape(-1), target.reshape(-1))
+            sets_sum = torch.sum(input) + torch.sum(target)
+            if sets_sum.item() == 0:
+                sets_sum = 2 * inter
+
+            return (2 * inter + epsilon) / (sets_sum + epsilon)
+        else:
+            # compute and average metric for each batch element
+            dice = 0
+            for i in range(input.shape[0]):
+                dice += dice_coeff(input[i, ...], target[i, ...])
+            return dice / input.shape[0]
+
+
+    def multiclass_dice_coeff(input, target, reduce_batch_first=False, epsilon=1e-6):
+        # Average of Dice coefficient for all classes
+        assert input.size() == target.size()
+        dice = 0
+        for channel in range(input.shape[1]):
+            dice += dice_coeff(input[:, channel, ...], target[:, channel, ...], reduce_batch_first, epsilon)
+
+        return dice / input.shape[1]
+
+
+    def dice_loss(input, target, multiclass=False):
+        b, c, h, w = input.size()
+        bt, ht, wt, ct = target.size()
+
+        input = F.softmax(input, dim=1).float()
+        target = target.permute(0, 3, 1, 2).float()
+
+        fn = multiclass_dice_coeff if multiclass else dice_coeff
+        return 1 - fn(input, target, reduce_batch_first=True)
+
+    return dice_loss(input, target, multiclass)
 
 
 def AchieveDice_1(input, target, beta=1, smooth=1, num_classes=2):
@@ -180,4 +233,4 @@ class DiceLoss(nn.Module):
  
     def forward(self, pred, label):
 
-        return AchieveDice_5(pred, label)
+        return AchieveDice_0(pred, label)
