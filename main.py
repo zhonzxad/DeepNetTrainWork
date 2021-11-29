@@ -100,13 +100,13 @@ def fit_one_epoch(model, epoch, dataloaders, optimizer, amp):
             # 返回值按照 0/总loss, 1/celoss, 2/bceloss, 3/diceloss, 4/floss排布
             loss = loss_func(output, png, label, this_device)
 
-            total_loss += loss[0].item()
+        total_loss += loss[0].item()
 
-             # 误差反向传播
-            grad_scaler.scale(loss[0]).backward()
-            # 优化梯度
-            grad_scaler.step(optimizer)
-            grad_scaler.update()
+        # 误差反向传播
+        grad_scaler.scale(loss[0]).backward()
+        # 优化梯度
+        grad_scaler.step(optimizer)
+        grad_scaler.update()
 
         total_ce_loss   += loss[1].item()
         total_bce_loss  += loss[2].item()
