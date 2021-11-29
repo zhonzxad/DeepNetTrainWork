@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-10-25 20:59:11
-LastEditTime: 2021-11-24 10:17:03
+LastEditTime: 2021-11-26 20:03:54
 LastEditors: zhonzxad
 '''
 # -*- coding: UTF-8 -*- 
@@ -33,7 +33,7 @@ class WriteLog:
 
     def write(self, log, coutprint=False):
         time = dt.datetime.now().strftime("%F_%H-%M-%S") # 2021-10-25_15:08:03
-        log = time + " >> " + "{}".format(log)
+        log = time + " >> " + "{}".format(log) + "\n"
         self.trace_func(log)  # 重定向到print
 
         if coutprint == True:

@@ -162,9 +162,9 @@ def test(model, val_loader):
         # print("\n output shape is {} || png shape is {}".format(output.shape, png.shape))
         # ce_loss   = CELOSS(output, png)
         
-        loss = loss_func(output, png, label, this_device)
+        loss, ce_loss = loss_func(output, png, label, this_device)
 
-        total_loss += loss[0].item()
+        total_loss += loss.item()
 
         # total_ce_loss   += ce_loss.item()
         # total_bce_loss  += bce_loss.item()
@@ -188,7 +188,7 @@ def test(model, val_loader):
                             # Diceloss=("{:5f}".format(dice_loss))
                         )
 
-    return [loss]
+    return [loss, total_loss / (batch_idx + 1), total_ce_loss / (batch_idx + 1)]
 
 
 # 定义命令行参数
@@ -289,7 +289,7 @@ if __name__ == '__main__':
     writer.write("优化器及早停模块加载完毕")
 
     if Resume:
-        path = "./savepoint/model_data/UNet_2Class_NewLoss_1___.pth"
+        path = "./savepoint/model_data/UNEt_2Class_NewLoss_Dice_CE___.pth"
         if os.path.isfile(path):
             checkpoint = torch.load(path)
             start_epoch = checkpoint['epoch']
@@ -302,6 +302,9 @@ if __name__ == '__main__':
         else:
             writer.write("没有找到检查点，从(epoch 1)开始")
 
+    # 将最优损失设置为无穷大
+    best_loss = float("inf")
+
     # 开始训练
     tqbar = tqdm(range(start_epoch + 1, args.nepoch + 1))
     writer.write("开始训练")
@@ -310,36 +313,46 @@ if __name__ == '__main__':
         #t_correct = test(model, test_dataloader)
         
         # 训练
-        ret = \
+        ret_train = \
             fit_one_epoch(model, epoch, gen, optimizer, scheduler)
         
         # 进行测试
-        test(model, gen_val)
+        ret_val = \
+            test(model, gen_val)
         
         # 判断是否满足早停
-        early_stopping(ret[0], model.train)
+        early_stopping(ret_train[0], model.train)
 
         # 学习率逐步变小
         scheduler.step()
-        
+
+        # 一些保存的参数
         checkpoint = {
             'epoch': epoch,
             'model': model,
             'optimizer': optimizer,
         }
-        saveparafilepath = "./savepoint/model_data/UNEt_2Class_NewLoss_Dice_CE.pth"
-        torch.save(checkpoint, saveparafilepath)
-        writer.write("保存检查点完成，当前批次{}, 当然权重文件保存地址{}".format(epoch, saveparafilepath))
+        saveparafilepath = "./savepoint/model_data/UNEt_DiceCELoss_KMInit.pth"
+        # 判断当前损失是否变小，变小才进行保存参数
+        # 注意ret[0]是tensor格式，ret[1]才是平均损失（损失累加除以轮次）
+        # 使用的是验证集上的损失，如果验证集损失一直在下降也是，说明模型还在训练
+        if ret_val[1] < best_loss:
+            best_loss = ret_val[1]
+            torch.save(checkpoint, saveparafilepath)
+            writer.write("保存检查点完成，当前批次{}, 权重文件保存地址{}".format(epoch, saveparafilepath))
+        else:
+            writer.write("完成当前批次{}训练, 损失值较上一轮没有减小，未保存模型".format(epoch))
 
         # 若满足 early stopping 要求 且 当前批次>=10
-        if early_stopping.early_stop and \
-            epoch >= 5:
+        if early_stopping.early_stop:
             writer.write("命中早停模式，当前批次{}".format(epoch))
-            # os.system('/root/shutdown.sh') 
-            break
+            if epoch >= 5:
+                writer.write("停止训练，当前批次{}".format(epoch))
+                # os.system('/root/shutdown.sh') 
+                break
 
         # 设置进度条左边显示的信息
-        tqbar.set_description("Train Epoch Count")
+        tqbar.set_description("Train Epoch Count")    
         # 设置进度条右边显示的信息
         tqbar.set_postfix()
 

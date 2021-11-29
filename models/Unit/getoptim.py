@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-11-22 20:22:53
-LastEditTime: 2021-11-24 15:17:00
+LastEditTime: 2021-11-28 11:21:59
 LastEditors: zhonzxad
 '''
 import torch
@@ -44,6 +44,25 @@ def UserOptim2(model, lr):
 def UserOptim3(model, lr):
     optimizer = torch.optim.RMSprop(model.parameters(), lr=lr, alpha=0.9, eps=1e-08)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.96)
+
+    return optimizer, scheduler
+
+def UserOptim4(model, lr, momentum=0.9, weight_decay=0.001, lr_gamma=0.001, lr_decay=0.75):
+    """
+    从迁移学习框架库中学习到的优化器用法
+    lr: 0.01
+    weight_decay: 0.001 # 5e-4
+    momentum: 0.9
+    lr_scheduler: True
+    lr_gamma: 0.001
+    lr_decay: 0.75
+    """
+    initial_lr = lr if lr is not None else 1.0
+    params = model.get_parameters(initial_lr=initial_lr)
+    optimizer = torch.optim.SGD(params, lr=lr, momentum=momentum, weight_decay=weight_decay, nesterov=False)
+    scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, \
+                            lambda x: lr * (1. + lr_gamma * float(x)) ** (-lr_decay))
+    
 
     return optimizer, scheduler
 

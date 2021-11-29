@@ -1,11 +1,13 @@
 '''
 Author: zhonzxad
 Date: 2021-11-24 15:29:20
-LastEditTime: 2021-11-25 21:12:01
+LastEditTime: 2021-11-28 10:09:00
 LastEditors: zhonzxad
 '''
 import argparse
 import sys
+
+import torch
 
 sys.path.append("..")
 
@@ -29,9 +31,9 @@ def loss_func(output, png, label, this_device="cuda:0"):
     
     # dice_loss = diceloss(output, label)
     bce_loss = bceloss(output, label)
-    ce_loss = celoss(output, png)
+    # ce_loss = celoss(output, png)
     # loss = FocalLoss()(output, label)
 
     loss = bce_loss
     
-    return loss, ce_loss
+    return loss, torch.zeros_like(loss)

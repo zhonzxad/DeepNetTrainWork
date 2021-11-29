@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-10-26 10:34:44
-LastEditTime: 2021-11-23 20:59:43
+LastEditTime: 2021-11-29 09:59:47
 LastEditors: zhonzxad
 '''
 # -*- coding: UTF-8 -*- 
@@ -38,8 +38,8 @@ global writer
 def test(model, image):
     model.eval()
 
-    image = [np.array(image) / 255]
-    image = np.transpose(image, (0, 3, 1, 2))
+    image = [np.array(image, np.float32) / 255]
+    image = np.expand_dims(np.transpose(image, (2, 0, 1)), 0)
 
     with torch.no_grad():
         image = torch.from_numpy(image).type(torch.FloatTensor)
@@ -147,7 +147,7 @@ if __name__ == '__main__':
         model = model.to(this_device)
     writer.write("网络创建完毕")
     
-    path = "./savepoint/model_data/UNet_2Class_NewLoss_Online.pth"            # 本机权重
+    path = "./savepoint/model_data/UNEt_D_CELoss_KMInit_User18_Bn2.pth"            # 本机权重
     # path = "./savepoint/model_data/UNET-2Class-NewData-checkpoint.pth"      # 服务器权重
     if os.path.isfile(path):
         model_data = torch.load(path, map_location="cuda:0" if GPU else "cpu")
@@ -166,10 +166,8 @@ if __name__ == '__main__':
     RetImgList = []
     for i in range(len(CutImgList)):
         ret = test(model, CutImgList[i])
+        ret = CreatSeqImg(ret)
         RetImgList.append(ret)
-
-    for i in range(len(RetImgList)):
-        RetImgList[i] = CreatSeqImg(RetImgList[i]).copy()
 
     RetImg = ImgMerge(RetImgList)
 
