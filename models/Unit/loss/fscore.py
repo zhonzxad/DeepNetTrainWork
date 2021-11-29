@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-11-23 10:33:48
-LastEditTime: 2021-11-25 10:18:22
+LastEditTime: 2021-11-29 10:44:38
 LastEditors: zhonzxad
 '''
 
@@ -96,4 +96,4 @@ class FocalLoss(torch.nn.Module):
 
     def forward(self, input, target):
         
-        return f_score_sklean(input, target)
+        return f_score(input, target)

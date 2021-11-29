@@ -81,21 +81,20 @@ def fit_one_epoch(model, epoch, dataloaders, optimizer, scheduler):
 
         # 计算损失
         # print("\n output shape is {} || png shape is {}".format(output.shape, png.shape))
-        loss, ce_loss = loss_func(output, png, label, this_device)
+        # 返回值按照 0/总loss, 1/celoss, 2/bceloss, 3/diceloss, 4/floss排布
+        loss = loss_func(output, png, label, this_device)
+
+        total_loss += loss[0].item()
 
         # 误差反向传播
-        loss.backward()
+        loss[0].backward()
         # 优化梯度
         optimizer.step()
 
-        total_loss += loss.item()
-        total_ce_loss += ce_loss.item()
-
-        # total_ce_loss   += ce_loss.item()
-        # total_bce_loss  += bce_loss.item()
-        # total_dice_loss += dice_loss.item()
-        # total_f_score   += _f_score.item()
-        # total_loss      += loss.item()
+        total_ce_loss   += loss[1].item()
+        total_bce_loss  += loss[2].item()
+        total_dice_loss += loss[3].item()
+        total_f_score   += loss[4].item()
 
         # total_ce_loss   /= (batch_idx + 1)
         # total_bce_loss  /= (batch_idx + 1)
@@ -108,9 +107,9 @@ def fit_one_epoch(model, epoch, dataloaders, optimizer, scheduler):
         if tfwriter != None:
             tfwriter.add_scalar(tags[0],     total_loss / (batch_idx + 1))#, epoch*(batch_idx + 1))
             tfwriter.add_scalar(tags[1],     total_ce_loss / (batch_idx + 1))#, epoch*(batch_idx + 1))
-            # tfwriter.add_scalar(tags[2],          bce_loss)#, epoch*(batch_idx + 1))
-            # tfwriter.add_scalar(tags[3],       dice_loss)#, epoch*(batch_idx + 1))
-            # tfwriter.add_scalar(tags[4],         f_score)#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[2],     total_bce_loss / (batch_idx + 1))#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[3],     total_dice_loss / (batch_idx + 1))#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[4],     total_f_score / (batch_idx + 1))#, epoch*(batch_idx + 1))
             tfwriter.add_scalar(tags[5], get_lr(optimizer))#, epoch*(batch_idx + 1))
 
         #设置进度条左边显示的信息
@@ -118,12 +117,15 @@ def fit_one_epoch(model, epoch, dataloaders, optimizer, scheduler):
         #设置进度条右边显示的信息
         tqdmbar.set_postfix(Loss=("{:5f}".    format(total_loss / (batch_idx + 1))),
                             CEloss=("{:5f}".  format(total_ce_loss / (batch_idx + 1))),
-                            # BCEloss=("{:5f}". format( bce_loss)),
-                            # Diceloss=("{:5f}".format(dice_loss)),
-                            # F_SOCRE=("{:5f}". format(  f_score)),
+                            BCEloss=("{:5f}". format(total_bce_loss / (batch_idx + 1))),
+                            Diceloss=("{:5f}".format(total_dice_loss / (batch_idx + 1))),
+                            F_SOCRE=("{:5f}". format(total_f_score / (batch_idx + 1))),
                             lr=("{:7f}".      format(get_lr(optimizer))))
 
-    return [loss, total_loss / (batch_idx + 1), total_ce_loss / (batch_idx + 1), get_lr(optimizer)]
+    # 返回值按照 总0/loss, 1/loss_value, 2/celoss_value, 3/bceloss_value, 4/diceloss_value, 5/floss_value, 6/lr
+    return [loss, total_loss / (batch_idx + 1), total_ce_loss / (batch_idx + 1), 
+            total_bce_loss / (batch_idx + 1), total_dice_loss / (batch_idx + 1), 
+            total_f_score / (batch_idx + 1), get_lr(optimizer)]
 
 
 # 测试方法
@@ -160,17 +162,15 @@ def test(model, val_loader):
 
         # 计算损失
         # print("\n output shape is {} || png shape is {}".format(output.shape, png.shape))
-        # ce_loss   = CELOSS(output, png)
-        
-        loss, ce_loss = loss_func(output, png, label, this_device)
+        # 返回值按照 0/总loss, 1/celoss, 2/bceloss, 3/diceloss, 4/floss排布
+        loss = loss_func(output, png, label, this_device)
 
-        total_loss += loss.item()
+        total_loss += loss[0].item()
 
-        # total_ce_loss   += ce_loss.item()
-        # total_bce_loss  += bce_loss.item()
-        # total_dice_loss += dice_loss.item()
-        # total_f_score   += _f_score.item()
-        # total_loss      += loss.item()
+        total_ce_loss   += loss[1].item()
+        total_bce_loss  += loss[2].item()
+        total_dice_loss += loss[3].item()
+        total_f_score   += loss[4].item()
 
         # total_ce_loss   /= (batch_idx + 1)
         # total_bce_loss  /= (batch_idx + 1)
@@ -182,13 +182,15 @@ def test(model, val_loader):
         tqdmbar.set_description("Vaild_Epoch_size")
         #设置进度条右边显示的信息
         tqdmbar.set_postfix(Loss=("{:5f}".format(total_loss / (batch_idx + 1))),
-                            # CEloss=("{:5f}".format(ce_loss)),
-                            # BCEloss=("{:5f}".format(bce_loss)),
-                            # F_SOCRE=("{:5f}".format(total_f_score)),
-                            # Diceloss=("{:5f}".format(dice_loss))
-                        )
+                            CEloss=("{:5f}".format(total_ce_loss / (batch_idx + 1))),
+                            BCEloss=("{:5f}".format(total_bce_loss / (batch_idx + 1))),
+                            F_SOCRE=("{:5f}".format(total_f_score / (batch_idx + 1))),
+                            Diceloss=("{:5f}".format(total_dice_loss / (batch_idx + 1))))
 
-    return [loss, total_loss / (batch_idx + 1), total_ce_loss / (batch_idx + 1)]
+    # 返回值按照 总0/loss, 1/loss_value, 2/celoss_value, 3/bceloss_value, 4/diceloss_value, 5/floss_value, 6/lr
+    return [loss, total_loss / (batch_idx + 1), total_ce_loss / (batch_idx + 1), 
+            total_bce_loss / (batch_idx + 1), total_dice_loss / (batch_idx + 1), 
+            total_f_score / (batch_idx + 1), get_lr(optimizer)]
 
 
 # 定义命令行参数
@@ -313,6 +315,7 @@ if __name__ == '__main__':
         #t_correct = test(model, test_dataloader)
         
         # 训练
+        # 返回值按照 总0/loss, 1/loss_value, 2/celoss_value, 3/bceloss_value, 4/diceloss_value, 5/floss_value, 6/lr
         ret_train = \
             fit_one_epoch(model, epoch, gen, optimizer, scheduler)
         
@@ -348,7 +351,7 @@ if __name__ == '__main__':
             writer.write("命中早停模式，当前批次{}".format(epoch))
             if epoch >= 5:
                 writer.write("停止训练，当前批次{}".format(epoch))
-                # os.system('/root/shutdown.sh') 
+                # os.system('/root/shutdown.sh')
                 break
 
         # 设置进度条左边显示的信息

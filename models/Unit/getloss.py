@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-11-24 15:29:20
-LastEditTime: 2021-11-28 10:09:00
+LastEditTime: 2021-11-29 11:09:19
 LastEditors: zhonzxad
 '''
 import argparse
@@ -22,6 +22,7 @@ def loss_func(output, png, label, this_device="cuda:0"):
     diceloss = DiceLoss()
     celoss   = CELoss2d()
     bceloss  = BCELoss2d()
+    floss    = FocalLoss()
 
     loss = None
     if this_device.type == 'cuda':
@@ -33,7 +34,10 @@ def loss_func(output, png, label, this_device="cuda:0"):
     bce_loss = bceloss(output, label)
     # ce_loss = celoss(output, png)
     # loss = FocalLoss()(output, label)
+    # f_scoreloss = floss(output, label)
 
     loss = bce_loss
     
-    return loss, torch.zeros_like(loss)
+    # 返回值按照 0/总loss, 1/celoss, 2/bceloss, 3/diceloss, 4/floss排布
+    # 如果某一值不需要，将其设置未0
+    return loss, torch.zeros_like(loss), bce_loss, torch.zeros_like(loss), torch.zeros_like(loss)
