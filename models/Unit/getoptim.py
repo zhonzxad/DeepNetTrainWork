@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-11-22 20:22:53
-LastEditTime: 2021-11-29 20:18:29
+LastEditTime: 2021-11-30 19:51:00
 LastEditors: zhonzxad
 '''
 import torch
@@ -30,7 +30,7 @@ def UserOptim1(model, lr):
     optimizer = torch.optim.RMSprop(model.parameters(), lr=lr, alpha=0.9, eps=1e-07)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode="min", \
                                                             verbose = True, \
-                                                            factor=0.5, patience=1, cooldown=1, \
+                                                            factor=0.75, patience=1, cooldown=1, \
                                                             eps=1e-7)
 
     return optimizer, scheduler
@@ -74,4 +74,4 @@ def UserOptim5(model, lr, lr_gamma=0.5, lr_decay=0.75):
 
 def CreateOptim(model, lr):
 
-    return UserOptim3(model, lr)
+    return UserOptim1(model, lr)

@@ -132,10 +132,8 @@ def fit_one_epoch(model, epoch, dataloaders, optimizer, amp):
                             F_SOCRE=("{:5f}". format(total_f_score / (batch_idx + 1))),
                             lr=("{:7f}".      format(get_lr(optimizer))))
 
-    # 返回值按照 总0/loss, 1/loss_value, 2/celoss_value, 3/bceloss_value, 4/diceloss_value, 5/floss_value, 6/lr
-    return [loss[0], total_loss / (batch_idx + 1), total_ce_loss / (batch_idx + 1), 
-            total_bce_loss / (batch_idx + 1), total_dice_loss / (batch_idx + 1), 
-            total_f_score / (batch_idx + 1), get_lr(optimizer)]
+    # 返回值按照 0/总loss, 1/count, 2/celoss, 3/bceloss, 4/diceloss, 5/floss, 6/lr
+    return [loss[0], (batch_idx + 1), loss[1], loss[2], loss[3], loss[4], get_lr(optimizer)]
 
 
 # 测试方法
@@ -190,10 +188,8 @@ def test(model, val_loader):
                             F_SOCRE=("{:5f}".format(total_f_score / (batch_idx + 1))),
                             Diceloss=("{:5f}".format(total_dice_loss / (batch_idx + 1))))
 
-    # 返回值按照 总0/loss, 1/loss_value, 2/celoss_value, 3/bceloss_value, 4/diceloss_value, 5/floss_value, 6/lr
-    return [loss[0], total_loss / (batch_idx + 1), total_ce_loss / (batch_idx + 1), 
-            total_bce_loss / (batch_idx + 1), total_dice_loss / (batch_idx + 1), 
-            total_f_score / (batch_idx + 1), get_lr(optimizer)]
+    # 返回值按照 0/总loss, 1/count, 2/celoss, 3/bceloss, 4/diceloss, 5/floss
+    return [loss[0], (batch_idx + 1), loss[1], loss[2], loss[3], loss[4]]
 
 
 # 定义命令行参数
@@ -204,7 +200,7 @@ def get_args():
     parser.add_argument('--nclass', type=int,
                         help='Number of classes', default=2)
     parser.add_argument('--batch_size', type=int,
-                        help='batch size', default=2)
+                        help='batch size', default=1)
     parser.add_argument('--load_tread', type=int,
                         help='load data thread', default=1)
     parser.add_argument('--nepoch', type=int,
@@ -228,7 +224,7 @@ def get_args():
     parser.add_argument('--UseGPU', type=bool,
                         help='is use cuda as env', default=True)
     parser.add_argument('--amp', action='store_true',
-                        help='Use mixed precision', default=True)
+                        help='Use mixed precision', default=False)
                         
     args = parser.parse_args()
 
@@ -312,6 +308,8 @@ if __name__ == '__main__':
 
     # 将最优损失设置为无穷大
     best_loss = float("inf")
+    # 将优化器针对的损失进行特殊距离
+    best_opt_loss = -float("inf")
 
     # 开始训练
     tqbar = tqdm(range(start_epoch + 1, args.nepoch + 1))
@@ -321,8 +319,7 @@ if __name__ == '__main__':
         #t_correct = test(model, test_dataloader)
         
         # 训练
-        # 返回值按照 总0/loss, 1/loss_value, 2/celoss_value, 3/bceloss_value, 
-        # 4/diceloss_value, 5/floss_value, 6/lr
+        # 返回值按照 0/总loss, 1/count, 2/celoss, 3/bceloss, 4/diceloss, 5/floss, 6/lr
         ret_train = \
             fit_one_epoch(model, epoch, gen, optimizer, args.amp)
         
@@ -331,10 +328,13 @@ if __name__ == '__main__':
             test(model, gen_val)
         
         # 判断是否满足早停
-        early_stopping(ret_train[0], model.train)
+        early_stopping(ret_val[0], model.eval)
 
-        # 学习率逐步变小
-        scheduler.step()
+        # 只有当前学习率较之前不够优异时，才去优化学习率，进行更细粒度的调节
+        # 依据测试数据级中dice损失来进行优化
+        if ret_val[4] >= best_opt_loss:
+            best_opt_loss = ret_val[4]
+            scheduler.step(ret_val[4])
 
         # 一些保存的参数
         checkpoint = {
