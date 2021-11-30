@@ -1,13 +1,15 @@
 '''
 Author: zhonzxad
 Date: 2021-11-22 17:25:31
-LastEditTime: 2021-11-23 21:01:07
+LastEditTime: 2021-11-30 11:08:00
 LastEditors: zhonzxad
 '''
 import os
 
 import cv2
 import numpy as np
+import torch
+import torch.nn.functional as F
 from PIL import Image
 from torch.utils.data.dataset import Dataset
 
@@ -41,7 +43,7 @@ def preprocess_input(image):
     return image
 
 class UnetDataset(Dataset):
-    def __init__(self, annotation_lines, input_shapewh, num_classes, train, dataset_path):
+    def __init__(self, annotation_lines, input_shapewh, num_classes, train, dataset_path, VOC_FileName):
         super(UnetDataset, self).__init__()
         self.annotation_lines   = annotation_lines
         self.length             = len(annotation_lines)
@@ -49,6 +51,7 @@ class UnetDataset(Dataset):
         self.num_classes        = num_classes
         self.train              = train
         self.dataset_path       = dataset_path
+        self.VOCFileName        = VOC_FileName
 
     def __len__(self):
         return self.length
@@ -60,24 +63,28 @@ class UnetDataset(Dataset):
         #-------------------------------#
         #   从文件中读取图像
         #-------------------------------#
-        jpg         = Image.open(os.path.join(os.path.join(self.dataset_path, "VOC2007/JPEGImages"), name + ".jpg"))
-        png         = Image.open(os.path.join(os.path.join(self.dataset_path, "VOC2007/SegmentationClass"), name + ".png"))
+        jpg         = Image.open(os.path.join(os.path.join(self.dataset_path, 
+                                                    self.VOCFileName + "/JPEGImages"), name + ".jpg"))
+        png         = Image.open(os.path.join(os.path.join(self.dataset_path, 
+                                                    self.VOCFileName + "/SegmentationClass"), name + ".png"))
         #-------------------------------#
         #   数据增强
         #-------------------------------#
         jpg, png    = self.get_random_data(jpg, png, self.input_shape, random = self.train)
 
         jpg         = np.transpose(preprocess_input(np.array(jpg, np.float64)), [2, 0, 1])
+
         png         = np.array(png)
         png[png >= self.num_classes] = self.num_classes
-        #-------------------------------------------------------#
-        #   转化成one_hot的形式
-        #   在这里需要+1是因为voc数据集有些标签具有白边部分
-        #   我们需要将白边部分进行忽略，+1的目的是方便忽略。
-        #-------------------------------------------------------#
-        seg_label  = np.eye(self.num_classes)[png.copy().reshape([-1])]
-        seg_label  = seg_label.reshape((int(self.input_shape[0]), int(self.input_shape[1]),
-                                            self.num_classes))
+
+        # 转化成one_hot的形式
+        # seg_label  = np.eye(self.num_classes)[png.copy().reshape([-1])]
+        # seg_label  = seg_label.reshape((int(self.input_shape[0]), int(self.input_shape[1]),
+        #                                     self.num_classes))
+        seg_label = png.copy().astype(np.int64)
+        seg_label = torch.from_numpy(seg_label)
+        seg_label = F.one_hot(seg_label, num_classes=self.num_classes)
+        seg_label = seg_label.numpy()
 
         # png = png.transpose(2, 0, 1)
         # seg_label = seg_label.transpose(2, 0, 1)
@@ -99,7 +106,7 @@ class UnetDataset(Dataset):
             nh      = int(ih*scale)
 
             image       = image.resize((nw,nh), Image.BICUBIC)
-            new_image   = Image.new('RGB', [w, h], (128,128,128))
+            new_image   = Image.new('RGB', [w, h], (128, 128, 128))
             new_image.paste(image, ((w-nw)//2, (h-nh)//2))
 
             label       = label.resize((nw,nh), Image.NEAREST)
@@ -152,6 +159,7 @@ class UnetDataset(Dataset):
         x[:, :, 1:][x[:, :, 1:]>1] = 1
         x[x<0] = 0
         image_data = cv2.cvtColor(x, cv2.COLOR_HSV2RGB)*255
+        
         return image_data,label
 
 

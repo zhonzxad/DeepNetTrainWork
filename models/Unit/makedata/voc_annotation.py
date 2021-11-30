@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-11-22 17:03:36
-LastEditTime: 2021-11-22 17:22:06
+LastEditTime: 2021-11-30 10:00:45
 LastEditors: zhonzxad
 '''
 import os
@@ -24,14 +24,14 @@ train_percent       = 0.8
 #   指向VOC数据集所在的文件夹
 #   默认指向根目录下的VOC数据集
 #-------------------------------------------------------#
-VOCdevkit_path  = r'./../../Data/BXG/'
+VOCdevkit_path  = r'G:/Py_Debug/UNet-Version-master/Data/BXG/'
 
 if __name__ == "__main__":
     random.seed(2021)
     print("Generate txt in ImageSets.")
-    imgfilepath     = os.path.join(VOCdevkit_path, 'VOC2007/JPEGImages')
-    segfilepath     = os.path.join(VOCdevkit_path, 'VOC2007/SegmentationClass')
-    saveBasePath    = os.path.join(VOCdevkit_path, 'VOC2007/ImageSets/Segmentation')
+    imgfilepath     = os.path.join(VOCdevkit_path, 'Signal-VOC/JPEGImages')
+    segfilepath     = os.path.join(VOCdevkit_path, 'Signal-VOC/SegmentationClass')
+    saveBasePath    = os.path.join(VOCdevkit_path, 'Signal-VOC/ImageSets/Segmentation')
     
     img_list = os.listdir(imgfilepath)
     temp_seg = os.listdir(segfilepath)

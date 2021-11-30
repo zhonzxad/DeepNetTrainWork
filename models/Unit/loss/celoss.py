@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-10-25 13:18:03
-LastEditTime: 2021-11-29 19:46:06
+LastEditTime: 2021-11-30 11:54:19
 LastEditors: zhonzxad
 '''
 
@@ -30,6 +30,8 @@ def AchieveCE_1(inputs, target):
     return CE_loss
 
 def AchieveCE_2(inputs, target):
+    target = target.long()
+
     n, c, h, w = inputs.size()
     nt, ht, wt = target.size()
 

@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-11-22 17:29:29
-LastEditTime: 2021-11-29 21:37:04
+LastEditTime: 2021-11-30 10:47:56
 LastEditors: zhonzxad
 '''
 import os
@@ -35,10 +35,11 @@ val_loader = torch.utils.data.DataLoader(val_dataset, shuffle=True, batch_size=a
 """
 
 class MakeLoader():
-    def __init__(self, IMGSIZE=[384,384,3], CLASSNUM=2, BatchSize=2):
+    def __init__(self, IMGSIZE=[384,384,3], CLASSNUM=2, BatchSize=2, num_workers=1):
         self.imgsize = IMGSIZE
         self.nclass  = CLASSNUM
         self.batchsize = BatchSize
+        self.num_workers = num_workers
 
         self.tra_img = r"G:/DataBase/userdata/BXG/CutFromData-4/train/img-resize-3/"
         self.tra_leb = r"G:/DataBase/userdata/BXG/CutFromData-4/train/label-resize-3/"
@@ -52,7 +53,7 @@ class MakeLoader():
         # self.tra_leb = r"/mnt/work/database/BXG/train/label-resize-3/"
         # self.val_img = r"/mnt/work/database/BXG/val/img-resize-3/"
         # self.val_leb = r"/mnt/work/database/BXG/val/label-resize-3/"
-
+        self.VOCFileName    = "Signal-VOC"
         self.VOCdevkit_path = r"G:/Py_Debug/UNet-Version-master/Data/BXG/"
 
     def makedataUser(self):
@@ -66,35 +67,37 @@ class MakeLoader():
         # collate_fn: 将一个list的sample组成一个mini-batch的函数
         # drop_last:如果设置为True：比如你的batch_size设置为64，而一个epoch只有100个样本，那么训练的时候后面的36个就被扔掉了…
         # 另外：在Windows环境下，设置num_workers>1会及容易产生报错的现象（使用裸语句 没有被写在函数中），所以不建议在Windows下设置次参数，
-        gen = DataLoader(train_dataset, shuffle=True, batch_size=self.batchsize, num_workers = 1,
+        gen = DataLoader(train_dataset, shuffle=True, batch_size=self.batchsize, num_workers=self.num_workers,
                             pin_memory=True if torch.cuda.is_available() else False,
                             drop_last=True, collate_fn=dataset_collate)
-        gen_val = DataLoader(val_dataset, shuffle=False, batch_size=self.batchsize, num_workers = 1,
+        gen_val = DataLoader(val_dataset, shuffle=False, batch_size=self.batchsize, num_workers=self.num_workers,
                             pin_memory=True if torch.cuda.is_available() else False,
                             drop_last=True, collate_fn=dataset_collate)
 
         return gen, gen_val
     
     def makedataVoc(self):
-        
-        with open(os.path.join(self.VOCdevkit_path, "VOC2007/ImageSets/Segmentation/train.txt"), "r") as f:
+
+        with open(os.path.join(self.VOCdevkit_path, self.VOCFileName + "/ImageSets/Segmentation/train.txt"), "r") as f:
             self.train_lines = f.readlines()
 
-        with open(os.path.join(self.VOCdevkit_path, "VOC2007/ImageSets/Segmentation/val.txt"), "r") as f:
+        with open(os.path.join(self.VOCdevkit_path, self.VOCFileName + "/ImageSets/Segmentation/val.txt"), "r") as f:
             self.val_lines = f.readlines()
 
-        train_dataset   = UnetDataset(self.train_lines, self.imgsize, self.nclass, True, self.VOCdevkit_path)
-        val_dataset     = UnetDataset(self.val_lines,   self.imgsize, self.nclass, False, self.VOCdevkit_path)
+        train_dataset   = UnetDataset(self.train_lines, self.imgsize, self.nclass, 
+                                        True, self.VOCdevkit_path, self.VOCFileName)
+        val_dataset     = UnetDataset(self.val_lines,   self.imgsize, self.nclass, 
+                                        False, self.VOCdevkit_path, self.VOCFileName)
 
         gen             = DataLoader(train_dataset, shuffle = True, batch_size=self.batchsize, 
-                                    num_workers = 1, pin_memory=True,
-                                    drop_last = True, collate_fn=dataset_collate)
+                                    num_workers=self.num_workers, pin_memory=True,
+                                    drop_last=True, collate_fn=dataset_collate)
         gen_val         = DataLoader(val_dataset  , shuffle = True, batch_size = self.batchsize, 
-                                    num_workers = 1, pin_memory=True,
-                                    drop_last = True, collate_fn=dataset_collate)
+                                    num_workers=self.num_workers, pin_memory=True,
+                                    drop_last=True, collate_fn=dataset_collate)
 
         return gen, gen_val
 
     def makedata(self, backbone="User"):
         
-        return self.makedataUser()
+        return self.makedataVoc()
