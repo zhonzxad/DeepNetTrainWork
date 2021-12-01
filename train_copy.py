@@ -68,8 +68,11 @@ def fit_one_epoch(model, epoch, dataloaders, optimizer, amp, cls_weights):
     # 创建混合精度训练
     grad_scaler = torch.cuda.amp.GradScaler(enabled=amp)
 
-    tqdmbar = tqdm(dataloaders, total=len(dataloaders), leave=False, mininterval=0.2)
-    for batch_idx, batch in enumerate(tqdmbar):
+    widgets = ['tain in epoch:', Percentage(), ' ', Bar('#'), ' ', Timer(),
+               ' ', ETA()]
+    bar_obj = ProgressBar(widgets=widgets, maxval=len(dataloaders)).start()
+    batch_idx = 0
+    for batch in dataloaders:
 
         img, png, label = batch
         # print("\nNo in RangeNet img shape is {} || png shape is {}".format(img.shape, png.shape))
@@ -128,15 +131,18 @@ def fit_one_epoch(model, epoch, dataloaders, optimizer, amp, cls_weights):
             tfwriter.add_scalar(tags[4],     total_f_score / (batch_idx + 1))#, epoch*(batch_idx + 1))
             tfwriter.add_scalar(tags[5], get_lr(optimizer))#, epoch*(batch_idx + 1))
 
-        #设置进度条左边显示的信息
-        tqdmbar.set_description("Train {}".format(epoch))
-        #设置进度条右边显示的信息
-        tqdmbar.set_postfix(Loss=("{:5f}".    format(total_loss / (batch_idx + 1))),
-                            CEloss=("{:5f}".  format(total_ce_loss / (batch_idx + 1))),
-                            BCEloss=("{:5f}". format(total_bce_loss / (batch_idx + 1))),
-                            Diceloss=("{:5f}".format(total_dice_loss / (batch_idx + 1))),
-                            F_SOCRE=("{:5f}". format(total_f_score / (batch_idx + 1))),
-                            lr=("{:7f}".      format(get_lr(optimizer))))
+        # #设置进度条左边显示的信息
+        # tqdmbar.set_description("Epoch in Range")
+        # #设置进度条右边显示的信息
+        # tqdmbar.set_postfix(Loss=("{:5f}".    format(total_loss / (batch_idx + 1))),
+        #                     CEloss=("{:5f}".  format(total_ce_loss / (batch_idx + 1))),
+        #                     BCEloss=("{:5f}". format(total_bce_loss / (batch_idx + 1))),
+        #                     Diceloss=("{:5f}".format(total_dice_loss / (batch_idx + 1))),
+        #                     F_SOCRE=("{:5f}". format(total_f_score / (batch_idx + 1))),
+        #                     lr=("{:7f}".      format(get_lr(optimizer))))
+        bar_obj.update(batch_idx + 1)
+        batch_idx += 1
+    bar_obj.finish()
 
     # 返回值按照 0/总loss, 1/count, 2/celoss, 3/bceloss, 4/diceloss, 5/floss, 6/lr
     return [loss[0], (batch_idx + 1), loss[1], loss[2], loss[3], loss[4], get_lr(optimizer)]
