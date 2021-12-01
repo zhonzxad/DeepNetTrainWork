@@ -10,9 +10,9 @@ import sys
 import torch
 from torch.utils.data import DataLoader
 
-#from models.Unit.MakeVOCDataSet import MakeVOCDataSet
-from .makedata.unetdataloader import UnetDataset
-from .makedata.userdataset import UserDataLoader, dataset_collate
+from makedata.unetdataloader import UnetDataset
+from makedata.userdataset import UserDataLoader, dataset_collate
+from makedata.userdataset_trans import UserDataLoaderTrans
 
 # 在Windows下使用vscode运行时 添加上这句话就会使用正确的相对路径设置
 # 需要import os和sys两个库
@@ -59,9 +59,9 @@ class MakeLoader():
 
     def makedataUser(self):
 
-        train_dataset = UserDataLoader(self.tra_img, self.tra_leb, 
+        train_dataset = UserDataLoader(self.tra_img, self.tra_leb,
                                         image_size=self.imgsize, num_classes=self.nclass)
-        val_dataset   = UserDataLoader(self.val_img, self.val_leb, 
+        val_dataset   = UserDataLoader(self.val_img, self.val_leb,
                                         image_size=self.imgsize, num_classes=self.nclass)
 
         # pin_memory:如果设置为True，那么data loader将会在返回它们之前，将tensors拷贝到CUDA中的固定内存
@@ -99,6 +99,24 @@ class MakeLoader():
 
         return gen, gen_val
 
-    def makedata(self, backbone="User"):
-        
+    def makedataUser_Targer(self):
+        train_dataset = UserDataLoaderTrans(self.tra_img,
+                                       image_size=self.imgsize, num_classes=self.nclass)
+
+        gen = DataLoader(train_dataset, shuffle=True, batch_size=self.batchsize, num_workers=self.num_workers,
+                         pin_memory=True if torch.cuda.is_available() else False,
+                         drop_last=True, collate_fn=dataset_collate)
+
+        return gen
+
+    def makedata(self):
+        """
+        源域数据集/source
+        """
         return self.makedataVoc()
+
+    def makedataTarget(self):
+        """
+        目标域数据集/target
+        """
+        return self.makedataUser_Targer()

@@ -4,18 +4,15 @@ import math
 import os
 import sys
 
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
 import torch.nn as nn
 import torch.nn.functional as F
-import torchvision
 from PIL import Image
 from tensorboardX import SummaryWriter
 from torchsummary import summary
 from tqdm import tqdm, trange
-from progressbar import ProgressBar, Percentage, Bar, Timer, ETA, FileTransferSpeed
 
 from models.Unit.getearlystop import EarlyStopping
 from models.Unit.getloader import MakeLoader
@@ -34,16 +31,17 @@ global writer
 global tfwriter
 global this_device
 
-# 获取学习率
+
 def get_lr(optimizer):
+    """获取学习率"""
     for param_group in optimizer.param_groups:
         return param_group['lr']
 
 def set_lr(optimizer, value:float):
     optimizer.param_groups[0]['lr'] = value
 
-# 创建文件夹
 def MakeDir(path):
+    """创建文件夹"""
     workpath = os.getcwd()
     if not os.path.isabs(path):
         path = os.path.join(workpath, path)
@@ -53,9 +51,8 @@ def MakeDir(path):
 
     return path
 
-# 定义训练每一个epoch的步骤
 def fit_one_epoch(model, epoch, dataloaders, optimizer, amp, cls_weights):
-
+    """"定义训练每一个epoch的步骤"""
     total_ce_loss   = 0
     total_bce_loss  = 0
     total_dice_loss = 0
@@ -142,9 +139,8 @@ def fit_one_epoch(model, epoch, dataloaders, optimizer, amp, cls_weights):
     return [loss[0], (batch_idx + 1), loss[1], loss[2], loss[3], loss[4], get_lr(optimizer)]
 
 
-# 测试方法
 def test(model, val_loader, cls_weights):
-
+    """测试方法"""
     total_ce_loss   = 0
     total_bce_loss  = 0
     total_dice_loss = 0
@@ -233,7 +229,7 @@ def get_args():
                         help='is use cuda as env', default=True)
     parser.add_argument('--amp', action='store_true',
                         help='Use mixed precision', default=False)
-                        
+
     args = parser.parse_args()
 
     return args
@@ -311,9 +307,9 @@ if __name__ == '__main__':
                 model.load_state_dict(checkpoint['model'])
             optimizer = checkpoint['optimizer']
             set_lr(optimizer, 0.001)
+            writer.write("加载数据检查点，从(epoch {})开始".format(checkpoint['epoch']))
         else:
             writer.write("没有找到检查点，从(epoch 1)开始")
-    writer.write("加载数据检查点，从(epoch {})开始".format(checkpoint['epoch']))
 
     # 将最优损失设置为无穷大
     best_loss = float("inf")
