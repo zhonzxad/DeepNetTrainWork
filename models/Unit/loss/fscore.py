@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-11-23 10:33:48
-LastEditTime: 2021-11-29 10:44:38
+LastEditTime: 2021-12-01 10:10:24
 LastEditors: zhonzxad
 '''
 
@@ -9,6 +9,7 @@ import math
 
 import numpy as np
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 from sklearn.metrics import (confusion_matrix, f1_score,
                              precision_recall_fscore_support)
@@ -83,17 +84,38 @@ def f_score_sklean(inputs, target):
 
     return f1_score(lable_all, prob_all, average="binary")
 
+def f_score_1(inputs, target, cls_weights, num_classes=2, alpha=0.5, gamma=2):
+    n, c, h, w = inputs.size()
+    nt, ht, wt = target.size()
+
+    target = target.long()
+    
+    if h != ht and w != wt:
+        inputs = F.interpolate(inputs, size=(ht, wt), mode="bilinear", align_corners=True)
+
+    temp_inputs = inputs.permute(0, 2, 3, 1).contiguous().view(-1, c)
+    temp_target = target.view(-1)
+
+    logpt  = -nn.CrossEntropyLoss(weight=cls_weights, reduction='none')(temp_inputs, temp_target)
+    pt = torch.exp(logpt)
+    if alpha is not None:
+        logpt *= alpha
+    loss = -((1 - pt) ** gamma) * logpt
+    loss = loss.mean()
+    return loss
+
 
 class FocalLoss(torch.nn.Module):
     """
     二分类的Focalloss alpha 固定
     """
-    def __init__(self, gamma=2, alpha=0.25, reduction='elementwise_mean'):
+    def __init__(self, cls_weights, gamma=2, alpha=0.25, reduction='elementwise_mean'):
         super().__init__()
         self.gamma = gamma
         self.alpha = alpha
         self.reduction = reduction
+        self.cls_weights = cls_weights
 
     def forward(self, input, target):
         
-        return f_score(input, target)
+        return f_score_1(input, target, self.cls_weights)

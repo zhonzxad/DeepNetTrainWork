@@ -38,6 +38,9 @@ def get_lr(optimizer):
     for param_group in optimizer.param_groups:
         return param_group['lr']
 
+def set_lr(optimizer, value:float):
+    optimizer.param_groups[0]['lr'] = value
+
 # 创建文件夹
 def MakeDir(path):
     workpath = os.getcwd()
@@ -50,7 +53,7 @@ def MakeDir(path):
     return path
 
 # 定义训练每一个epoch的步骤
-def fit_one_epoch(model, epoch, dataloaders, optimizer, amp):
+def fit_one_epoch(model, epoch, dataloaders, optimizer, amp, cls_weights):
 
     total_ce_loss   = 0
     total_bce_loss  = 0
@@ -74,9 +77,10 @@ def fit_one_epoch(model, epoch, dataloaders, optimizer, amp):
             # img = torch.autograd.Va   riable(torch.from_numpy(img).type(torch.FloatTensor))
             # png = torch.autograd.Variable(torch.from_numpy(png).type(torch.FloatTensor)).long()
             # seg_labels = torch.autograd.Variable(torch.from_numpy(seg_labels).type(torch.FloatTensor))
-            img    = torch.from_numpy(img).type(torch.FloatTensor)
-            png    = torch.from_numpy(png).type(torch.FloatTensor)
-            label  = torch.from_numpy(label).type(torch.FloatTensor)
+            img     = torch.from_numpy(img).type(torch.FloatTensor)
+            png     = torch.from_numpy(png).type(torch.FloatTensor)
+            label   = torch.from_numpy(label).type(torch.FloatTensor)
+            weights = torch.from_numpy(cls_weights)
             # img = torch.autograd.Variable(img).type(torch.FloatTensor)
             # png = torch.autograd.Variable(png).type(torch.FloatTensor)
             # seg_labels = torch.autograd.Variable(seg_labels).type(torch.FloatTensor)
@@ -84,9 +88,10 @@ def fit_one_epoch(model, epoch, dataloaders, optimizer, amp):
             # writer.write("\n img shape is {} || png shape is {} || seg_labels shape is {}".format(img.shape, png.shape, seg_labels.shape))
 
             if this_device.type == "cuda":
-                img   = img.to(this_device)
-                png   = png.to(this_device)
-                label = label.to(this_device)
+                img     = img.to(this_device)
+                png     = png.to(this_device)
+                label   = label.to(this_device)
+                weights = weights.to(this_device)
 
         # 所有梯度为0
         optimizer.zero_grad()
@@ -98,7 +103,7 @@ def fit_one_epoch(model, epoch, dataloaders, optimizer, amp):
             # 计算损失
             # print("\n output shape is {} || png shape is {}".format(output.shape, png.shape))
             # 返回值按照 0/总loss, 1/celoss, 2/bceloss, 3/diceloss, 4/floss排布
-            loss = loss_func(output, png, label, this_device)
+            loss = loss_func(output, png, label, weights, this_device)
 
             # 误差反向传播
             grad_scaler.scale(loss[0]).backward()
@@ -137,7 +142,7 @@ def fit_one_epoch(model, epoch, dataloaders, optimizer, amp):
 
 
 # 测试方法
-def test(model, val_loader):
+def test(model, val_loader, cls_weights):
 
     total_ce_loss   = 0
     total_bce_loss  = 0
@@ -152,18 +157,20 @@ def test(model, val_loader):
         img, png, label = batch
 
         with torch.no_grad():
-            img    = torch.from_numpy(img).type(torch.FloatTensor)
-            png    = torch.from_numpy(png).type(torch.FloatTensor)
-            label  = torch.from_numpy(label).type(torch.FloatTensor)
+            img     = torch.from_numpy(img).type(torch.FloatTensor)
+            png     = torch.from_numpy(png).type(torch.FloatTensor)
+            label   = torch.from_numpy(label).type(torch.FloatTensor)
+            weights = torch.from_numpy(cls_weights)
             # img = torch.autograd.Variable(img).type(torch.FloatTensor)
             # png = torch.autograd.Variable(png).type(torch.FloatTensor).long()
             # seg_labels = torch.autograd.Variable(seg_labels).type(torch.FloatTensor)
             # seg_labels = seg_labels.transpose(1, 3).transpose(2, 3)
 
             if this_device.type == "cuda":
-                img       = img.to(this_device)
-                png       = png.to(this_device)
-                label     = label.to(this_device)
+                img     = img.to(this_device)
+                png     = png.to(this_device)
+                label   = label.to(this_device)
+                weights = weights.to(this_device)
 
         # 输入测试图像
         output    = model_eval(img)
@@ -171,7 +178,7 @@ def test(model, val_loader):
         # 计算损失
         # print("\n output shape is {} || png shape is {}".format(output.shape, png.shape))
         # 返回值按照 0/总loss, 1/celoss, 2/bceloss, 3/diceloss, 4/floss排布
-        loss = loss_func(output, png, label, this_device)
+        loss = loss_func(output, png, label, weights, this_device)
 
         total_loss      += loss[0].item()
         total_ce_loss   += loss[1].item()
@@ -247,7 +254,7 @@ if __name__ == '__main__':
     torch.manual_seed(SEED)
 
     # 不同损失函数之间的调整系数，默认是均衡的
-    # cls_weights = np.ones([CLASSNUM], np.float32)
+    cls_weights = np.ones([CLASSNUM], np.float32)
 
     # 加载日志对象
     writer   = WriteLog(writerpath=MakeDir("log/log/"))
@@ -293,7 +300,7 @@ if __name__ == '__main__':
     writer.write("优化器及早停模块加载完毕")
 
     if Resume:
-        path = "./savepoint/model_data/UNEt_2Class_NewLoss_Dice_CE___.pth"
+        path = "./savepoint/model_data/UNEt_DiceCELoss_KMInit.pth"
         if os.path.isfile(path):
             checkpoint = torch.load(path)
             start_epoch = checkpoint['epoch']
@@ -302,9 +309,10 @@ if __name__ == '__main__':
             else:
                 model.load_state_dict(checkpoint['model'])
             optimizer = checkpoint['optimizer']
-            writer.write("加载数据检查点，从(epoch {})开始".format(checkpoint['epoch']))
+            set_lr(optimizer, 0.001)
         else:
             writer.write("没有找到检查点，从(epoch 1)开始")
+    writer.write("加载数据检查点，从(epoch {})开始".format(checkpoint['epoch']))
 
     # 将最优损失设置为无穷大
     best_loss = float("inf")
@@ -321,29 +329,30 @@ if __name__ == '__main__':
         # 训练
         # 返回值按照 0/总loss, 1/count, 2/celoss, 3/bceloss, 4/diceloss, 5/floss, 6/lr
         ret_train = \
-            fit_one_epoch(model, epoch, gen, optimizer, args.amp)
+            fit_one_epoch(model, epoch, gen, optimizer, args.amp, cls_weights)
         
         # 进行测试
         ret_val = \
-            test(model, gen_val)
+            test(model, gen_val, cls_weights)
         
         # 判断是否满足早停
         early_stopping(ret_val[0], model.eval)
 
         # 只有当前学习率较之前不够优异时，才去优化学习率，进行更细粒度的调节
         # 依据测试数据级中dice损失来进行优化
-        if ret_val[4] >= best_opt_loss:
-            best_opt_loss = ret_val[4]
-            scheduler.step(ret_val[4])
+        if ret_val[5] >= best_opt_loss:
+            best_opt_loss = ret_val[5]
+            scheduler.step(ret_val[5])
 
         # 一些保存的参数
         checkpoint = {
             'epoch': epoch,
             'model': model,
             'optimizer': optimizer,
+            'loss' : ret_val,
         }
         path = MakeDir("savepoint/model_data/")
-        saveparafilepath = path + "UNEt_DiceCELoss_KMInit.pth"
+        saveparafilepath = path + "UNEt_DiceCELoss_KMInit_NewPoint.pth"
         # 判断当前损失是否变小，变小才进行保存参数
         # 注意ret[0]是tensor格式，ret[1]才是平均损失（损失累加除以轮次）
         # 使用的是验证集上的损失，如果验证集损失一直在下降也是，说明模型还在训练
@@ -371,6 +380,7 @@ if __name__ == '__main__':
         'epoch': epoch,
         'model': model,
         'optimizer': optimizer,
+        'loss' : ret_val,
     }
     path = MakeDir("savepoint/model_data/")
     saveparafilepath = path + "checkpoint.pth"

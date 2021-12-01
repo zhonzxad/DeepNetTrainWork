@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-11-22 17:25:31
-LastEditTime: 2021-11-30 11:08:00
+LastEditTime: 2021-12-01 09:59:15
 LastEditors: zhonzxad
 '''
 import os
@@ -78,13 +78,13 @@ class UnetDataset(Dataset):
         png[png >= self.num_classes] = self.num_classes
 
         # 转化成one_hot的形式
-        # seg_label  = np.eye(self.num_classes)[png.copy().reshape([-1])]
-        # seg_label  = seg_label.reshape((int(self.input_shape[0]), int(self.input_shape[1]),
-        #                                     self.num_classes))
-        seg_label = png.copy().astype(np.int64)
-        seg_label = torch.from_numpy(seg_label)
-        seg_label = F.one_hot(seg_label, num_classes=self.num_classes)
-        seg_label = seg_label.numpy()
+        seg_label  = np.eye(self.num_classes)[png.copy().reshape([-1])]
+        seg_label  = seg_label.reshape((int(self.input_shape[0]), int(self.input_shape[1]),
+                                            self.num_classes))
+        # seg_label = png.copy().astype(np.int64)
+        # seg_label = torch.from_numpy(seg_label)
+        # seg_label = F.one_hot(seg_label, num_classes=self.num_classes)
+        # seg_label = seg_label.numpy()
 
         # png = png.transpose(2, 0, 1)
         # seg_label = seg_label.transpose(2, 0, 1)

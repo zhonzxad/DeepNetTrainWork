@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-11-22 17:29:29
-LastEditTime: 2021-11-30 10:47:56
+LastEditTime: 2021-12-01 09:50:56
 LastEditors: zhonzxad
 '''
 import os
@@ -53,6 +53,7 @@ class MakeLoader():
         # self.tra_leb = r"/mnt/work/database/BXG/train/label-resize-3/"
         # self.val_img = r"/mnt/work/database/BXG/val/img-resize-3/"
         # self.val_leb = r"/mnt/work/database/BXG/val/label-resize-3/"
+        
         self.VOCFileName    = "Signal-VOC"
         self.VOCdevkit_path = r"G:/Py_Debug/UNet-Version-master/Data/BXG/"
 
@@ -84,15 +85,15 @@ class MakeLoader():
         with open(os.path.join(self.VOCdevkit_path, self.VOCFileName + "/ImageSets/Segmentation/val.txt"), "r") as f:
             self.val_lines = f.readlines()
 
-        train_dataset   = UnetDataset(self.train_lines, self.imgsize, self.nclass, 
-                                        True, self.VOCdevkit_path, self.VOCFileName)
-        val_dataset     = UnetDataset(self.val_lines,   self.imgsize, self.nclass, 
-                                        False, self.VOCdevkit_path, self.VOCFileName)
+        train_dataset = UnetDataset(self.train_lines, self.imgsize, self.nclass, 
+                                      True, self.VOCdevkit_path, self.VOCFileName)
+        val_dataset   = UnetDataset(self.val_lines,   self.imgsize, self.nclass, 
+                                      False, self.VOCdevkit_path, self.VOCFileName)
 
-        gen             = DataLoader(train_dataset, shuffle = True, batch_size=self.batchsize, 
-                                    num_workers=self.num_workers, pin_memory=True,
-                                    drop_last=True, collate_fn=dataset_collate)
-        gen_val         = DataLoader(val_dataset  , shuffle = True, batch_size = self.batchsize, 
+        gen           = DataLoader(train_dataset, shuffle = True, batch_size=self.batchsize, 
+                                  num_workers=self.num_workers, pin_memory=True,
+                                  drop_last=True, collate_fn=dataset_collate)
+        gen_val       = DataLoader(val_dataset  , shuffle = True, batch_size = self.batchsize, 
                                     num_workers=self.num_workers, pin_memory=True,
                                     drop_last=True, collate_fn=dataset_collate)
 

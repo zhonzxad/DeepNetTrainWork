@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-06-24 12:51:18
-LastEditTime: 2021-11-29 19:56:19
+LastEditTime: 2021-12-01 09:57:28
 LastEditors: zhonzxad
 '''
 '''
@@ -233,4 +233,4 @@ class DiceLoss(nn.Module):
  
     def forward(self, pred, label):
 
-        return AchieveDice_0(pred, label)
+        return AchieveDice_1(pred, label)
