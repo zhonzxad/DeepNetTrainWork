@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-10-21 22:26:30
-LastEditTime: 2021-11-29 19:34:36
+LastEditTime: 2021-12-02 21:35:44
 LastEditors: zhonzxad
 '''
 import math
@@ -25,9 +25,6 @@ transforms_train = transforms.Compose([
                     transforms.ToPILImage(),             
                     transforms.ToTensor(),                                  # 将数据转换成Tensor型
                     transforms.Normalize((0.5,0.5,0.5),(0.5,0.5,0.5))])     # 标准化
-
-
-
 
 class UserDataLoaderTrans(Dataset):
     def __init__(self, imgpath, image_size, num_classes):
