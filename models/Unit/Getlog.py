@@ -7,9 +7,7 @@ LastEditors: zhonzxad
 # -*- coding: UTF-8 -*- 
 import datetime as dt
 import sys
-
 sys.path.append("..")
-
 
 class GetWriteLog:
     def __init__(self, writerpath='', trace_func=print):
@@ -33,7 +31,7 @@ class GetWriteLog:
 
     def write(self, log, coutprint=False):
         time = dt.datetime.now().strftime("%F_%H-%M-%S") # 2021-10-25_15:08:03
-        log = "\r\n" + time + " >> " + "{}".format(log) + "\n"
+        log  = time + " >> " + "{}".format(log) + "\r\n"
         self.trace_func(log)  # 重定向到print
 
         if coutprint == True:

@@ -1,4 +1,4 @@
-from loss_funcs.adv import *
+from TransferLossFun.adv import *
 
 class DAANLoss(AdversarialLoss):
     def __init__(self, num_class, gamma=1.0, max_iter=1000, **kwargs):

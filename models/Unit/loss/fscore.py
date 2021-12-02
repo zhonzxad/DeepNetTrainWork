@@ -60,8 +60,8 @@ def f_score_sklean(inputs, target):
                  pos_label=1, 
                  average=’binary’, 
                  sample_weight=None)
-    average : [None, ‘binary’ (default), ‘micro’, ‘macro’, ‘samples’, ‘weighted’] 
-            多类/多标签目标需要此参数。默认为‘binary’，即二分类
+    average : [None, ‘binary’ (default), ‘micro’, ‘macro’, ‘samples’, ‘weighted’]
+    多类/多标签目标需要此参数。默认为‘binary’，即二分类
     """
     prob_all = []
     lable_all = []
@@ -102,6 +102,7 @@ def f_score_1(inputs, target, cls_weights, num_classes=2, alpha=0.5, gamma=2):
         logpt *= alpha
     loss = -((1 - pt) ** gamma) * logpt
     loss = loss.mean()
+
     return loss
 
 

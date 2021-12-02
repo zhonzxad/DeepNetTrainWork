@@ -1,26 +1,19 @@
 # -*- coding: UTF-8 -*- 
 import argparse
-import math
 import os
 import sys
 
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
-import torch.nn as nn
-import torch.nn.functional as F
-import torchvision
-from PIL import Image
 from tensorboardX import SummaryWriter
-from torchsummary import summary
-from tqdm import tqdm, trange
-from progressbar import ProgressBar, Percentage, Bar, Timer, ETA, FileTransferSpeed
+from tqdm import tqdm
+from progressbar import ProgressBar, Percentage, Bar, Timer, ETA
 
 from models.Unit.getearlystop import GetEarlyStopping
 from models.Unit.getloader import GetLoader
 from models.Unit.getloss import loss_func
-from models.Unit.getmodel import GetModel
+from getmodel import GetModel
 from models.Unit.getoptim import GetOptim
 from models.Unit.Getlog import GetWriteLog
 
@@ -30,7 +23,7 @@ os.chdir(sys.path[0])
 sys.path.append("..")
 
 # 创建全局对象
-global writer
+global logger
 global tfwriter
 global this_device
 
@@ -89,7 +82,7 @@ def fit_one_epoch(model, epoch, dataloaders, optimizer, amp, cls_weights):
             # png = torch.autograd.Variable(png).type(torch.FloatTensor)
             # seg_labels = torch.autograd.Variable(seg_labels).type(torch.FloatTensor)
             # seg_labels = seg_labels.transpose(1, 3).transpose(2, 3)
-            # writer.write("\n img shape is {} || png shape is {} || seg_labels shape is {}".format(img.shape, png.shape, seg_labels.shape))
+            # logger.write("\n img shape is {} || png shape is {} || seg_labels shape is {}".format(img.shape, png.shape, seg_labels.shape))
 
             if this_device.type == "cuda":
                 img     = img.to(this_device)
@@ -264,20 +257,20 @@ if __name__ == '__main__':
     cls_weights = np.ones([CLASSNUM], np.float32)
 
     # 加载日志对象
-    writer   = GetWriteLog(writerpath=MakeDir("log/log/"))
+    logger   = GetWriteLog(writerpath=MakeDir("log/log/"))
     tfwriter = SummaryWriter(logdir=MakeDir("log/tfboard/"), comment="unet")
 
     # 打印列表参数
     # print(vars(args))
-    writer.write(vars(args))
+    logger.write(vars(args))
 
     loader = GetLoader(IMGSIZE, CLASSNUM, args.batch_size, args.load_tread)
     gen, gen_val = loader.makedata()
-    writer.write("数据集加载完毕")
+    logger.write("数据集加载完毕")
 
-    modelClass = GetModel((IMGSIZE, CLASSNUM), writer)
+    modelClass = GetModel((IMGSIZE, CLASSNUM), logger)
     model = modelClass.Createmodel(is_train=True)
-    writer.write("模型创建及初始化完毕")
+    logger.write("模型创建及初始化完毕")
 
     if this_device.type == "cuda":
         # 为GPU设定随机种子，以便确信结果是可靠的
@@ -291,7 +284,7 @@ if __name__ == '__main__':
         model = model.to(this_device)
     
     # tfwriter.add_graph(model=model, input_to_model=IMGSIZE)
-    writer.write("模型初始化完毕")
+    logger.write("模型初始化完毕")
 
     # 测试网络结构
     # summary(model, input_size=(IMGSIZE[2], IMGSIZE[0], IMGSIZE[1]))
@@ -304,7 +297,7 @@ if __name__ == '__main__':
     path = MakeDir("savepoint/early_stopp/")
     early_stopping = GetEarlyStopping(patience, path=path + "checkpoint.pth",
                                       verbose=True, savemode=SaveMode)
-    writer.write("优化器及早停模块加载完毕")
+    logger.write("优化器及早停模块加载完毕")
 
     if Resume:
         path = "./savepoint/model_data/UNEt_DiceCELoss_KMInit.pth"
@@ -318,8 +311,8 @@ if __name__ == '__main__':
             optimizer = checkpoint['optimizer']
             set_lr(optimizer, 0.001)
         else:
-            writer.write("没有找到检查点，从(epoch 1)开始")
-    writer.write("加载数据检查点，从(epoch {})开始".format(checkpoint['epoch']))
+            logger.write("没有找到检查点，从(epoch 1)开始")
+    logger.write("加载数据检查点，从(epoch {})开始".format(checkpoint['epoch']))
 
     # 将最优损失设置为无穷大
     best_loss = float("inf")
@@ -328,7 +321,7 @@ if __name__ == '__main__':
 
     # 开始训练
     tqbar = tqdm(range(start_epoch + 1, args.nepoch + 1))
-    writer.write("开始训练")
+    logger.write("开始训练")
     for epoch in tqbar:
         #loss, loss_cls, loss_lmmd = train_epoch(epoch, model, [tra_source_dataloader,tra_target_dataloader] , optimizer, scheduler)
         #t_correct = test(model, test_dataloader)
@@ -366,15 +359,15 @@ if __name__ == '__main__':
         if ret_val[1] < best_loss:
             best_loss = ret_val[1]
             torch.save(checkpoint, saveparafilepath)
-            writer.write("保存检查点完成，当前批次{}, 权重文件保存地址{}".format(epoch, saveparafilepath))
+            logger.write("保存检查点完成，当前批次{}, 权重文件保存地址{}".format(epoch, saveparafilepath))
         else:
-            writer.write("完成当前批次{}训练, 损失值较上一轮没有减小，未保存模型".format(epoch))
+            logger.write("完成当前批次{}训练, 损失值较上一轮没有减小，未保存模型".format(epoch))
 
         # 若满足 early stopping 要求 且 当前批次>=10
         if early_stopping.early_stop:
-            writer.write("命中早停模式，当前批次{}".format(epoch))
+            logger.write("命中早停模式，当前批次{}".format(epoch))
             if epoch >= 5:
-                writer.write("停止训练，当前批次{}".format(epoch))
+                logger.write("停止训练，当前批次{}".format(epoch))
                 # os.system('/root/shutdown.sh')
                 break
 
@@ -392,7 +385,7 @@ if __name__ == '__main__':
     path = MakeDir("savepoint/model_data/")
     saveparafilepath = path + "checkpoint.pth"
     torch.save(checkpoint, saveparafilepath)
-    writer.write("保存检查点完成，当前批次{}, 当然权重文件保存地址{}".format(epoch, saveparafilepath))
+    logger.write("保存检查点完成，当前批次{}, 当然权重文件保存地址{}".format(epoch, saveparafilepath))
 
     os.system('shutdown /s /t 0')       # 0秒之后Windows关机
     # os.system('/root/shutdown.sh')    # 极客云停机代码

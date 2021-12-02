@@ -1,5 +1,5 @@
-from loss_funcs.mmd import MMDLoss
-from loss_funcs.adv import LambdaSheduler
+from TransferLossFun.mmd import MMDLoss
+from TransferLossFun.adv import LambdaSheduler
 import torch
 import numpy as np
 
