@@ -1,7 +1,20 @@
+'''
+Author: zhonzxad
+Date: 2021-12-02 16:55:18
+LastEditTime: 2021-12-02 20:36:52
+LastEditors: zhonzxad
+'''
+import os
+import sys
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # __file__获取执行文件相对路径，整行为取上一级的上一级目录
+sys.path.append(BASE_DIR)
+
 from torch import nn
-from unet_parts import OutConv
-from unet_parts_depthwise_separable import DoubleConvDS, UpDS, DownDS
-from Smart_Layer import CBAM
+
+from SmaAtUNer.SmartLayer import CBAM
+from SmaAtUNer.unet_parts import OutConv
+from SmaAtUNer.unet_parts_depthwise_separable import DoubleConvDS, DownDS, UpDS
 
 
 class SmaAtUNet(nn.Module):

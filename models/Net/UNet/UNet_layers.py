@@ -1,19 +1,17 @@
 '''
 Author: zhonzxad
 Date: 2021-06-24 10:10:02
-LastEditTime: 2021-11-23 13:25:41
+LastEditTime: 2021-12-02 21:24:45
 LastEditors: zhonzxad
 '''
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from init_weights import init_weight
 
-
-class unetConv2(nn.Module):
+class UNetConv2(nn.Module):
     def __init__(self, in_size, out_size, is_batchnorm, n=2, kernel_size=3, stride=1, padding=1):
-        super(unetConv2, self).__init__()
+        super(UNetConv2, self).__init__()
         self.n = n
         self.ks = kernel_size
         self.stride = stride
@@ -36,9 +34,10 @@ class unetConv2(nn.Module):
                 setattr(self, 'conv%d' % i, conv)
                 in_size = out_size
 
-        # initialise the blocks
-        for m in self.children():
-            init_weight(m, init_type='kaiming')
+        # # initialise the blocks
+        # 统一放置到最外层进行初始化
+        # for m in self.children():
+        #     init_weight(m, init_type='kaiming')
 
     def forward(self, inputs):
         x = inputs
@@ -48,20 +47,21 @@ class unetConv2(nn.Module):
 
         return x
 
-class unetUp(nn.Module):
+class UNetUp(nn.Module):
     def __init__(self, in_size, out_size, is_deconv, n_concat=2):
-        super(unetUp, self).__init__()
+        super(UNetUp, self).__init__()
         # self.conv = unetConv2(in_size + (n_concat - 2) * out_size, out_size, False)
-        self.conv = unetConv2(out_size * 2, out_size, False)
+        self.conv = UNetConv2(out_size * 2, out_size, False)
         if is_deconv:
             self.up = nn.ConvTranspose2d(in_size, out_size, kernel_size=4, stride=2, padding=1)
         else:
             self.up = nn.UpsamplingBilinear2d(scale_factor=2)
 
-        # initialise the blocks
-        for m in self.children():
-            if m.__class__.__name__.find('unetConv2') != -1: continue
-            init_weight(m, init_type='kaiming')
+        # # initialise the blocks
+        # 统一放置到最外层进行初始化
+        # for m in self.children():
+        #     if m.__class__.__name__.find('unetConv2') != -1: continue
+        #     init_weight(m, init_type='kaiming')
 
     def forward(self, inputs0, *input):
         # print(self.n_concat)
@@ -80,16 +80,17 @@ class unetUp_origin(nn.Module):
         super(unetUp_origin, self).__init__()
         # self.conv = unetConv2(out_size*2, out_size, False)
         if is_deconv:
-            self.conv = unetConv2(in_size + (n_concat - 2) * out_size, out_size, False)
+            self.conv = UNetUp(in_size + (n_concat - 2) * out_size, out_size, False)
             self.up = nn.ConvTranspose2d(in_size, out_size, kernel_size=4, stride=2, padding=1)
         else:
-            self.conv = unetConv2(in_size + (n_concat - 2) * out_size, out_size, False)
+            self.conv = UNetUp(in_size + (n_concat - 2) * out_size, out_size, False)
             self.up = nn.UpsamplingBilinear2d(scale_factor=2)
 
         # initialise the blocks
-        for m in self.children():
-            if m.__class__.__name__.find('unetConv2') != -1: continue
-            init_weight(m, init_type='kaiming')
+        # 统一放置到最外层进行初始化
+        # for m in self.children():
+        #     if m.__class__.__name__.find('unetConv2') != -1: continue
+        #     init_weight(m, init_type='kaiming')
 
     def forward(self, inputs0, *input):
         # print(self.n_concat)

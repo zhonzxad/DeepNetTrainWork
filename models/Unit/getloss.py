@@ -1,20 +1,16 @@
 '''
 Author: zhonzxad
 Date: 2021-11-24 15:29:20
-LastEditTime: 2021-12-01 10:06:19
+LastEditTime: 2021-12-02 21:34:12
 LastEditors: zhonzxad
 '''
-import argparse
-import sys
-
 import torch
-sys.path.append("..")
-
-from Unit.loss.diceloss import DiceLoss
-from Unit.loss.celoss import CELoss2d
-from Unit.loss.bceloss import BCELoss2d
-from Unit.loss.fscore import FocalLoss
-from Unit.loss.transferloss import TransferLoss
+# 在文件被引用的初始使用绝对路径
+from models.Unit.loss.bceloss import BCELoss2d
+from models.Unit.loss.celoss import CELoss2d
+from models.Unit.loss.diceloss import DiceLoss
+from models.Unit.loss.fscore import FocalLoss
+from models.Unit.loss.transferloss import TransferLoss
 
 # from loss import *
 

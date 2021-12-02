@@ -1,13 +1,19 @@
 '''
 Author: zhonzxad
 Date: 2021-12-01 15:27:02
-LastEditTime: 2021-12-01 15:34:39
+LastEditTime: 2021-12-02 20:56:34
 LastEditors: zhonzxad
 '''
+import os
+import sys
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(BASE_DIR)
+
 import torch
 import torch.nn as nn
 
-from TransferLossFun import *
+from loss.TransferLossFun import *
 
 """
 kwargs

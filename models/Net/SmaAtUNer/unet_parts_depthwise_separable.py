@@ -1,9 +1,16 @@
+'''
+Author: zhonzxad
+Date: 2021-12-02 16:55:18
+LastEditTime: 2021-12-02 20:46:49
+LastEditors: zhonzxad
+'''
 """ Parts of the U-Net model """
 # Base model taken from: https://github.com/milesial/Pytorch-UNet
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from Smart_Layer import DepthwiseSeparableConv
+
+from SmaAtUNer.SmartLayer import DepthwiseSeparableConv
 
 
 class DoubleConvDS(nn.Module):

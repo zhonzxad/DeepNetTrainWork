@@ -1,16 +1,19 @@
+'''
+Author: zhonzxad
+Date: 2021-11-24 15:29:20
+LastEditTime: 2021-12-02 21:33:35
+LastEditors: zhonzxad
+'''
 import os
 import sys
+
 import numpy as np
-# 在Windows下使用vscode运行时 添加上这句话就会使用正确的相对路径设置
-# 需要import os和sys两个库
-sys.path.append("../")
-
 import torch
+# 在文件被引用的初始使用绝对路径
+from models.Unit.makedata.unetdataloader import UnetDataset
+from models.Unit.makedata.userdataset import UserDataLoader
+from models.Unit.makedata.userdataset_trans import UserDataLoaderTrans
 from torch.utils.data import DataLoader
-
-from Unit.makedata.userdataset import UserDataLoader
-from Unit.makedata.userdataset_trans import UserDataLoaderTrans
-from Unit.makedata.unetdataloader import UnetDataset
 
 # from makedata import *
 

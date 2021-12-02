@@ -2,10 +2,11 @@
 import argparse
 import os
 import sys
+
 # 在Windows下使用vscode运行时 添加上这句话就会使用正确的相对路径设置
 # 需要import os和sys两个库
-os.chdir(sys.path[0])
-sys.path.append("..")
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(BASE_DIR)
 
 import numpy as np
 import torch
@@ -14,12 +15,12 @@ from tensorboardX import SummaryWriter
 from torchsummary import summary
 from tqdm import tqdm
 
-from models.Unit.getloader import GetLoader
 from models.Net.getmodel import GetModel
+from models.Unit.getearlystop import GetEarlyStopping
+from models.Unit.getloader import GetLoader
+from models.Unit.Getlog import GetWriteLog
 from models.Unit.getloss import loss_func
 from models.Unit.getoptim import GetOptim
-from models.Unit.Getlog import GetWriteLog
-from models.Unit.getearlystop import GetEarlyStopping
 
 
 def get_lr(optimizer):
@@ -206,7 +207,7 @@ def get_args():
     parser.add_argument('--nclass', type=int,
                         help='Number of classes', default=2)
     parser.add_argument('--batch_size', type=int,
-                        help='batch size', default=2)
+                        help='batch size', default=1)
     parser.add_argument('--load_tread', type=int,
                         help='load data thread', default=1)
     parser.add_argument('--nepoch', type=int,

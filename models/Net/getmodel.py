@@ -1,22 +1,28 @@
 '''
 Author: zhonzxad
 Date: 2021-11-23 09:49:29
-LastEditTime: 2021-11-29 21:38:05
+LastEditTime: 2021-12-02 21:27:34
 LastEditors: zhonzxad
 '''
 import argparse
+
 import torch
 
-from Net.UNet.UNet import UNet
-from Net.UNet.UNet_2Plus import UNet_2Plus
-from Net.UNet.UNet_3Plus import UNet_3Plus
-from Net.UNet.UNetBili import UNetVGG16
-from Net.ResNet.resnet18 import RestNet18
-from Net.ResNet.ResNet import GetResNet
-from Net.FCN.fcn import FCN
-from Net.SegNet.SegNet import SegNet
-from Net.SmaAtUNer.SmaAt_UNet import SmaAtUNet
+from .FCN.fcn import FCN
+from .ResNet.ResNet import GetResNet
+from .ResNet.resnet18 import RestNet18
+from .SegNet.SegNet import SegNet
+from .SmaAtUNer.SmaAt_UNet import SmaAtUNet
+from .UNet.UNet import UNet
+from .UNet.UNet_2Plus import UNet_2Plus
+from .UNet.UNet_3Plus import UNet_3Plus
+from .UNet.UNetBili import UNetVGG16
 
+# import os
+# import sys
+
+# BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# sys.path.append(BASE_DIR)
 
 class GetModel():
     def __init__(self, args, loger):

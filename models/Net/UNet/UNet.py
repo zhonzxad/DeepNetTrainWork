@@ -1,12 +1,11 @@
-#coding=utf-8
+# -*- coding: utf-8 -*-
+
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from init_weights import init_weight
-from layers import unetConv2, unetUp, unetUp_origin
-from Net.model.Nam_Att import Att
+from .UNet_layers import UNetConv2, UNetUp
 
 
 class UNet(nn.Module):
@@ -24,28 +23,28 @@ class UNet(nn.Module):
         # # filters = [int(x / self.feature_scale) for x in filters]
 
         # 下采样
-        self.conv1 = unetConv2(self.in_channels, filters[0], self.is_batchnorm)
+        self.conv1 = UNetConv2(self.in_channels, filters[0], self.is_batchnorm)
         self.maxpool1 = nn.MaxPool2d(kernel_size=2)
 
-        self.conv2 = unetConv2(filters[0], filters[1], self.is_batchnorm)
+        self.conv2 = UNetConv2(filters[0], filters[1], self.is_batchnorm)
         self.maxpool2 = nn.MaxPool2d(kernel_size=2)
 
-        self.conv3 = unetConv2(filters[1], filters[2], self.is_batchnorm)
+        self.conv3 = UNetConv2(filters[1], filters[2], self.is_batchnorm)
         self.maxpool3 = nn.MaxPool2d(kernel_size=2)
 
-        self.conv4 = unetConv2(filters[2], filters[3], self.is_batchnorm)
+        self.conv4 = UNetConv2(filters[2], filters[3], self.is_batchnorm)
         self.maxpool4 = nn.MaxPool2d(kernel_size=2)
 
-        self.center = unetConv2(filters[3], filters[4], self.is_batchnorm)
+        self.center = UNetConv2(filters[3], filters[4], self.is_batchnorm)
 
         # 
         self.up_up   = nn.ConvTranspose2d(filters[4], filters[4] // 2, kernel_size=4, stride=2, padding=1)
 
         # 上采样恢复
-        self.up_concat4 = unetUp(filters[4], filters[3], self.is_deconv)
-        self.up_concat3 = unetUp(filters[3], filters[2], self.is_deconv)
-        self.up_concat2 = unetUp(filters[2], filters[1], self.is_deconv)
-        self.up_concat1 = unetUp(filters[1], filters[0], self.is_deconv)
+        self.up_concat4 = UNetUp(filters[4], filters[3], self.is_deconv)
+        self.up_concat3 = UNetUp(filters[3], filters[2], self.is_deconv)
+        self.up_concat2 = UNetUp(filters[2], filters[1], self.is_deconv)
+        self.up_concat1 = UNetUp(filters[1], filters[0], self.is_deconv)
 
         #
         self.outconv1 = nn.Conv2d(filters[0], self.nclass, kernel_size=1)

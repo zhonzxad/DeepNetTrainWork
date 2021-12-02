@@ -23,7 +23,8 @@ class VGG(nn.Module):
             nn.Dropout(),
             nn.Linear(4096, num_classes),
         )
-        self._initialize_weights()
+
+        # self._initialize_weights()
 
     def forward(self, x):
         x = self.features(x)
@@ -129,13 +130,15 @@ class UNetVGG16(nn.Module):
         
         return final
 
-    def _initialize_weights(self, *stages):
-        for modules in stages:
-            for module in modules.modules():
-                if isinstance(module, nn.Conv2d):
-                    nn.init.kaiming_normal_(module.weight)
-                    if module.bias is not None:
-                        module.bias.data.zero_()
-                elif isinstance(module, nn.BatchNorm2d):
-                    module.weight.data.fill_(1)
-                    module.bias.data.zero_()
+
+
+# def _initialize_weights(self, *stages):
+#     for modules in stages:
+#         for module in modules.modules():
+#             if isinstance(module, nn.Conv2d):
+#                 nn.init.kaiming_normal_(module.weight)
+#                 if module.bias is not None:
+#                     module.bias.data.zero_()
+#             elif isinstance(module, nn.BatchNorm2d):
+#                 module.weight.data.fill_(1)
+#                 module.bias.data.zero_()

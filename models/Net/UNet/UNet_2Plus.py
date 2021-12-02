@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
+
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import models
 
-from init_weights import init_weight
-from layers import unetConv2, unetUp, unetUp_origin
+from .unet_init_weights import init_weight
+from .UNet_layers import UNetConv2, UNetUp, unetUp_origin
 
 
 class UNet_2Plus(nn.Module):
