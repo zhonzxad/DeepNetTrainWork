@@ -7,7 +7,7 @@ LastEditors: zhonzxad
 import torch
 import torch.nn as nn
 
-from loss.TransferLossFun import *
+from TransferLossFun import *
 
 """
 kwargs

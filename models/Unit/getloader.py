@@ -1,15 +1,9 @@
-'''
-Author: zhonzxad
-Date: 2021-11-22 17:29:29
-LastEditTime: 2021-12-01 09:50:56
-LastEditors: zhonzxad
-'''
 import os
 import sys
 import numpy as np
 # 在Windows下使用vscode运行时 添加上这句话就会使用正确的相对路径设置
 # 需要import os和sys两个库
-sys.path.append("")
+sys.path.append("../")
 
 import torch
 from torch.utils.data import DataLoader
@@ -17,6 +11,8 @@ from torch.utils.data import DataLoader
 from Unit.makedata.userdataset import UserDataLoader
 from Unit.makedata.userdataset_trans import UserDataLoaderTrans
 from Unit.makedata.unetdataloader import UnetDataset
+
+# from makedata import *
 
 """
 train_dataser = MakeVOCDataSet.MakeVOCDataSet(args.root_path.join("train"))
@@ -97,14 +93,14 @@ class GetLoader():
     def makedataVoc(self):
 
         with open(os.path.join(self.VOCdevkit_path, self.VOCFileName + "/ImageSets/Segmentation/train.txt"), "r") as f:
-            self.train_lines = f.readlines()
+            train_lines = f.readlines()
 
         with open(os.path.join(self.VOCdevkit_path, self.VOCFileName + "/ImageSets/Segmentation/val.txt"), "r") as f:
-            self.val_lines = f.readlines()
+            val_lines = f.readlines()
 
-        train_dataset = UnetDataset(self.train_lines, self.imgsize, self.nclass, 
+        train_dataset = UnetDataset(train_lines, self.imgsize, self.nclass,
                                       True, self.VOCdevkit_path, self.VOCFileName)
-        val_dataset   = UnetDataset(self.val_lines,   self.imgsize, self.nclass, 
+        val_dataset   = UnetDataset(val_lines,   self.imgsize, self.nclass,
                                       False, self.VOCdevkit_path, self.VOCFileName)
 
         gen           = DataLoader(train_dataset, shuffle = True, batch_size=self.batchsize, 

@@ -8,7 +8,6 @@ import argparse
 import sys
 
 import torch
-
 sys.path.append("..")
 
 from Unit.loss.diceloss import DiceLoss
@@ -17,6 +16,7 @@ from Unit.loss.bceloss import BCELoss2d
 from Unit.loss.fscore import FocalLoss
 from Unit.loss.transferloss import TransferLoss
 
+# from loss import *
 
 def loss_func(output, png, label, cls_weights, this_device="cuda:0"):
     diceloss = DiceLoss()

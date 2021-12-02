@@ -10,3 +10,4 @@ Data/
 tfboard/
 log/
 predict.py
+.idea/

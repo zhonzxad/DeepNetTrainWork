@@ -6,6 +6,7 @@ import torch.nn.functional as F
 
 from init_weights import init_weight
 from layers import unetConv2, unetUp, unetUp_origin
+from Net.model.Nam_Att import Att
 
 
 class UNet(nn.Module):

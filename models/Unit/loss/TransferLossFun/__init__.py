@@ -3,8 +3,10 @@
 # @Author   : zhonzxad
 # @File     : __init__.py
 
-from adv import *
-from coral import *
-from daan import *
-from lmmd import *
-from mmd import *
+__all__ = ["MMDLoss", "LMMDLoss", "CORAL", "AdversarialLoss", "DAANLoss", ]
+from TransferLossFun.mmd import *
+from TransferLossFun.adv import *
+from TransferLossFun.coral import *
+from TransferLossFun.daan import *
+from TransferLossFun.lmmd import *
+

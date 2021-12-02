@@ -224,7 +224,7 @@ def get_args():
     parser.add_argument('--save_mode', type=bool,
                         help='true save mode false save dic', default=True)
     parser.add_argument('--resume', type=bool,
-                        help='user resume', default=True)
+                        help='user resume weight', default=True)
     parser.add_argument('--gpu', type=str,
                         help='GPU ID', default='0')
     parser.add_argument('--UseGPU', type=bool,
@@ -300,7 +300,7 @@ if __name__ == '__main__':
     logger.write("优化器及早停模块加载完毕")
 
     if Resume:
-        path = "./savepoint/model_data/UNEt_DiceCELoss_KMInit.pth"
+        path = "./savepoint/model_data/UNEt_DiceCELoss_KMInit___.pth"
         if os.path.isfile(path):
             checkpoint = torch.load(path)
             start_epoch = checkpoint['epoch']
@@ -365,7 +365,7 @@ if __name__ == '__main__':
             'loss' : ret_val,
         }
         path = MakeDir("savepoint/model_data/")
-        saveparafilepath = path + "UNEt_DiceCELoss_KMInit_NewPoint.pth"
+        saveparafilepath = path + "SmarUNEt_DiceCELoss_KMInit.pth"
         # 判断当前损失是否变小，变小才进行保存参数
         # 注意ret[0]是tensor格式，ret[1]才是平均损失（损失累加除以轮次）
         # 使用的是验证集上的损失，如果验证集损失一直在下降也是，说明模型还在训练
