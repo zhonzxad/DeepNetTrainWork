@@ -5,8 +5,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import models
 
-from .init_weights import init_weight
-from .layers import unetConv2, unetUp, unetUp_origin
+from init_weights import init_weight
+from layers import unetConv2, unetUp, unetUp_origin
 
 
 class UNet_2Plus(nn.Module):

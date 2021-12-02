@@ -6,18 +6,17 @@ LastEditors: zhonzxad
 '''
 import os
 import sys
+import numpy as np
+# 在Windows下使用vscode运行时 添加上这句话就会使用正确的相对路径设置
+# 需要import os和sys两个库
+sys.path.append("")
 
 import torch
 from torch.utils.data import DataLoader
 
-from makedata.unetdataloader import UnetDataset
-from makedata.userdataset import UserDataLoader, dataset_collate
-from makedata.userdataset_trans import UserDataLoaderTrans
-
-# 在Windows下使用vscode运行时 添加上这句话就会使用正确的相对路径设置
-# 需要import os和sys两个库
-os.chdir(sys.path[0])
-sys.path.append("..")
+from models.Unit.makedata.userdataset import UserDataLoader
+from models.Unit.makedata.userdataset_trans import UserDataLoaderTrans
+from models.Unit.makedata.unetdataloader import UnetDataset
 
 """
 train_dataser = MakeVOCDataSet.MakeVOCDataSet(args.root_path.join("train"))
@@ -34,7 +33,25 @@ val_loader = torch.utils.data.DataLoader(val_dataset, shuffle=True, batch_size=a
                     drop_last=True, collate_fn=MakeVOCDataSet.dataset_collate)
 """
 
-class MakeLoader():
+# DataLoader中collate_fn使用
+def dataset_collate(batch):
+    images = []
+    pngs = []
+    seg_labels = []
+
+    for img, png, labels in batch:
+        images.append(img)
+        pngs.append(png)
+        seg_labels.append(labels)
+
+    # 产生数组
+    images     = np.array(images)
+    pngs       = np.array(pngs)
+    seg_labels = np.array(seg_labels)
+
+    return images, pngs, seg_labels
+
+class GetLoader():
     def __init__(self, IMGSIZE=[384,384,3], CLASSNUM=2, BatchSize=2, num_workers=1):
         self.imgsize = IMGSIZE
         self.nclass  = CLASSNUM

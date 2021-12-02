@@ -14,12 +14,12 @@ from tensorboardX import SummaryWriter
 from torchsummary import summary
 from tqdm import tqdm, trange
 
-from models.Unit.getearlystop import EarlyStopping
-from models.Unit.getloader import MakeLoader
-from models.Unit.getloss import loss_func
+from models.Unit.getloader import GetLoader
 from models.Unit.getmodel import GetModel
-from models.Unit.getoptim import CreateOptim
-from models.Unit.writelog import WriteLog
+from models.Unit.getloss import loss_func
+from models.Unit.getoptim import GetOptim
+from models.Unit.Getlog import GetWriteLog
+from models.Unit.getearlystop import GetEarlyStopping
 
 # 在Windows下使用vscode运行时 添加上这句话就会使用正确的相对路径设置
 # 需要import os和sys两个库
@@ -204,7 +204,7 @@ def get_args():
     parser.add_argument('--nclass', type=int,
                         help='Number of classes', default=2)
     parser.add_argument('--batch_size', type=int,
-                        help='batch size', default=1)
+                        help='batch size', default=2)
     parser.add_argument('--load_tread', type=int,
                         help='load data thread', default=1)
     parser.add_argument('--nepoch', type=int,
@@ -254,14 +254,14 @@ if __name__ == '__main__':
     cls_weights = np.ones([CLASSNUM], np.float32)
 
     # 加载日志对象
-    writer   = WriteLog(writerpath=MakeDir("log/log/"))
+    writer   = GetWriteLog(writerpath=MakeDir("log/log/"))
     tfwriter = SummaryWriter(logdir=MakeDir("log/tfboard/"), comment="unet")
 
     # 打印列表参数
     # print(vars(args))
     writer.write(vars(args))
 
-    loader = MakeLoader(IMGSIZE, CLASSNUM, args.batch_size, args.load_tread)
+    loader = GetLoader(IMGSIZE, CLASSNUM, args.batch_size, args.load_tread)
     gen, gen_val = loader.makedata()
     writer.write("数据集加载完毕")
 
@@ -273,27 +273,28 @@ if __name__ == '__main__':
         # 为GPU设定随机种子，以便确信结果是可靠的
         # os.environ["CUDA_VISIBLE_DEVICES"] = "cuda:0"
         torch.cuda.manual_seed(SEED)
-        # model = torch.nn.DataParallel(model) # 需要配合 assert self.labelpath_list.count(shotname + ".png") == 1
         cudnn.benchmark = True
-        # # 那么cuDNN使用的非确定性算法就会自动寻找最适合当前配置的高效算法，来达到优化运行效率的问题
-        # torch.backends.cudnn.deterministic = True
-        # torch.backends.cudnn.benchmark = False
+        # 那么cuDNN使用的非确定性算法就会自动寻找最适合当前配置的高效算法，来达到优化运行效率的问题
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+        # 将模型设置为GPU
         model = model.to(this_device)
+        model = torch.nn.DataParallel(model)
     
     # tfwriter.add_graph(model=model, input_to_model=IMGSIZE)
     writer.write("模型初始化完毕")
 
     # 测试网络结构
-    # summary(model, input_size=(IMGSIZE[2], IMGSIZE[0], IMGSIZE[1]))
+    summary(model, input_size=(IMGSIZE[2], IMGSIZE[0], IMGSIZE[1]))
 
     # 创建优化器
-    optimizer, scheduler = CreateOptim(model, lr=args.lr[0])
+    optimizer, scheduler = GetOptim(model, lr=args.lr[0])
 
     # 初始化 early_stopping 对象
     patience = args.early_stop # 当验证集损失在连续20次训练周期中都没有得到降低时，停止模型训练，以防止模型过拟合
     path = MakeDir("savepoint/early_stopp/")
-    early_stopping = EarlyStopping(patience, path=path + "checkpoint.pth",
-                                    verbose=True, savemode=SaveMode)
+    early_stopping = GetEarlyStopping(patience, path=path + "checkpoint.pth",
+                                      verbose=True, savemode=SaveMode)
     writer.write("优化器及早停模块加载完毕")
 
     if Resume:

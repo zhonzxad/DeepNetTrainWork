@@ -6,20 +6,17 @@ LastEditors: zhonzxad
 '''
 import argparse
 import sys
-
 import torch
 
-from ..Net.FCN.fcn import FCN
-from ..Net.SegNet.SegNet import SegNet
-from ..Net.UNet.resnet18 import RestNet18
-from ..Net.UNet.UNet import UNet
-from ..Net.UNet.UNet_2Plus import UNet_2Plus
-from ..Net.UNet.UNetBili import UNetVGG16
+from models.Net.UNet.UNet import UNet
+from models.Net.FCN.fcn import FCN
+from models.Net.SegNet.SegNet import SegNet
+from models.Net.UNet.UNetBili import UNetVGG16
+from models.Net.UNet.resnet18 import RestNet18
+from models.Net.UNet.UNet_2Plus import UNet_2Plus
+from models.Net.UNet.UNet_3Plus import UNet_3Plus
 
-sys.path.append("..")
-
-
-class  GetModel():
+class GetModel():
     def __init__(self, args, loger):
         if type(args) == argparse.Namespace:
             self.args    = args

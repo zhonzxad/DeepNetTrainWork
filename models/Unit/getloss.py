@@ -11,11 +11,7 @@ import torch
 
 sys.path.append("..")
 
-from .loss.bceloss import BCELoss2d
-from .loss.celoss import CELOSS, CELoss2d
-from .loss.diceloss import Dice_Loss, DiceLoss
-from .loss.fscore import FocalLoss
-from .loss.iouloss import bbox_overlaps_ciou
+from models.Unit.loss import *
 
 
 def loss_func(output, png, label, cls_weights, this_device="cuda:0"):

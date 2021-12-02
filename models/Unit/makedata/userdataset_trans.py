@@ -26,23 +26,7 @@ transforms_train = transforms.Compose([
                     transforms.ToTensor(),                                  # 将数据转换成Tensor型
                     transforms.Normalize((0.5,0.5,0.5),(0.5,0.5,0.5))])     # 标准化
 
-# DataLoader中collate_fn使用
-def dataset_collate(batch):
-    images = []
-    pngs = []
-    seg_labels = []
 
-    for img, png, labels in batch:
-        images.append(img)
-        pngs.append(png)
-        seg_labels.append(labels)
-
-    # 产生数组
-    images     = np.array(images)
-    pngs       = np.array(pngs)
-    seg_labels = np.array(seg_labels)
-
-    return images, pngs, seg_labels
 
 
 class UserDataLoaderTrans(Dataset):

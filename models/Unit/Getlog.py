@@ -11,9 +11,9 @@ import sys
 sys.path.append("..")
 
 
-class WriteLog:
+class GetWriteLog:
     def __init__(self, writerpath='', trace_func=print):
-        super(WriteLog, self).__init__()
+        super(GetWriteLog, self).__init__()
         self.writerpath = writerpath
         self.trace_func = trace_func
 

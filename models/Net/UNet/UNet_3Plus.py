@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from init_weights import init_weights
+from init_weights import init_weight
 from layers import unetConv2
 
 '''
@@ -184,12 +184,12 @@ class UNet_3Plus(nn.Module):
         # output
         self.outconv1 = nn.Conv2d(self.UpChannels, kernel_size=3, padding=1)
 
-        # initialise weights
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                init_weights(m, init_type='kaiming')
-            elif isinstance(m, nn.BatchNorm2d):
-                init_weights(m, init_type='kaiming')
+        # initialise weights,统一放置在外层进行初始化
+        # for m in self.modules():
+        #     if isinstance(m, nn.Conv2d):
+        #         init_weight(m, init_type='kaiming')
+        #     elif isinstance(m, nn.BatchNorm2d):
+        #         init_weight(m, init_type='kaiming')
 
     def forward(self, inputs):
         ## -------------Encoder-------------

@@ -72,6 +72,6 @@ def UserOptim5(model, lr, lr_gamma=0.5, lr_decay=0.75):
 
     return optimizer, scheduler
 
-def CreateOptim(model, lr):
+def GetOptim(model, lr):
 
     return UserOptim1(model, lr)
