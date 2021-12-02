@@ -11,7 +11,8 @@ from Net.UNet.UNet import UNet
 from Net.UNet.UNet_2Plus import UNet_2Plus
 from Net.UNet.UNet_3Plus import UNet_3Plus
 from Net.UNet.UNetBili import UNetVGG16
-from Net.resnet18 import RestNet18
+from Net.ResNet.resnet18 import RestNet18
+from Net.ResNet.ResNet import GetResNet
 from Net.FCN.fcn import FCN
 from Net.SegNet.SegNet import SegNet
 from Net.SmaAtUNer.SmaAt_UNet import SmaAtUNet
