@@ -270,6 +270,8 @@ def get_args():
                         help='is use record tf board', default=False)
     parser.add_argument('--amp', action='store_true',
                         help='Use mixed precision', default=False)
+    parser.add_argument("--systemtype", type=bool,
+                        help='net run on system, True is windows', default=True)
 
     args = parser.parse_args()
 
@@ -285,9 +287,9 @@ if __name__ == '__main__':
     SEED        = args.seed           # 设置随机种子
     CLASSNUM    = args.nclass
     IMGSIZE     = args.IMGSIZE
-    SystemType  = True if platform.system().lower() == 'windows' else False
+    args.systemtype  = True if platform.system().lower() == 'windows' else False
     this_device = torch.device("cuda:0" if torch.cuda.is_available() and args.UseGPU else "cpu")
-    
+
     # 为CPU设定随机种子使结果可靠，就是每个人的随机结果都尽可能保持一致
     np.random.seed(SEED)
     torch.manual_seed(SEED)
@@ -298,7 +300,7 @@ if __name__ == '__main__':
     # 加载日志对象
     logger   = GetWriteLog(writerpath=MakeDir("log/log/"))
     tfwriter = SummaryWriter(logdir=MakeDir("log/tfboard/"), comment="unet") \
-                    if SystemType == False or (SystemType == True and args.UseTfBoard) else None
+                    if args.systemtype == False or (args.systemtype == True and args.UseTfBoard) else None
     if tfwriter is None:
         logger.write("注意：没有使用tfboard记录数据")
 
@@ -306,7 +308,7 @@ if __name__ == '__main__':
     # print(vars(args))
     logger.write(vars(args))
 
-    loader = GetLoader(IMGSIZE, CLASSNUM, SystemType, args.batch_size, args.load_tread)
+    loader = GetLoader(IMGSIZE, CLASSNUM, args.systemtype, args.batch_size, args.load_tread)
     gen, gen_val = loader.makedata()
     gen_target   = [1,] # loader.makedataTarget()
     logger.write("数据集加载完毕")
