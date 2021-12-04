@@ -189,7 +189,7 @@ def test(net, gens, **kargs):
         iter_source = iter(gen_val_source)
         iter_target = 0
 
-    tqdm_bar = tqdm(total=len(gen_val_source), leave=False, mininterval=0.2, ascii=True, desc="val")
+    tqdm_bar_val = tqdm(total=len(gen_val_source), leave=False, mininterval=0.2, ascii=True, desc="val")
     for batch_idx in range(len(gen_val_source)):
 
         img, png, label = next(iter_source)
@@ -228,8 +228,8 @@ def test(net, gens, **kargs):
         #设置进度条右边显示的信息
         tq_str = set_tqdm_post((total_loss, total_ce_loss, total_bce_loss, total_dice_loss, total_f_score), \
                                batch_idx + 1, optimizer)
-        tqdm_bar.set_postfix_str(tq_str)
-        tqdm_bar.update(1)
+        tqdm_bar_val.set_postfix_str(tq_str)
+        tqdm_bar_val.update(1)
 
     # 返回值按照 0/总loss, 1/count, 2/celoss, 3/bceloss, 4/diceloss, 5/floss
     return [loss[0], (batch_idx + 1), loss[1], loss[2], loss[3], loss[4]]
