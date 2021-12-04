@@ -67,7 +67,7 @@ class SegNet(nn.Module):
             nn.Conv2d(64, num_class, kernel_size=3, stride=1, padding=1),
         )
 
-        self.load_weights(r"G:/Py_Debug/UNet-Version-master/models/Net/vgg16.pth")
+        self.load_weights(r"/pth/vgg16.pth")
 
     def load_weights(self, weights_path):
         weights = torch.load(weights_path)

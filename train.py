@@ -2,6 +2,7 @@
 import argparse
 import os
 import sys
+import platform
 
 # 在Windows下使用vscode运行时 添加上这句话就会使用正确的相对路径设置
 # 需要import os和sys两个库
@@ -13,7 +14,7 @@ import torch
 import torch.backends.cudnn as cudnn
 from tensorboardX import SummaryWriter
 from torchsummary import summary
-from tqdm import tqdm
+from tqdm import tqdm, trange
 
 from models.Net.getmodel import GetModel
 from models.Unit.getearlystop import GetEarlyStopping
@@ -29,7 +30,26 @@ def get_lr(optimizer):
         return param_group['lr']
 
 def set_lr(optimizer, value:float):
+    """optimizer.param_groups：是长度为2的list,0表示params/lr/eps等参数，1表示优化器状态"""
     optimizer.param_groups[0]['lr'] = value
+
+def set_tqdm_post(vals, batch_indx, optimizer):
+    """按照固定的顺序排布"""
+    name = ["Loss", "CEloss", "BCEloss", "Diceloss", "F_SOCRE", ]
+    info = ""
+    for i in range(len(vals)):
+        if vals[i] > 0:
+            info += ("{}={:.5f},".format(name[i], (vals[i] / batch_indx)))
+
+    info += ("lr={:.7f}".format(get_lr(optimizer)))
+
+    return info
+    # tqdmbar.set_postfix(Loss=("{:5f}".    format(total_loss / (batch_idx + 1))),
+    #                     CEloss=("{:5f}".  format(total_ce_loss / (batch_idx + 1))),
+    #                     BCEloss=("{:5f}". format(total_bce_loss / (batch_idx + 1))),
+    #                     Diceloss=("{:5f}".format(total_dice_loss / (batch_idx + 1))),
+    #                     F_SOCRE=("{:5f}". format(total_f_score / (batch_idx + 1))),
+    #                     lr=("{:7f}".      format(get_lr(optimizer))))
 
 def MakeDir(path):
     """创建文件夹"""
@@ -42,7 +62,7 @@ def MakeDir(path):
 
     return path
 
-def fit_one_epoch(net, dataloader, **kargs):
+def fit_one_epoch(net, gens, **kargs):
     """"定义训练每一个epoch的步骤"""
     total_ce_loss   = 0
     total_bce_loss  = 0
@@ -62,10 +82,21 @@ def fit_one_epoch(net, dataloader, **kargs):
     # 创建混合精度训练
     grad_scaler = torch.cuda.amp.GradScaler(enabled=amp)
 
-    tqdmbar = tqdm(dataloader, total=len(dataloader), leave=False, mininterval=0.2)
-    for batch_idx, batch in enumerate(tqdmbar):
+    # 分发数据集
+    gen_source = gens[0]
+    gen_target = gens[1]
 
-        img, png, label = batch
+    if len(gen_source) == len(gen_target):
+        iter_source, iter_target = iter(gen_source), iter(gen_target)
+    else:
+        iter_source = iter(gen_source)
+        iter_target = 0
+
+    tqdm_bar = tqdm(total=len(gen_source), leave=False, mininterval=0.2, ascii=True, desc="Train in epoch")
+    for batch_idx in range(len(gen_source)):
+
+        img, png, label = next(iter_source)
+        img_tag         = next(iter_target) if iter_target != 0 else None
         # print("\nNo in RangeNet img shape is {} || png shape is {}".format(img.shape, png.shape))
 
         with torch.no_grad():
@@ -114,7 +145,7 @@ def fit_one_epoch(net, dataloader, **kargs):
 
         # 写tensorboard
         tags = ["train_loss", "CEloss", "BCEloss", "Diceloss", "f_score", "lr", "accuracy"]
-        if tfwriter != None:
+        if tfwriter is not None:
             tfwriter.add_scalar(tags[0],     total_loss / (batch_idx + 1))#, epoch*(batch_idx + 1))
             tfwriter.add_scalar(tags[1],     total_ce_loss / (batch_idx + 1))#, epoch*(batch_idx + 1))
             tfwriter.add_scalar(tags[2],     total_bce_loss / (batch_idx + 1))#, epoch*(batch_idx + 1))
@@ -122,21 +153,17 @@ def fit_one_epoch(net, dataloader, **kargs):
             tfwriter.add_scalar(tags[4],     total_f_score / (batch_idx + 1))#, epoch*(batch_idx + 1))
             tfwriter.add_scalar(tags[5], get_lr(optimizer))#, epoch*(batch_idx + 1))
 
-        #设置进度条左边显示的信息
-        tqdmbar.set_description("Train {}".format(epoch))
         #设置进度条右边显示的信息
-        tqdmbar.set_postfix(Loss=("{:5f}".    format(total_loss / (batch_idx + 1))),
-                            CEloss=("{:5f}".  format(total_ce_loss / (batch_idx + 1))),
-                            BCEloss=("{:5f}". format(total_bce_loss / (batch_idx + 1))),
-                            Diceloss=("{:5f}".format(total_dice_loss / (batch_idx + 1))),
-                            F_SOCRE=("{:5f}". format(total_f_score / (batch_idx + 1))),
-                            lr=("{:7f}".      format(get_lr(optimizer))))
+        tq_str = set_tqdm_post((total_loss, total_ce_loss, total_bce_loss, total_dice_loss, total_f_score), \
+                    batch_idx + 1, optimizer)
+        tqdm_bar.set_postfix_str(tq_str)
+        tqdm_bar.update(1)
 
     # 返回值按照 0/总loss, 1/count, 2/celoss, 3/bceloss, 4/diceloss, 5/floss, 6/lr
     return [loss[0], (batch_idx + 1), loss[1], loss[2], loss[3], loss[4], get_lr(optimizer)]
 
 
-def test(net, val_loader, **kargs):
+def test(net, gens, **kargs):
     """测试方法"""
     total_ce_loss   = 0
     total_bce_loss  = 0
@@ -152,9 +179,21 @@ def test(net, val_loader, **kargs):
 
     model_eval = net.eval()
 
-    tqdmbar = tqdm(val_loader)
-    for batch_idx, batch in enumerate(tqdmbar):
-        img, png, label = batch
+    # 分发数据集
+    gen_val_source = gens[0]
+    gen_val_target = gens[1]
+
+    if len(gen_val_source) == len(gen_val_target):
+        iter_source, iter_target = iter(gen_val_source), iter(gen_val_target)
+    else:
+        iter_source = iter(gen_val_source)
+        iter_target = 0
+
+    tqdm_bar = tqdm(total=len(gen_val_source), leave=False, mininterval=0.2, ascii=True, desc="val")
+    for batch_idx in range(len(gen_val_source)):
+
+        img, png, label = next(iter_source)
+        img_tag         = next(iter_target) if iter_target != 0 else None
 
         with torch.no_grad():
             img     = torch.from_numpy(img).type(torch.FloatTensor)
@@ -186,14 +225,11 @@ def test(net, val_loader, **kargs):
         total_dice_loss += loss[3].item()
         total_f_score   += loss[4].item()
 
-        #设置进度条左边显示的信息
-        tqdmbar.set_description("Vaild_Epoch_size")
         #设置进度条右边显示的信息
-        tqdmbar.set_postfix(Loss=("{:5f}".format(total_loss / (batch_idx + 1))),
-                            CEloss=("{:5f}".format(total_ce_loss / (batch_idx + 1))),
-                            BCEloss=("{:5f}".format(total_bce_loss / (batch_idx + 1))),
-                            F_SOCRE=("{:5f}".format(total_f_score / (batch_idx + 1))),
-                            Diceloss=("{:5f}".format(total_dice_loss / (batch_idx + 1))))
+        tq_str = set_tqdm_post((total_loss, total_ce_loss, total_bce_loss, total_dice_loss, total_f_score), \
+                               batch_idx + 1, optimizer)
+        tqdm_bar.set_postfix_str(tq_str)
+        tqdm_bar.update(1)
 
     # 返回值按照 0/总loss, 1/count, 2/celoss, 3/bceloss, 4/diceloss, 5/floss
     return [loss[0], (batch_idx + 1), loss[1], loss[2], loss[3], loss[4]]
@@ -230,6 +266,8 @@ def get_args():
                         help='GPU ID', default='0')
     parser.add_argument('--UseGPU', type=bool,
                         help='is use cuda as env', default=True)
+    parser.add_argument('--UseTfBoard', type=bool,
+                        help='is use record tf board', default=False)
     parser.add_argument('--amp', action='store_true',
                         help='Use mixed precision', default=False)
 
@@ -247,6 +285,7 @@ if __name__ == '__main__':
     SEED        = args.seed           # 设置随机种子
     CLASSNUM    = args.nclass
     IMGSIZE     = args.IMGSIZE
+    SystemType  = True if platform.system().lower() == 'windows' else False
     this_device = torch.device("cuda:0" if torch.cuda.is_available() and args.UseGPU else "cpu")
     
     # 为CPU设定随机种子使结果可靠，就是每个人的随机结果都尽可能保持一致
@@ -258,14 +297,18 @@ if __name__ == '__main__':
 
     # 加载日志对象
     logger   = GetWriteLog(writerpath=MakeDir("log/log/"))
-    tfwriter = SummaryWriter(logdir=MakeDir("log/tfboard/"), comment="unet")
+    tfwriter = SummaryWriter(logdir=MakeDir("log/tfboard/"), comment="unet") \
+                    if SystemType == False or (SystemType == True and args.UseTfBoard) else None
+    if tfwriter is None:
+        logger.write("注意：没有使用tfboard记录数据")
 
     # 打印列表参数
     # print(vars(args))
     logger.write(vars(args))
 
-    loader = GetLoader(IMGSIZE, CLASSNUM, args.batch_size, args.load_tread)
+    loader = GetLoader(IMGSIZE, CLASSNUM, SystemType, args.batch_size, args.load_tread)
     gen, gen_val = loader.makedata()
+    gen_target   = [1,] # loader.makedataTarget()
     logger.write("数据集加载完毕")
 
     modelClass = GetModel((IMGSIZE, CLASSNUM), logger)
@@ -288,7 +331,7 @@ if __name__ == '__main__':
     logger.write("模型初始化完毕")
 
     # 测试网络结构
-    summary(model, input_size=(IMGSIZE[2], IMGSIZE[0], IMGSIZE[1]))
+    # summary(model, input_size=(IMGSIZE[2], IMGSIZE[0], IMGSIZE[1]))
 
     # 创建优化器
     optimizer, scheduler = GetOptim(model, lr=args.lr[0])
@@ -304,7 +347,7 @@ if __name__ == '__main__':
         path = "./savepoint/model_data/UNEt_DiceCELoss_KMInit___.pth"
         if os.path.isfile(path):
             checkpoint = torch.load(path)
-            start_epoch = checkpoint['epoch']
+            start_epoch = checkpoint['epoch'] if checkpoint['epoch'] != -1 else 0
             if SaveMode:
                 model = checkpoint['model']
             else:
@@ -343,11 +386,11 @@ if __name__ == '__main__':
         # 训练
         # 返回值按照 0/总loss, 1/count, 2/celoss, 3/bceloss, 4/diceloss, 5/floss, 6/lr
         ret_train = \
-            fit_one_epoch(model, gen, **para_kargs)
+            fit_one_epoch(model, (gen, gen_target), **para_kargs)
         
         # 进行测试
         ret_val = \
-            test(model, gen_val, **para_kargs)
+            test(model, (gen_val, gen_target), **para_kargs)
         
         # 判断是否满足早停
         early_stopping(ret_val[0], model.eval)
@@ -391,7 +434,7 @@ if __name__ == '__main__':
         tqbar.set_postfix()
 
     checkpoint = {
-        'epoch': epoch,
+        'epoch': -1,
         'model': model,
         'optimizer': optimizer,
         'loss' : ret_val,

@@ -3,6 +3,8 @@ Author: zhonzxad
 Date: 2021-12-02 16:55:18
 LastEditTime: 2021-12-02 20:36:52
 LastEditors: zhonzxad
+https://www.shangmayuan.com/a/2d07edb726594dd9a18e1832.html
+https://github.com/HansBambel/SmaAt-UNet/blob/master/models/SmaAt_UNet.py
 '''
 import os
 import sys

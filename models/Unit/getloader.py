@@ -51,33 +51,39 @@ def dataset_collate(batch):
     return images, pngs, seg_labels
 
 class GetLoader():
-    def __init__(self, IMGSIZE=[384,384,3], CLASSNUM=2, BatchSize=2, num_workers=1):
-        self.imgsize = IMGSIZE
-        self.nclass  = CLASSNUM
-        self.batchsize = BatchSize
+    def __init__(self, IMGSIZE=[384,384,3], CLASSNUM=2, SystemType=True, BatchSize=2, num_workers=1):
+        self.imgsize     = IMGSIZE
+        self.nclass      = CLASSNUM
+        self.batchsize   = BatchSize
         self.num_workers = num_workers
+        self.SystemType  = SystemType  # false表示处于linux环境下
 
-        self.tra_img = r"G:/DataBase/userdata/BXG/CutFromData-4/train/img-resize-3/"
-        self.tra_leb = r"G:/DataBase/userdata/BXG/CutFromData-4/train/label-resize-3/"
-        self.val_img = r"G:/DataBase/userdata/BXG/CutFromData-4/val/img-resize-3/"
-        self.val_leb = r"G:/DataBase/userdata/BXG/CutFromData-4/val/label-resize-3/"
-        # self.tra_img = r"G:/DataBase/userdata/BXG/CutFromData-4/train/img-resize-3/"
-        # self.tra_leb = r"G:/DataBase/userdata/BXG/CutFromData-4/train/label-resize-3/"
-        # self.val_img = r"G:/DataBase/userdata/BXG/CutFromData-4/val/img-resize-3/"
-        # self.val_leb = r"G:/DataBase/userdata/BXG/CutFromData-4/val/label-resize-3/"
-        # self.tra_img = r"/mnt/work/database/BXG/train/img-resize-3/"
-        # self.tra_leb = r"/mnt/work/database/BXG/train/label-resize-3/"
-        # self.val_img = r"/mnt/work/database/BXG/val/img-resize-3/"
-        # self.val_leb = r"/mnt/work/database/BXG/val/label-resize-3/"
-        
+        if self.SystemType:
+            self.tra_img = r"G:/DataBase/userdata/BXG/CutFromData-4/train/img-resize-3/"
+            self.tra_lab = r"G:/DataBase/userdata/BXG/CutFromData-4/train/label-resize-3/"
+            self.val_img = r"G:/DataBase/userdata/BXG/CutFromData-4/val/img-resize-3/"
+            self.val_lab = r"G:/DataBase/userdata/BXG/CutFromData-4/val/label-resize-3/"
+
+            # self.tra_img = r"G:/DataBase/userdata/BXG/CutFromData-4/train/img-resize-3/"
+            # self.tra_lab = r"G:/DataBase/userdata/BXG/CutFromData-4/train/label-resize-3/"
+            # self.val_img = r"G:/DataBase/userdata/BXG/CutFromData-4/val/img-resize-3/"
+            # self.val_lab = r"G:/DataBase/userdata/BXG/CutFromData-4/val/label-resize-3/"
+        else:
+            self.tra_img = r"/mnt/work/database/BXG/train/img-resize-3/"
+            self.tra_lab = r"/mnt/work/database/BXG/train/label-resize-3/"
+            self.val_img = r"/mnt/work/database/BXG/val/img-resize-3/"
+            self.val_lab = r"/mnt/work/database/BXG/val/label-resize-3/"
+
+        self.tag_img = r"G:/DataBase/userdata/BXG/CutFromData-4/train/img-resize-3/"
+
         self.VOCFileName    = "Signal-VOC"
         self.VOCdevkit_path = r"G:/Py_Debug/UNet-Version-master/Data/BXG/"
 
     def makedataUser(self):
 
-        train_dataset = UserDataLoader(self.tra_img, self.tra_leb,
-                                        image_size=self.imgsize, num_classes=self.nclass)
-        val_dataset   = UserDataLoader(self.val_img, self.val_leb,
+        train_dataset = UserDataLoader(self.tra_img, self.tra_lab,
+                                       image_size=self.imgsize, num_classes=self.nclass)
+        val_dataset   = UserDataLoader(self.val_img, self.val_lab,
                                         image_size=self.imgsize, num_classes=self.nclass)
 
         # pin_memory:如果设置为True，那么data loader将会在返回它们之前，将tensors拷贝到CUDA中的固定内存
@@ -85,10 +91,8 @@ class GetLoader():
         # drop_last:如果设置为True：比如你的batch_size设置为64，而一个epoch只有100个样本，那么训练的时候后面的36个就被扔掉了…
         # 另外：在Windows环境下，设置num_workers>1会及容易产生报错的现象（使用裸语句 没有被写在函数中），所以不建议在Windows下设置次参数，
         gen = DataLoader(train_dataset, shuffle=True, batch_size=self.batchsize, num_workers=self.num_workers,
-                            pin_memory=True if torch.cuda.is_available() else False,
                             drop_last=True, collate_fn=dataset_collate)
         gen_val = DataLoader(val_dataset, shuffle=False, batch_size=self.batchsize, num_workers=self.num_workers,
-                            pin_memory=True if torch.cuda.is_available() else False,
                             drop_last=True, collate_fn=dataset_collate)
 
         return gen, gen_val
@@ -116,7 +120,8 @@ class GetLoader():
         return gen, gen_val
 
     def makedataUser_Targer(self):
-        train_dataset = UserDataLoaderTrans(self.tra_img,
+        """ 目标域数据集 """
+        train_dataset = UserDataLoaderTrans(self.tag_img,
                                        image_size=self.imgsize, num_classes=self.nclass)
 
         gen = DataLoader(train_dataset, shuffle=True, batch_size=self.batchsize, num_workers=self.num_workers,
@@ -129,7 +134,7 @@ class GetLoader():
         """
         源域数据集/source
         """
-        return self.makedataVoc()
+        return self.makedataUser()
 
     def makedataTarget(self):
         """

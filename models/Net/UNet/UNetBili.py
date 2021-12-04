@@ -70,7 +70,7 @@ def make_layers(cfg, batch_norm=False, in_channels = 3):
 def VGG16(pretrained, in_channels, **kwargs):
     model = VGG(make_layers(cfgs["D"], batch_norm = False, in_channels = in_channels), **kwargs)
     if pretrained:
-        pth_path = r"G:/Py_Debug/UNet-Version-master/models/Net/vgg16.pth"
+        pth_path = r"/pth/vgg16.pth"
         #state_dict = load_state_dict_from_url("https://download.pytorch.org/models/vgg16-397923af.pth", model_dir="./model_data")
         model.load_state_dict(torch.load(pth_path))
     
