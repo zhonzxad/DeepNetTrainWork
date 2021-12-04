@@ -20,7 +20,7 @@ class GetWriteLog:
     def init(self):
         assert (self.writerpath is not "")
 
-        creat_time = dt.datetime.now().strftime("%F_%H-%M") # 2021-10-25_15:08
+        creat_time = dt.datetime.now().strftime("%m-%d_%H:%M") # 10-25_15:08
         # frontpath  = os.path.abspath()
         self.file_name = self.writerpath + creat_time + ".txt"
         # self.file = open(file=self.file_name, mode='w', encoding="utf-8") # 用于读写，且清空文件
@@ -30,7 +30,7 @@ class GetWriteLog:
         self.trace_func('日志对象析构函数')
 
     def write(self, log, coutprint=False):
-        time = dt.datetime.now().strftime("%F_%H-%M-%S") # 2021-10-25_15:08:03
+        time = dt.datetime.now().strftime("%H:%M:%S") # 15:08:03
         log  = time + " >> " + "{}".format(log) + "\r\n"
         self.trace_func(log)  # 重定向到print
 
