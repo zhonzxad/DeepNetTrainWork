@@ -159,6 +159,7 @@ def fit_one_epoch(net, gens, **kargs):
         tqdm_bar.set_postfix_str(tq_str)
         tqdm_bar.update(1)
 
+    tqdm_bar.close()
     # 返回值按照 0/总loss, 1/count, 2/celoss, 3/bceloss, 4/diceloss, 5/floss, 6/lr
     return [loss[0], (batch_idx + 1), loss[1], loss[2], loss[3], loss[4], get_lr(optimizer)]
 
@@ -241,9 +242,9 @@ def test(net, gens, **kargs):
         tqdm_bar_val.set_postfix_str(tq_str)
         tqdm_bar_val.update(1)
 
+    tqdm_bar_val.close()
     # 返回值按照 0/总loss, 1/count, 2/celoss, 3/bceloss, 4/diceloss, 5/floss
     return [loss[0], (batch_idx + 1), loss[1], loss[2], loss[3], loss[4]]
-
 
 # 定义命令行参数
 def get_args():
