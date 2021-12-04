@@ -11,3 +11,4 @@ tfboard/
 log/
 predict.py
 .idea/
+.vscode/

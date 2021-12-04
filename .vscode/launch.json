@@ -12,7 +12,7 @@
             "console": "integratedTerminal",
 
             // 自己添加
-            "pythonPath": "${config:python.pythonPath}",
+            "python": "${command:python.interpreterPath}",
             "env": {"PYTHONPATH":"${workspaceRoot}"},
             "envFile": "${workspaceRoot}/.env",
             "cwd": "${workspaceRoot}",
