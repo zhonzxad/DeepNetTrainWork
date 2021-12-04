@@ -177,7 +177,11 @@ def test(net, gens, **kargs):
     tfwriter    = kargs["tf_writer"]
     cls_weights = kargs["cls_weight"]
 
+    # 设置网络为验证集模式
     model_eval = net.eval()
+
+    # 创建混合精度训练
+    grad_scaler_val = torch.cuda.amp.GradScaler(enabled=amp)
 
     # 分发数据集
     gen_val_source = gens[0]
@@ -211,13 +215,19 @@ def test(net, gens, **kargs):
                 label   = label.to(this_device)
                 weights = weights.to(this_device)
 
-        # 输入测试图像
-        output    = model_eval(img)
+        # 混合精度计算
+        with torch.cuda.amp.autocast(enabled=amp):
+            # 输入测试图像
+            output    = model_eval(img)
 
-        # 计算损失
-        # print("\n output shape is {} || png shape is {}".format(output.shape, png.shape))
-        # 返回值按照 0/总loss, 1/celoss, 2/bceloss, 3/diceloss, 4/floss排布
-        loss = loss_func(output, png, label, weights, this_device)
+            # 计算损失
+            # print("\n output shape is {} || png shape is {}".format(output.shape, png.shape))
+            # 返回值按照 0/总loss, 1/celoss, 2/bceloss, 3/diceloss, 4/floss排布
+            loss = loss_func(output, png, label, weights, this_device)
+
+            grad_scaler_val.scale(loss[0])
+            # 优化梯度
+            grad_scaler_val.update()
 
         total_loss      += loss[0].item()
         total_ce_loss   += loss[1].item()
