@@ -17,14 +17,47 @@ import torchvision.transforms as transforms
 from matplotlib.colors import hsv_to_rgb, rgb_to_hsv
 from PIL import Image
 from torch import tensor
-from torch.autograd import Variable
-from torch.utils.data import DataLoader
 from torch.utils.data.dataset import Dataset
 
 transforms_train = transforms.Compose([
                     transforms.ToPILImage(),             
                     transforms.ToTensor(),                                  # 将数据转换成Tensor型
                     transforms.Normalize((0.5,0.5,0.5),(0.5,0.5,0.5))])     # 标准化
+
+class maketestonehot():
+    def __init__(self):
+        self.colormap = [[0, 0, 0], [128, 0, 0], [0, 128, 0], [128, 128, 0],
+                    [0, 0, 128], [128, 0, 128], [0, 128, 128], [128, 128, 128],
+                    [64, 0, 0], [192, 0, 0], [64, 128, 0], [192, 128, 0],
+                    [64, 0, 128], [192, 0, 128], [64, 128, 128], [192, 128, 128],
+                    [0, 64, 0], [128, 64, 0], [0, 192, 0], [128, 192, 0],
+                    [0, 64, 128]]
+
+        self.classes = ['background', 'aeroplane', 'bicycle', 'bird', 'boat',
+                   'bottle', 'bus', 'car', 'cat', 'chair', 'cow',
+                   'diningtable', 'dog', 'horse', 'motorbike', 'person',
+                   'potted plant', 'sheep', 'sofa', 'train', 'tv/monitor']
+
+    def label_to_onehot(self, label):
+        """
+        Converts a segmentation label (H, W, C) to (H, W, K) where the last dim is a one
+        hot encoding vector, C is usually 1 or 3, and K is the number of class.
+        """
+        semantic_map = []
+        for colour in self.colormap:
+            equality = np.equal(label, colour)
+            class_map = np.all(equality, axis=-1)
+            semantic_map.append(class_map)
+        semantic_map = np.stack(semantic_map, axis=-1).astype(np.float32)
+        return semantic_map
+
+    def mask2onehot(self, mask, num_classes):
+        """
+        Converts a segmentation mask (H,W) to (K,H,W) where the last dim is a one
+        hot encoding vector
+        """
+        semantic_map = [mask == i for i in range(num_classes)]
+        return np.array(semantic_map).astype(np.uint8)
 
 class UserDataLoader(Dataset):
     def __init__(self, imgpath, labelpath, image_size, num_classes):
@@ -62,6 +95,20 @@ class UserDataLoader(Dataset):
         onehot = m_zeros.scatter_(1, label, 1.)  # (dim, index, value)
         
         return onehot
+
+    def png_to_onehot(self, png):
+        """
+        Converts a segmentation label (H, W, C) to (H, W, K) where the last dim is a one
+        hot encoding vector, C is usually 1 or 3, and K is the number of class.
+        """
+        colormap = [[0, 0, 0], [128, 0, 0],]
+        semantic_map = []
+        for colour in colormap:
+            equality = np.equal(png, colour)
+            class_map = np.all(equality, axis=-1)
+            semantic_map.append(class_map)
+        semantic_map = np.stack(semantic_map, axis=-1).astype(np.float32)
+        return semantic_map
 
     def __getitem__(self, index):
         # G:/Py_Debug/pspnet-pytorch-master/VOCdevkit/VOC2007/ImageSets/
@@ -103,11 +150,14 @@ class UserDataLoader(Dataset):
         # seg_labels = torch.from_numpy(seg_labels).permute(2, 0, 1)
         
         # seg_labels 在创建的时候被赋值为int64
-        seg_labels = seg_labels.astype(np.int64)
-        seg_labels = torch.from_numpy(seg_labels)
-        seg_labels = F.one_hot(seg_labels, num_classes=self.num_classes)
-        seg_labels = seg_labels.numpy()
+        # seg_labels = seg_labels.astype(np.int64)
+        # seg_labels = torch.from_numpy(seg_labels)
+        # seg_labels = F.one_hot(seg_labels, num_classes=self.num_classes)
+        # seg_labels = seg_labels.numpy()
         # seg_labels = seg_labels.permute(2, 0, 1)
+
+        seg_labels = seg_labels.reshape(png.shape[0], png.shape[1], 1)
+        seg_labels = self.png_to_onehot(seg_labels)
 
         # seg_labels = np.transpose(np.array(jpg), [2,0,1])
         # seg_labels = np.transpose(seg_labels.numpy(), [2,0,1])

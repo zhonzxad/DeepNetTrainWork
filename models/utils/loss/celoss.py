@@ -40,9 +40,9 @@ def AchieveCE_2(inputs, target):
     temp_inputs = inputs.transpose(1, 2).transpose(2, 3).contiguous().view(-1, c) # [n*h*w, c]
     temp_target = target.long().view(-1)  # [n*h*w]
     # print("\n temp_inputs shape is {} || temp_target shape is {}".format(temp_inputs.shape, temp_target.shape))
-    CE_loss  = nn.NLLLoss()(F.log_softmax(temp_inputs, dim=-1), temp_target)
+    celoss  = nn.NLLLoss()(F.log_softmax(temp_inputs, dim=-1), temp_target)
 
-    return CE_loss
+    return celoss
 
 def AchieveCE_3(pred, target, num_classes=2):
     n, c, h, w = pred.size()
@@ -97,7 +97,7 @@ class CELoss2d(nn.Module):
  
     def forward(self, pred, target):
 
-        return AchieveCE_1(pred, target)
+        return AchieveCE_2(pred, target)
 
         
 

@@ -31,7 +31,7 @@ class GetWriteLog:
 
     def write(self, log, coutprint=False):
         time = dt.datetime.now().strftime("%H:%M:%S") # 15:08:03
-        log  = time + " >> " + "{}".format(log) + "\r\n"
+        log  = time + " >> " + "{}".format(log) + "\n"
         self.trace_func(log)  # 重定向到print
 
         if coutprint == True:

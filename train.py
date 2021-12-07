@@ -3,6 +3,9 @@ import argparse
 import os
 import sys
 import platform
+import time
+
+import timm
 
 # 在Windows下使用vscode运行时 添加上这句话就会使用正确的相对路径设置
 # 需要import os和sys两个库
@@ -17,11 +20,11 @@ from torchsummary import summary
 from tqdm import tqdm, trange
 
 from models.Net.getmodel import GetModel
-from models.Unit.getearlystop import GetEarlyStopping
-from models.Unit.getloader import GetLoader
-from models.Unit.Getlog import GetWriteLog
-from models.Unit.getloss import loss_func
-from models.Unit.getoptim import GetOptim
+from models.utils.getearlystop import GetEarlyStopping
+from models.utils.getloader import GetLoader
+from models.utils.Getlog import GetWriteLog
+from models.utils.getloss import loss_func
+from models.utils.getoptim import GetOptim
 
 
 def get_lr(optimizer):
@@ -34,7 +37,7 @@ def set_lr(optimizer, value:float):
     optimizer.param_groups[0]['lr'] = value
 
 def set_tqdm_post(vals, batch_indx, optimizer):
-    """按照固定的顺序排布"""
+    """按照固定的顺序对loss相关信息进行输出"""
     name = ["Loss", "CEloss", "BCEloss", "Diceloss", "F_SOCRE", ]
     info = ""
     for i in range(len(vals)):
@@ -249,8 +252,6 @@ def test(net, gens, **kargs):
 # 定义命令行参数
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--root_path', type=str, help='Root path for dataset',
-                        default=r'dataset/')
     parser.add_argument('--nclass', type=int,
                         help='Number of classes', default=2)
     parser.add_argument('--batch_size', type=int,
@@ -258,13 +259,13 @@ def get_args():
     parser.add_argument('--load_tread', type=int,
                         help='load data thread', default=1)
     parser.add_argument('--nepoch', type=int,
-                        help='Total epoch num', default=200)
+                        help='Total epoch num', default=100)
     parser.add_argument('--IMGSIZE', type=list, 
                         help='IMGSIZE', default=[384, 384, 3])
     parser.add_argument('--lr', type=list, 
                         help='Learning rate', default=[0.001, 0.01])
     parser.add_argument('--early_stop', type=int,
-                        help='Early stoping number', default=15)
+                        help='Early stoping number', default=8)
     parser.add_argument('--seed', type=int,
                         help='Seed', default=2021)
     parser.add_argument('--log_path', type=str,
@@ -292,21 +293,29 @@ def get_args():
 if __name__ == '__main__':
     args        = get_args()
     start_epoch = 0                   # 起始的批次
-    LoadThread  = args.load_tread     # 加载数据线程数
-    SaveMode    = args.save_mode      # 保存模型加参数还是只保存参数
-    Resume      = args.resume         # 是否使用断点续训
-    SEED        = args.seed           # 设置随机种子
-    CLASSNUM    = args.nclass
-    IMGSIZE     = args.IMGSIZE
+
+    # 使用window平台还是Linux平台
     args.systemtype  = True if platform.system().lower() == 'windows' else False
+    # 当前是否使用cuda来进行加速
     this_device = torch.device("cuda:0" if torch.cuda.is_available() and args.UseGPU else "cpu")
 
-    # 为CPU设定随机种子使结果可靠，就是每个人的随机结果都尽可能保持一致
-    np.random.seed(SEED)
-    torch.manual_seed(SEED)
+    # 根据平台的不同，设置不同batch的大小
+    if args.systemtype == True:
+        args.batch_size = 1
+        load_tread      = 1
+        args.UseTfBoard = False
+    else:
+        args.batch_size = 6
+        load_tread      = 16
+        args.UseTfBoard = True
+        args.amp        = True
 
-    # 不同损失函数之间的调整系数，默认是均衡的
-    cls_weights = np.ones([CLASSNUM], np.float32)
+    # 为CPU设定随机种子使结果可靠，就是每个人的随机结果都尽可能保持一致
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+
+    # 不同分类之间的权重系数，默认都为1（均衡的）
+    cls_weights = np.ones([args.nclass], np.float32)
 
     # 加载日志对象
     logger   = GetWriteLog(writerpath=MakeDir("log/log/"))
@@ -319,19 +328,19 @@ if __name__ == '__main__':
     # print(vars(args))
     logger.write(vars(args))
 
-    loader = GetLoader(IMGSIZE, CLASSNUM, args.systemtype, args.batch_size, args.load_tread)
+    loader = GetLoader(args.IMGSIZE, args.nclass, args.systemtype, args.batch_size, args.load_tread)
     gen, gen_val = loader.makedata()
     gen_target   = [1,] # loader.makedataTarget()
     logger.write("数据集加载完毕")
 
-    modelClass = GetModel((IMGSIZE, CLASSNUM), logger)
+    modelClass = GetModel((args.IMGSIZE, args.nclass), logger)
     model = modelClass.Createmodel(is_train=True)
     logger.write("模型创建及初始化完毕")
 
     if this_device.type == "cuda":
         # 为GPU设定随机种子，以便确信结果是可靠的
         # os.environ["CUDA_VISIBLE_DEVICES"] = "cuda:0"
-        torch.cuda.manual_seed(SEED)
+        torch.cuda.manual_seed(args.seed)
         cudnn.benchmark = True
         # 那么cuDNN使用的非确定性算法就会自动寻找最适合当前配置的高效算法，来达到优化运行效率的问题
         torch.backends.cudnn.deterministic = True
@@ -340,11 +349,11 @@ if __name__ == '__main__':
         model = model.to(this_device)
         model = torch.nn.DataParallel(model)
     
-    # tfwriter.add_graph(model=model, input_to_model=IMGSIZE)
+    # tfwriter.add_graph(model=model, input_to_model=args.IMGSIZE)
     logger.write("模型初始化完毕")
 
     # 测试网络结构
-    # summary(model, input_size=(IMGSIZE[2], IMGSIZE[0], IMGSIZE[1]))
+    # summary(model, input_size=(args.IMGSIZE[2], args.IMGSIZE[0], args.IMGSIZE[1]))
 
     # 创建优化器
     optimizer, scheduler = GetOptim(model, lr=args.lr[0])
@@ -353,15 +362,15 @@ if __name__ == '__main__':
     patience = args.early_stop # 当验证集损失在连续20次训练周期中都没有得到降低时，停止模型训练，以防止模型过拟合
     path = MakeDir("savepoint/early_stopp/")
     early_stopping = GetEarlyStopping(patience, path=path + "checkpoint.pth",
-                                      verbose=True, savemode=SaveMode)
+                                      verbose=True, savemode=args.save_mode)
     logger.write("优化器及早停模块加载完毕")
 
-    if Resume:
-        path = "./savepoint/model_data/UNEt_DiceCELoss_KMInit___.pth"
+    if args.resume:
+        path = "./savepoint/model_data/SmarUNEt_DiceCELoss_KMInit.pth"
         if os.path.isfile(path):
             checkpoint = torch.load(path)
             start_epoch = checkpoint['epoch'] if checkpoint['epoch'] != -1 else 0
-            if SaveMode:
+            if args.save_mode:
                 model = checkpoint['model']
             else:
                 model.load_state_dict(checkpoint['model'])
@@ -398,9 +407,17 @@ if __name__ == '__main__':
         para_kargs["this_epoch"] = epoch
         # 训练
         # 返回值按照 0/总loss, 1/count, 2/celoss, 3/bceloss, 4/diceloss, 5/floss, 6/lr
+        time_start = time.time()
         ret_train = \
             fit_one_epoch(model, (gen, gen_target), **para_kargs)
-        
+        time_end = time.time()
+
+        # 每轮训练输出一些日志信息
+        logger.write("第{}轮训练完成,本轮训练轮次{},耗时{:.1f}秒,最终损失为{}".format(epoch,
+                                                            ret_train[1],
+                                                            (time_end - time_start),
+                                                            ret_train[0].item()))
+
         # 进行测试
         ret_val = \
             test(model, (gen_val, gen_target), **para_kargs)

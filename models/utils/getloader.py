@@ -10,9 +10,9 @@ import sys
 import numpy as np
 import torch
 # 在文件被引用的初始使用绝对路径
-from models.Unit.makedata.unetdataloader import UnetDataset
-from models.Unit.makedata.userdataset import UserDataLoader
-from models.Unit.makedata.userdataset_trans import UserDataLoaderTrans
+from models.utils.makedata.unetdataloader import UnetDataset
+from models.utils.makedata.userdataset import UserDataLoader
+from models.utils.makedata.userdataset_transfer import UserDataLoaderTrans
 from torch.utils.data import DataLoader
 
 # from makedata import *
@@ -90,9 +90,11 @@ class GetLoader():
         # collate_fn: 将一个list的sample组成一个mini-batch的函数
         # drop_last:如果设置为True：比如你的batch_size设置为64，而一个epoch只有100个样本，那么训练的时候后面的36个就被扔掉了…
         # 另外：在Windows环境下，设置num_workers>1会及容易产生报错的现象（使用裸语句 没有被写在函数中），所以不建议在Windows下设置次参数，
-        gen = DataLoader(train_dataset, shuffle=True, batch_size=self.batchsize, num_workers=self.num_workers,
-                            drop_last=True, collate_fn=dataset_collate)
-        gen_val = DataLoader(val_dataset, shuffle=False, batch_size=self.batchsize, num_workers=self.num_workers,
+        gen = DataLoader(train_dataset, shuffle=True, batch_size=self.batchsize,
+                            num_workers=self.num_workers,
+                            drop_last=False, collate_fn=dataset_collate)
+        gen_val = DataLoader(val_dataset, shuffle=False, batch_size=self.batchsize,
+                            num_workers=self.num_workers,
                             drop_last=True, collate_fn=dataset_collate)
 
         return gen, gen_val
