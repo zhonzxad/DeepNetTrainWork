@@ -78,6 +78,7 @@ def fit_one_epoch(net, gens, **kargs):
     optimizer   = kargs["optimizer"]
     tfwriter    = kargs["tf_writer"]
     cls_weights = kargs["cls_weight"]
+    logger      = kargs["log"]
 
     # 定义网络为训练模式
     model_train = net.train()
@@ -135,9 +136,14 @@ def fit_one_epoch(net, gens, **kargs):
             loss = loss_func(output, png, label, weights, this_device)
 
             # 误差反向传播
+            # scale作用将梯度进行自动化缩放
             grad_scaler.scale(loss[0]).backward()
             # 优化梯度
+            # 首先把梯度的值unscale回来。
+            # 如果梯度的值不是 infs 或者 NaNs，那么调用optimizer.step()来更新权重，
+            # 否则，忽略step调用，从而保证权重不更新（不被破坏）
             grad_scaler.step(optimizer)
+            # 准备着，看是否要增大scaler
             grad_scaler.update()
 
         total_loss      += loss[0].item()
@@ -413,9 +419,10 @@ if __name__ == '__main__':
         time_end = time.time()
 
         # 每轮训练输出一些日志信息
-        logger.write("第{}轮训练完成,本轮训练轮次{},耗时{:.1f}秒,最终损失为{}".format(epoch,
+        logger.write("第{}轮训练完成,本轮训练轮次{},耗时{}分{}秒,最终损失为{}".format(epoch,
                                                             ret_train[1],
-                                                            (time_end - time_start),
+                                                            (time_end - time_start) % 60,
+                                                            (time_end - time_start) // 60,
                                                             ret_train[0].item()))
 
         # 进行测试
