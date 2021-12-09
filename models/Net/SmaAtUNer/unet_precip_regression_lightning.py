@@ -1,6 +1,6 @@
 import argparse
-from unet_parts import *
-from unet_parts_depthwise_separable import DoubleConvDS, UpDS, DownDS
+from unet_parts_tradition import *
+from unet_parts_DS import DoubleConvDS, UpDS, DownDS
 from SmartLayer import CBAM
 import pytorch_lightning as pl
 from regression_lightning import Precip_regression_base

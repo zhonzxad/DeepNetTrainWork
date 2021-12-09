@@ -92,11 +92,11 @@ class OutConv(nn.Module):
     def forward(self, x):
         return self.conv(x)
 
-class UNetConv2(nn.Module):
+class UNetConv2_Tradition(nn.Module):
     """上采样后的卷积池化部分"""
 
     def __init__(self, in_size, out_size, is_batchnorm, n=2, kernel_size=3, stride=1, padding=1):
-        super(UNetConv2, self).__init__()
+        super(UNetConv2_Tradition, self).__init__()
         self.n = n
         self.ks = kernel_size
         self.stride = stride
@@ -126,15 +126,15 @@ class UNetConv2(nn.Module):
 
         return x
 
-class UNetUp(nn.Module):
+class UNetUp_Tradition(nn.Module):
     """使用传统方式进行卷积上采样"""
 
-    def __init__(self, in_size, out_size, is_deconv, n_concat=2):
-        super(UNetUp, self).__init__()
+    def __init__(self, in_size, out_size, is_deconv=True, n_concat=2):
+        super(UNetUp_Tradition, self).__init__()
         # self.conv = unetConv2(in_size + (n_concat - 2) * out_size, out_size, False)
-        self.conv = UNetConv2(out_size * 2, out_size, False)
+        self.conv = UNetConv2_Tradition(in_size, out_size // 2, is_batchnorm=False)
         if is_deconv:
-            self.up = nn.ConvTranspose2d(in_size, out_size, kernel_size=4, stride=2, padding=1)
+            self.up = nn.ConvTranspose2d(out_size, out_size, kernel_size=4, stride=2, padding=1)
         else:
             self.up = nn.UpsamplingBilinear2d(scale_factor=2)
 

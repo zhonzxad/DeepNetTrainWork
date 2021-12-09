@@ -381,7 +381,7 @@ if __name__ == '__main__':
     logger.write("优化器及早停模块加载完毕")
 
     if args.resume:
-        path = "./savepoint/model_data/SmarUNEt_DiceCELoss_KMInit.pth"
+        path = "./savepoint/model_data/SmarUNEt_DiceCELoss_KMInit____.pth"
         if os.path.isfile(path):
             checkpoint = torch.load(path)
             start_epoch = checkpoint['epoch'] if checkpoint['epoch'] != -1 else 0

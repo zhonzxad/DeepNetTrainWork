@@ -14,11 +14,13 @@ https://github.com/HansBambel/SmaAt-UNet/blob/master/models/SmaAt_UNet.py
 from torch import nn
 
 from SmaAtUNer.SmartLayer import CBAM
-from SmaAtUNer.unet_parts import OutConv
-from SmaAtUNer.unet_parts_depthwise_separable import DoubleConvDS, DownDS, UpDS
+# from SmaAtUNer.unet_parts import OutConv
+from SmaAtUNer.unet_parts_DS import DoubleConvDS, DownDS, UpDS, OutConv, UNetUp_Tradition
 
 
 class SmaAtUNet(nn.Module):
+    """增加转置卷积等"""
+
     def __init__(self, n_channels, n_classes, kernels_per_layer=2, bilinear=True, reduction_ratio=16):
         super(SmaAtUNet, self).__init__()
         self.n_channels = n_channels
@@ -48,31 +50,33 @@ class SmaAtUNet(nn.Module):
         self.up3_DS = UpDS(256, 128 // factor, self.bilinear, kernels_per_layer=self.kernels_per_layer)
         self.up4_DS = UpDS(128, 64, self.bilinear, kernels_per_layer=self.kernels_per_layer)
 
-        # self.up1_Conv = UpDS(1024, 512 // factor)
-        # self.up2_Conv = UpDS(512, 256 // factor)
-        # self.up3_Conv = UpDS(256, 128 // factor)
-        # self.up4_Conv = UpDS(128, 64)
+        self.up1_Conv = UNetUp_Tradition(1024, 512)
+        self.up2_Conv = UNetUp_Tradition(512, 256)
+        self.up3_Conv = UNetUp_Tradition(256, 128)
+        self.up4_Conv = UNetUp_Tradition(128, 64)
 
-        self.outc = OutConv(64, self.n_classes)
+        self.out_DS = OutConv(64, self.n_classes)
+        self.out_Conv = OutConv(64 // 2, self.n_classes)
 
-    def forward(self, x):
-        x1 = self.DCS_In(x)
+    def forward(self, inputs):
+        x = inputs
+        x1 = self.Conv2D_1_In(x)
 
-        x1Att = self.cbam1(x1)
+        x1_att = self.cbam1(x1)
         x2 = self.down1(x1)
-        x2Att = self.cbam2(x2)
+        x2_att = self.cbam2(x2)
         x3 = self.down2(x2)
-        x3Att = self.cbam3(x3)
+        x3_att = self.cbam3(x3)
         x4 = self.down3(x3)
-        x4Att = self.cbam4(x4)
+        x4_att = self.cbam4(x4)
         x5 = self.down4(x4)
-        x5Att = self.cbam5(x5)
+        x5_att = self.cbam5(x5)
 
-        x = self.up1_DS(x5Att, x4Att)
-        x = self.up2_DS(x, x3Att)
-        x = self.up3_DS(x, x2Att)
-        x = self.up4_DS(x, x1Att)
+        x = self.up1_Conv(x5_att, x4_att)
+        x = self.up2_Conv(x, x3_att)
+        x = self.up3_Conv(x, x2_att)
+        x = self.up4_Conv(x, x1_att)
 
-        logits = self.outc(x)
+        logits = self.out_Conv(x)
 
         return logits
