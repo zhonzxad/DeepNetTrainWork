@@ -35,7 +35,8 @@ class DoubleConvDS(nn.Module):
 
 class DownDS(nn.Module):
     """Downscaling with maxpool then double conv
-    使用macpool将特征图缩小之后采用通道可分离卷积
+    使用maxpool将特征图缩小之后采用通道可分离卷积
+    maxpool提取重要信息的操作，可以去掉不重要的信息，减少计算开销(改变图像的大小)
     """
 
     def __init__(self, in_channels, out_channels, kernels_per_layer=1):
@@ -50,7 +51,7 @@ class DownDS(nn.Module):
 
 class UpDS(nn.Module):
     """Upscaling then double conv
-    上采样之后进行一个双卷积
+    上采样之后进行一个 双倍 深度可分离卷积
     """
 
     def __init__(self, in_channels, out_channels, bilinear=True, kernels_per_layer=1):
@@ -82,6 +83,14 @@ class UpDS(nn.Module):
         # https://github.com/xiaopeng-liao/Pytorch-UNet/commit/8ebac70e633bac59fc22bb5195e513d5832fb3bd
         # 这是因为原论文鼓励无填充的下采样与无零填充的上采样一样，可以避免对语义信息的破坏。这也是提出重叠瓦片策略的原因之一
         x = torch.cat([x2, x1], dim=1)
+        return self.conv(x)
+
+class InConv(nn.Module):
+    def __init__(self, in_channels, out_channels, k_size):
+        super(InConv, self).__init__()
+        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=k_size)
+
+    def forward(self, x):
         return self.conv(x)
 
 class OutConv(nn.Module):

@@ -10,12 +10,19 @@ https://github.com/HansBambel/SmaAt-UNet/blob/master/models/SmaAt_UNet.py
 # import sys
 # BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # __file__获取执行文件相对路径，整行为取上一级的上一级目录
 # sys.path.append(BASE_DIR)
+"""Notion
+对于标准的k*k的卷积核，stride为s，分三种情况分析：
+1）s > 1 在卷积同时并伴随了downsampling操作，卷积后图像变小。
+2）s = 1 在padding为SAME时卷积后图像大小不变
+3）s < 1 fractionally strided convolution,相当于对原图先作了upsampling操作扩大原图，然后再卷积，这样得到的结果图会变大。
+"""
 
 from torch import nn
 
 from SmaAtUNer.SmartLayer import CBAM
 # from SmaAtUNer.unet_parts import OutConv
-from SmaAtUNer.unet_parts_DS import DoubleConvDS, DownDS, UpDS, OutConv, UNetUp_Tradition
+from SmaAtUNer.unet_parts_DS import DoubleConvDS, DownDS, UpDS, UNetUp_Tradition
+from SmaAtUNer.unet_parts_DS import InConv, OutConv
 
 
 class SmaAtUNet(nn.Module):
@@ -30,8 +37,8 @@ class SmaAtUNet(nn.Module):
         self.reduction_ratio = reduction_ratio
 
         # 1*1的卷积升/降特征的维度, 这里的维度指的是通道数(厚度),而不改变图片的宽和高
-        self.Conv2D_1_In = nn.Conv2d(self.n_channels, 64, kernel_size=1)
-        self.Conv2D_3_In = nn.Conv2d(self.n_channels, 64, kernel_size=3)
+        self.Conv2D_1_In = InConv(self.n_channels, 64, k_size=1)
+        self.Conv2D_3_In = InConv(self.n_channels, 64, k_size=3)
         self.DCS_In      = DoubleConvDS(self.n_channels, 64, kernels_per_layer=self.kernels_per_layer)
 
         self.cbam1 = CBAM(64, reduction_ratio=self.reduction_ratio)
