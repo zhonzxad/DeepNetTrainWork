@@ -96,8 +96,8 @@ def fit_one_epoch(net, gens, **kargs):
         iter_source = iter(gen_source)
         iter_target = 0
 
-    tqdm_bar = tqdm(total=len(gen_source), leave=False, mininterval=0.2, ascii=True, desc="Train in epoch")
-    for batch_idx in range(len(gen_source)):
+    tqdm_bar = tqdm(iterable=range(len(gen_source)), leave=False, mininterval=0.2, ascii=True, desc="Train in epoch")
+    for batch_idx in tqdm_bar:
 
         img, png, label = next(iter_source)
         img_tag         = next(iter_target) if iter_target != 0 else None
@@ -166,9 +166,9 @@ def fit_one_epoch(net, gens, **kargs):
         tq_str = set_tqdm_post((total_loss, total_ce_loss, total_bce_loss, total_dice_loss, total_f_score), \
                     batch_idx + 1, optimizer)
         tqdm_bar.set_postfix_str(tq_str)
-        tqdm_bar.update(1)
+        # tqdm_bar.update(1)
 
-    tqdm_bar.close()
+    # tqdm_bar.close()
     # 返回值按照 0/总loss, 1/count, 2/celoss, 3/bceloss, 4/diceloss, 5/floss, 6/lr
     return [loss[0], (batch_idx + 1), loss[1], loss[2], loss[3], loss[4], get_lr(optimizer)]
 
@@ -203,8 +203,8 @@ def test(net, gens, **kargs):
         iter_source = iter(gen_val_source)
         iter_target = 0
 
-    tqdm_bar_val = tqdm(total=len(gen_val_source), leave=False, mininterval=0.2, ascii=True, desc="val")
-    for batch_idx in range(len(gen_val_source)):
+    tqdm_bar_val = tqdm(iterable=range(len(gen_val_source)), leave=False, mininterval=0.2, ascii=True, desc="val")
+    for batch_idx in tqdm_bar_val:
 
         img, png, label = next(iter_source)
         img_tag         = next(iter_target) if iter_target != 0 else None
@@ -245,13 +245,23 @@ def test(net, gens, **kargs):
         total_dice_loss += loss[3].item()
         total_f_score   += loss[4].item()
 
+        # 写tensorboard
+        tags = ["train_loss_val", "CEloss_val", "BCEloss_val", "Diceloss_val", "f_score_val", "lr_val", "accuracy"]
+        if tfwriter is not None:
+            tfwriter.add_scalar(tags[0],     total_loss / (batch_idx + 1))#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[1],     total_ce_loss / (batch_idx + 1))#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[2],     total_bce_loss / (batch_idx + 1))#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[3],     total_dice_loss / (batch_idx + 1))#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[4],     total_f_score / (batch_idx + 1))#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[5], get_lr(optimizer))#, epoch*(batch_idx + 1))
+
         #设置进度条右边显示的信息
         tq_str = set_tqdm_post((total_loss, total_ce_loss, total_bce_loss, total_dice_loss, total_f_score), \
                                batch_idx + 1, optimizer)
         tqdm_bar_val.set_postfix_str(tq_str)
-        tqdm_bar_val.update(1)
+        # tqdm_bar_val.update(1)
 
-    tqdm_bar_val.close()
+    # tqdm_bar_val.close()
     # 返回值按照 0/总loss, 1/count, 2/celoss, 3/bceloss, 4/diceloss, 5/floss
     return [loss[0], (batch_idx + 1), loss[1], loss[2], loss[3], loss[4]]
 
@@ -347,13 +357,12 @@ if __name__ == '__main__':
         # 为GPU设定随机种子，以便确信结果是可靠的
         # os.environ["CUDA_VISIBLE_DEVICES"] = "cuda:0"
         torch.cuda.manual_seed(args.seed)
-        cudnn.benchmark = True
         # 那么cuDNN使用的非确定性算法就会自动寻找最适合当前配置的高效算法，来达到优化运行效率的问题
         torch.backends.cudnn.deterministic = True
-        torch.backends.cudnn.benchmark = False
+        torch.backends.cudnn.benchmark = True
         # 将模型设置为GPU
         model = model.to(this_device)
-        model = torch.nn.DataParallel(model)
+        # model = torch.nn.DataParallel(model)
     
     # tfwriter.add_graph(model=model, input_to_model=args.IMGSIZE)
     logger.write("模型初始化完毕")
