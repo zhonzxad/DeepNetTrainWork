@@ -172,8 +172,7 @@ def fit_one_epoch(net, gens, **kargs):
     # 返回值按照 0/总loss, 1/count, 2/celoss, 3/bceloss, 4/diceloss, 5/floss, 6/lr
     return [loss[0], (batch_idx + 1), loss[1], loss[2], loss[3], loss[4], get_lr(optimizer)]
 
-
-def test(net, gens, **kargs):
+def test(net, gen_vals, **kargs):
     """测试方法"""
     total_ce_loss   = 0
     total_bce_loss  = 0
@@ -194,8 +193,8 @@ def test(net, gens, **kargs):
     grad_scaler_val = torch.cuda.amp.GradScaler(enabled=amp)
 
     # 分发数据集
-    gen_val_source = gens[0]
-    gen_val_target = gens[1]
+    gen_val_source = gen_vals[0]
+    gen_val_target = gen_vals[1]
 
     if len(gen_val_source) == len(gen_val_target):
         iter_source, iter_target = iter(gen_val_source), iter(gen_val_target)
