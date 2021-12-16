@@ -151,7 +151,6 @@ class SpatialAttention(nn.Module):
             scale = self.sigmoid(out)
         return scale
 
-
 class CBAM(nn.Module):
     """CBAM(convolutional block attention modules)是一个卷积块注意力模块
     做用于输入图像，按照顺序将注意力机制应用于通道，而后是空间维度。
@@ -167,3 +166,78 @@ class CBAM(nn.Module):
         out = self.channel_att(x)
         out = self.spatial_att(out)
         return out
+
+class GAM(nn.Module):
+    """
+    GAM 全局注意力机制(GAM)，相教于传统通道注意力和空间注意力能更好的涨点。
+    CBAM依次进行通道和空间注意力操作，而BAM并行进行。但它们都忽略了通道与空间的相互作用，从而丢失了跨维信息
+    GAM 一种注意力机制能够在减少信息弥散的情况下也能放大全局维交互特征
+    引自：Global Attention Mechanism: Retain Information to Enhance Channel-Spatial Interactions
+    """
+
+    def __init__(self, in_channels, out_channels, rate=4):
+        super(GAM, self).__init__()
+
+        self.channel_attention = nn.Sequential(
+            nn.Linear(in_channels, int(in_channels / rate)),
+            nn.ReLU(inplace=True),
+            nn.Linear(int(in_channels / rate), in_channels)
+        )
+
+        self.spatial_attention = nn.Sequential(
+            nn.Conv2d(in_channels, int(in_channels / rate), kernel_size=7, padding=3),
+            nn.BatchNorm2d(int(in_channels / rate)),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(int(in_channels / rate), out_channels, kernel_size=7, padding=3),
+            nn.BatchNorm2d(out_channels)
+        )
+
+    def forward(self, x):
+        b, c, h, w = x.shape
+        x_permute = x.permute(0, 2, 3, 1).view(b, -1, c)
+        x_att_permute = self.channel_attention(x_permute).view(b, h, w, c)
+        x_channel_att = x_att_permute.permute(0, 3, 1, 2)    # b,c,h,w
+
+        x = x * x_channel_att
+
+        x_spatial_att = self.spatial_attention(x).sigmoid()
+        out = x * x_spatial_att
+
+        return out
+
+class GroupNorm(nn.Module):
+    """
+    Group Normbalization（GN）是一种新的深度学习归一化方式，可以替代BN，GN优化了BN在比较小的mini-batch情况下表现不太好的劣势
+    BN沿着batch维度进行归一化，其受限于BatchSize大小，当其很小时（值小于32），BN会得到不准确的统计估计，会导致模型误差明显增加
+        将 Channels 划分为多个 groups，再计算每个 group 内的均值和方法，以进行归一化。
+        GB的计算与Batch Size无关，因此对于高精度图片小BatchSize的情况也是非常稳定的
+    这是自己代码实现方式与官方的BG实现方式
+    """
+
+    def __init__(self, num_features_chanel, num_groups_batch, usepytorchsimple=False, eps=1e-5):
+        super(GroupNorm, self).__init__()
+        self.weight = nn.Parameter(torch.ones(1, num_features_chanel, 1, 1))
+        self.bias = nn.Parameter(torch.zeros(1, num_features_chanel, 1, 1))
+        self.num_groups_batch = num_groups_batch
+        self.eps = eps
+        self.UsePytorchSimple = usepytorchsimple
+        self.simpleGN = torch.nn.GroupNorm(num_channels=num_features_chanel, num_groups=num_groups_batch)
+
+    def forward(self, x):
+        b, c, h, w = x.size()
+
+        if self.UsePytorchSimple:
+            ret = self.simpleGN(x)
+            return ret
+        else:
+            g = self.num_groups_batch
+            assert c % g == 0
+
+            x = x.view(b, g, -1)
+            mean = x.mean(-1, keepdim=True)
+            var = x.var(-1, keepdim=True)
+
+            x = (x-mean) / (var+self.eps).sqrt()
+            x = x.view(b, c, h, w)
+
+            return x * self.weight + self.bias
