@@ -44,8 +44,10 @@ def set_tqdm_post(vals, batch_indx, optimizer):
     for i in range(len(vals)):
         if vals[i] > 0:
             info += ("{}={:.5f},".format(names[i], (vals[i] / batch_indx)))
+        elif vals[i] < 0:
+            logger.warning("序列化损失函数时发生错误,存在{}损失值小于0的情况".format(names[i]))
         else:
-            logger.warning("序列化损失函数时发生错误，存在{}损失值小于0的情况".format(names[i]))
+            pass
 
     info += ("lr={:.7f}".format(get_lr(optimizer)))
 
@@ -100,7 +102,6 @@ def fit_one_epoch(net, gens, **kargs):
     optimizer   = kargs["optimizer"]
     tfwriter    = kargs["tf_writer"]
     cls_weights = kargs["cls_weight"]
-    logger      = kargs["log"]
 
     # 定义网络为训练模式
     model_train = net.train()
@@ -149,24 +150,32 @@ def fit_one_epoch(net, gens, **kargs):
         optimizer.zero_grad()
 
         # 混合精度计算
-        with torch.cuda.amp.autocast(enabled=amp):
-            # 网络计算
-            output = model_train(img)
-            # 计算损失
-            # print("\n output shape is {} || png shape is {}".format(output.shape, png.shape))
-            # 返回值按照 0/总loss, 1/celoss, 2/bceloss, 3/diceloss, 4/floss排布
-            loss = loss_func(output, png, label, weights, this_device)
+        if amp == True:
+            with torch.cuda.amp.autocast(enabled=amp):
+                # 网络计算
+                output = model_train(img)
+                # 计算损失
+                # print("\n output shape is {} || png shape is {}".format(output.shape, png.shape))
+                # 返回值按照 0/总loss, 1/celoss, 2/bceloss, 3/diceloss, 4/floss排布
+                loss = loss_func(output, png, label, weights, this_device)
 
-            # 误差反向传播
-            # scale作用将梯度进行自动化缩放
-            grad_scaler.scale(loss[0]).backward()
-            # 优化梯度
-            # 首先把梯度的值unscale回来。
-            # 如果梯度的值不是 infs 或者 NaNs，那么调用optimizer.step()来更新权重，
-            # 否则，忽略step调用，从而保证权重不更新（不被破坏）
-            grad_scaler.step(optimizer)
-            # 准备着，看是否要增大scaler
-            grad_scaler.update()
+                # 误差反向传播
+                # scale作用将梯度进行自动化缩放,它还会判断本轮loss是否是nan，如果是，那么本轮计算的梯度不会回传
+                # amp混合精度在2080Ti之后的机型上具有良好的效果，较低配置机型效果不大甚至有nan的风险
+                grad_scaler.scale(loss[0]).backward()
+                # 优化梯度
+                # 首先把梯度的值unscale回来。
+                # 如果梯度的值不是 infs 或者 NaNs，那么调用optimizer.step()来更新权重，
+                # 否则，忽略step调用，从而保证权重不更新（不被破坏）
+                grad_scaler.step(optimizer)
+                # 准备着，看是否要增大scaler
+                grad_scaler.update()
+        else:
+            output = model_train(img)
+            # 计算损失 返回值按照 0/总loss, 1/celoss, 2/bceloss, 3/diceloss, 4/floss排布
+            loss = loss_func(output, png, label, weights, this_device)
+            loss[0].backward()
+            optimizer.step()
 
         total_loss      += loss[0].item()
         total_ce_loss   += loss[1].item()
@@ -246,19 +255,24 @@ def test(net, gen_vals, **kargs):
                 label   = label.to(this_device)
                 weights = weights.to(this_device)
 
-        # 混合精度计算
-        with torch.cuda.amp.autocast(enabled=amp):
+        if amp == True:
+            # 混合精度计算
+            with torch.cuda.amp.autocast(enabled=amp):
+                # 输入测试图像
+                output    = model_eval(img)
+
+                # 计算损失
+                # print("\n output shape is {} || png shape is {}".format(output.shape, png.shape))
+                # 返回值按照 0/总loss, 1/celoss, 2/bceloss, 3/diceloss, 4/floss排布
+                loss = loss_func(output, png, label, weights, this_device)
+                grad_scaler_val.scale(loss[0])
+                # 优化梯度
+                grad_scaler_val.update()
+        else:
             # 输入测试图像
             output    = model_eval(img)
-
-            # 计算损失
-            # print("\n output shape is {} || png shape is {}".format(output.shape, png.shape))
-            # 返回值按照 0/总loss, 1/celoss, 2/bceloss, 3/diceloss, 4/floss排布
+            # 计算损失,返回值按照 0/总loss, 1/celoss, 2/bceloss, 3/diceloss, 4/floss排布
             loss = loss_func(output, png, label, weights, this_device)
-
-            grad_scaler_val.scale(loss[0])
-            # 优化梯度
-            grad_scaler_val.update()
 
         total_loss      += loss[0].item()
         total_ce_loss   += loss[1].item()
@@ -321,6 +335,8 @@ def get_args():
                         help='Use mixed precision', default=False)
     parser.add_argument("--systemtype", type=bool,
                         help='net run on system, True is windows', default=True)
+    parser.add_argument("--systemtype_mac", type=bool,
+                        help='net run on system, True is mac', default=False)
     args = parser.parse_args()
 
     return args
@@ -331,18 +347,19 @@ if __name__ == '__main__':
 
     # 使用window平台还是Linux平台
     args.systemtype  = True if platform.system().lower() == 'windows' else False
+    args.systemtype_mac = True if platform.mac_ver()[0] is not "" else False
     # 当前是否使用cuda来进行加速
     this_device = torch.device("cuda:0" if torch.cuda.is_available() and args.UseGPU else "cpu")
 
     # 根据平台的不同，设置不同batch的大小
     if args.systemtype == True:
         args.batch_size = 1
-        load_tread      = 1
+        args.load_tread = 1
         args.UseTfBoard = False
         args.amp        = False
     else:
         args.batch_size = 6
-        load_tread      = 16
+        args.load_tread = 16
         args.UseTfBoard = True
         args.amp        = True
 
@@ -354,7 +371,7 @@ if __name__ == '__main__':
     cls_weights = np.ones([args.nclass], np.float32)
 
     # 加载日志对象
-    #GetWriteLog(writerpath=MakeDir("log/log/"))
+    #logger = GetWriteLog(writerpath=MakeDir("log/log/"))  # 需注释掉最前方引用的logger库
     logger.add(MakeDir("log/log/") + "logfile_{time:MM-DD_HH:mm}.log", format="{time:DD Day HH:mm:ss} | {level} | {message}", filter="",
                            enqueue=True, encoding='utf-8', rotation="50 MB")
     tfwriter = SummaryWriter(logdir=MakeDir("log/tfboard/"), comment="unet") \
@@ -382,7 +399,8 @@ if __name__ == '__main__':
         torch.backends.cudnn.benchmark = True
         # 将模型设置为GPU
         model = model.to(this_device)
-        # model = torch.nn.DataParallel(model)
+        # 开启GPU并行化处理
+        model = torch.nn.DataParallel(model)
     
     # tfwriter.add_graph(model=model, input_to_model=args.IMGSIZE)
     logger.success("模型初始化完毕")
@@ -441,7 +459,6 @@ if __name__ == '__main__':
     # 开始训练
     tqbar = tqdm(range(start_epoch + 1, args.nepoch + 1))
     logger.success("开始训练")
-    epoch_count = 0
     for epoch in tqbar:
         #loss, loss_cls, loss_lmmd = train_epoch(epoch, model, [tra_source_dataloader,tra_target_dataloader] , optimizer, scheduler)
         #t_correct = test(model, test_dataloader)
@@ -502,18 +519,16 @@ if __name__ == '__main__':
         tqbar.set_description("Train Epoch Count")    
         # 设置进度条右边显示的信息
         tqbar.set_postfix()
-        # 更新epoch总数
-        epoch_count = epoch
 
     checkpoint = {
-        'epoch': epoch_count,
+        'epoch': para_kargs["this_epoch"],
         'model': model,
         'optimizer': optimizer,
     }
     path = MakeDir("savepoint/model_data/")
     saveparafilepath = path + "checkpoint.pth"
     torch.save(checkpoint, saveparafilepath)
-    logger.success("保存检查点完成，当前批次{}, 当然权重文件保存地址{}".format(epoch_count, saveparafilepath))
+    logger.success("保存检查点完成，当前批次{}, 当然权重文件保存地址{}".format(para_kargs["this_epoch"], saveparafilepath))
 
     os.system('shutdown /s /t 0')       # 0秒之后Windows关机
     # os.system('/root/shutdown.sh')    # 极客云停机代码

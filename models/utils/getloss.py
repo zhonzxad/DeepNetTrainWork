@@ -14,11 +14,16 @@ from models.utils.loss.transferloss import TransferLoss
 
 # from loss import *
 
-def loss_func(output, png, label, cls_weights, this_device="cuda:0"):
+"""NOTICE
+在使用amp混合精度训练时容易出现nan的一些情况
+在使用ce loss 或者 bceloss的时候，会有log的操作，在半精度情况下，一些非常小的数值会被直接舍入到0，log(0)等于啥？——等于nan啊！
+"""
+
+def loss_func(output, png, label, cls_weights, this_device):
     diceloss = DiceLoss()
     celoss   = CELoss2d()
-    bceloss  = BCELoss2d()
-    floss    = FocalLoss(cls_weights)
+    # bceloss  = BCELoss2d()
+    # floss    = FocalLoss(cls_weights)
     loss = None
     
     if this_device.type == 'cuda':
@@ -31,7 +36,6 @@ def loss_func(output, png, label, cls_weights, this_device="cuda:0"):
     ce_loss = celoss(output, png)
     # focal_loss = floss(output, png)
     # loss = FocalLoss()(output, label)
-    
 
     loss = ce_loss + dice_loss
     
