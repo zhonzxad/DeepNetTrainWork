@@ -14,7 +14,7 @@ from SmaAtUNer.SmartLayer import DepthwiseSeparableConv, GroupNorm
 
 
 class DoubleConvDS(nn.Module):
-    """(convolution(深度可分离卷积) => [BN] => ReLU) * 2"""
+    """(convolution(深度可分离卷积) => [批处理归一化] => ReLU) * 2"""
 
     def __init__(self, in_channels, out_channels, mid_channels=None, kernels_per_layer=1):
         super().__init__()

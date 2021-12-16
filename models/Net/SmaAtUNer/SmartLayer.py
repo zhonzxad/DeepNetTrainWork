@@ -216,6 +216,7 @@ class GroupNorm(nn.Module):
         GB的计算与Batch Size无关，因此对于高精度图片小BatchSize的情况也是非常稳定的
     这是自己代码实现方式与官方的BG实现方式
     更改自：https://github.com/kuangliu/pytorch-groupnorm/blob/master/groupnorm.py
+    https://blog.csdn.net/qq_34107425/article/details/107903800
     """
 
     def __init__(self, num_features_chanel, num_groups_batch=32, usepytorchsimple=False, eps=1e-5):
@@ -225,13 +226,13 @@ class GroupNorm(nn.Module):
         self.num_groups_batch = num_groups_batch
         self.eps = eps
         self.UsePytorchSimple = usepytorchsimple
-        self.simpleGN = torch.nn.GroupNorm(num_channels=num_features_chanel, num_groups=num_groups_batch)
+        self.simplePytorchGN = torch.nn.GroupNorm(num_channels=num_features_chanel, num_groups=num_groups_batch)
 
     def forward(self, x):
         b, c, h, w = x.size()
 
         if self.UsePytorchSimple:
-            ret = self.simpleGN(x)
+            ret = self.simplePytorchGN(x)
             return ret
         else:
             g = self.num_groups_batch
