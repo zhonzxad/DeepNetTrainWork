@@ -18,11 +18,12 @@ import torch.backends.cudnn as cudnn
 from tensorboardX import SummaryWriter
 from torchsummary import summary
 from tqdm import tqdm, trange
+from loguru import logger
 
 from models.Net.getmodel import GetModel
 from models.utils.getearlystop import GetEarlyStopping
 from models.utils.getloader import GetLoader
-from models.utils.Getlog import GetWriteLog
+from models.utils.getlog import GetWriteLog
 from models.utils.getloss import loss_func
 from models.utils.getoptim import GetOptim
 
@@ -38,11 +39,13 @@ def set_lr(optimizer, value:float):
 
 def set_tqdm_post(vals, batch_indx, optimizer):
     """按照固定的顺序对loss相关信息进行输出"""
-    name = ["Loss", "CEloss", "BCEloss", "Diceloss", "F_SOCRE", ]
+    names = ["Loss", "CEloss", "BCEloss", "Diceloss", "F_SOCRE", ]
     info = ""
     for i in range(len(vals)):
         if vals[i] > 0:
-            info += ("{}={:.5f},".format(name[i], (vals[i] / batch_indx)))
+            info += ("{}={:.5f},".format(names[i], (vals[i] / batch_indx)))
+        else:
+            logger.warning("序列化损失函数时发生错误，存在{}损失值小于0的情况".format(names[i]))
 
     info += ("lr={:.7f}".format(get_lr(optimizer)))
 
@@ -53,6 +56,25 @@ def set_tqdm_post(vals, batch_indx, optimizer):
     #                     Diceloss=("{:5f}".format(total_dice_loss / (batch_idx + 1))),
     #                     F_SOCRE=("{:5f}". format(total_f_score / (batch_idx + 1))),
     #                     lr=("{:7f}".      format(get_lr(optimizer))))
+
+def formt_time(timecount):
+    """将浮点秒转化为字符串时间"""
+    _time = int(timecount)
+    hour   = -1
+    minute = _time // 60
+    second = _time % 60
+    if minute >= 60:
+        hour   = minute // 60
+        minute = minute % 60
+    if hour == -1:
+        if minute == 0:
+            time_str = "{}秒".format(second)
+        else:
+            time_str = "{}分{}秒".format(minute, second)
+    else:
+        time_str = "{}小时{}分{}秒".format(hour, minute, second)
+
+    return time_str
 
 def MakeDir(path):
     """创建文件夹"""
@@ -299,11 +321,9 @@ def get_args():
                         help='Use mixed precision', default=False)
     parser.add_argument("--systemtype", type=bool,
                         help='net run on system, True is windows', default=True)
-
     args = parser.parse_args()
 
     return args
-
 
 if __name__ == '__main__':
     args        = get_args()
@@ -319,6 +339,7 @@ if __name__ == '__main__':
         args.batch_size = 1
         load_tread      = 1
         args.UseTfBoard = False
+        args.amp        = False
     else:
         args.batch_size = 6
         load_tread      = 16
@@ -333,24 +354,24 @@ if __name__ == '__main__':
     cls_weights = np.ones([args.nclass], np.float32)
 
     # 加载日志对象
-    logger   = GetWriteLog(writerpath=MakeDir("log/log/"))
+    #GetWriteLog(writerpath=MakeDir("log/log/"))
+    logger.add(MakeDir("log/log/") + "logfile_{time:MM-DD_HH:mm}.log", format="{time:DD Day HH:mm:ss} | {level} | {message}", filter="",
+                           enqueue=True, encoding='utf-8', rotation="50 MB")
     tfwriter = SummaryWriter(logdir=MakeDir("log/tfboard/"), comment="unet") \
                     if args.systemtype == False or (args.systemtype == True and args.UseTfBoard) else None
-    if tfwriter is None:
-        logger.write("注意：没有使用tfboard记录数据")
 
     # 打印列表参数
     # print(vars(args))
-    logger.write(vars(args))
+    logger.info(vars(args))
 
     loader = GetLoader(args.IMGSIZE, args.nclass, args.systemtype, args.batch_size, args.load_tread)
     gen, gen_val = loader.makedata()
     gen_target   = [1,] # loader.makedataTarget()
-    logger.write("数据集加载完毕")
+    logger.success("数据集加载完毕")
 
-    modelClass = GetModel((args.IMGSIZE, args.nclass), logger)
+    modelClass = GetModel((args.IMGSIZE, args.nclass))
     model = modelClass.Createmodel(is_train=True)
-    logger.write("模型创建及初始化完毕")
+    logger.success("模型创建及初始化完毕")
 
     if this_device.type == "cuda":
         # 为GPU设定随机种子，以便确信结果是可靠的
@@ -364,7 +385,7 @@ if __name__ == '__main__':
         # model = torch.nn.DataParallel(model)
     
     # tfwriter.add_graph(model=model, input_to_model=args.IMGSIZE)
-    logger.write("模型初始化完毕")
+    logger.success("模型初始化完毕")
 
     # 测试网络结构
     # summary(model, input_size=(args.IMGSIZE[2], args.IMGSIZE[0], args.IMGSIZE[1]))
@@ -377,7 +398,7 @@ if __name__ == '__main__':
     path = MakeDir("savepoint/early_stopp/")
     early_stopping = GetEarlyStopping(patience, path=path + "checkpoint.pth",
                                       verbose=True, savemode=args.save_mode)
-    logger.write("优化器及早停模块加载完毕")
+    logger.success("优化器及早停模块加载完毕")
 
     if args.resume:
         path = "./savepoint/model_data/SmarUNEt_DiceCELoss_KMInit____.pth"
@@ -390,9 +411,14 @@ if __name__ == '__main__':
                 model.load_state_dict(checkpoint['model'])
             optimizer = checkpoint['optimizer']
             set_lr(optimizer, 0.001)
-            logger.write("加载数据检查点，从(epoch {})开始".format(checkpoint['epoch']))
+            logger.info("加载数据检查点，从(epoch {})开始".format(checkpoint['epoch']))
         else:
-            logger.write("没有找到检查点，从(epoch 1)开始")
+            logger.info("没有找到检查点，从(epoch 1)开始")
+
+    if tfwriter is None:
+        logger.info("注意：没有使用tfboard记录数据")
+    if args.amp is True:
+        logger.info("注意：使用了amp混合精度训练")
 
     # 将最优损失设置为无穷大
     best_loss = float("inf")
@@ -414,7 +440,8 @@ if __name__ == '__main__':
 
     # 开始训练
     tqbar = tqdm(range(start_epoch + 1, args.nepoch + 1))
-    logger.write("开始训练")
+    logger.success("开始训练")
+    epoch_count = 0
     for epoch in tqbar:
         #loss, loss_cls, loss_lmmd = train_epoch(epoch, model, [tra_source_dataloader,tra_target_dataloader] , optimizer, scheduler)
         #t_correct = test(model, test_dataloader)
@@ -427,10 +454,8 @@ if __name__ == '__main__':
         time_end = time.time()
 
         # 每轮训练输出一些日志信息
-        logger.write("第{}轮训练完成,本轮训练轮次{},耗时{}分{}秒,最终损失为{}".format(epoch,
-                                                            ret_train[1],
-                                                            (time_end - time_start) % 60,
-                                                            (time_end - time_start) // 60,
+        logger.info("第{}轮训练完成,本轮训练轮次{},耗时{},最终损失为{}".format(epoch, ret_train[1],
+                                                            formt_time((time_end - time_start)),
                                                             ret_train[0].item()))
 
         # 进行测试
@@ -454,22 +479,22 @@ if __name__ == '__main__':
             'loss' : ret_val,
         }
         path = MakeDir("savepoint/model_data/")
-        saveparafilepath = path + "SmarUNEt_DiceCELoss_KMInit.pth"
+        saveparafilepath = path + "SmarUNEt_NewGN_NewGAM.pth"
         # 判断当前损失是否变小，变小才进行保存参数
         # 注意ret[0]是tensor格式，ret[1]才是平均损失（损失累加除以轮次）
         # 使用的是验证集上的损失，如果验证集损失一直在下降也是，说明模型还在训练
         if ret_val[1] < best_loss:
             best_loss = ret_val[1]
             torch.save(checkpoint, saveparafilepath)
-            logger.write("保存检查点完成，当前批次{}, 权重文件保存地址{}".format(epoch, saveparafilepath))
+            logger.info("保存检查点完成，当前批次{}, 权重文件保存地址{}".format(epoch, saveparafilepath))
         else:
-            logger.write("完成当前批次{}训练, 损失值较上一轮没有减小，未保存模型".format(epoch))
+            logger.success("完成当前批次{}训练, 损失值较上一轮没有减小，未保存模型".format(epoch))
 
         # 若满足 early stopping 要求 且 当前批次>=10
         if early_stopping.early_stop:
-            logger.write("命中早停模式，当前批次{}".format(epoch))
+            logger.info("命中早停模式，当前批次{}".format(epoch))
             if epoch >= 5:
-                logger.write("停止训练，当前批次{}".format(epoch))
+                logger.info("停止训练，当前批次{}".format(epoch))
                 # os.system('/root/shutdown.sh')
                 break
 
@@ -477,17 +502,18 @@ if __name__ == '__main__':
         tqbar.set_description("Train Epoch Count")    
         # 设置进度条右边显示的信息
         tqbar.set_postfix()
+        # 更新epoch总数
+        epoch_count = epoch
 
     checkpoint = {
-        'epoch': -1,
+        'epoch': epoch_count,
         'model': model,
         'optimizer': optimizer,
-        'loss' : ret_val,
     }
     path = MakeDir("savepoint/model_data/")
     saveparafilepath = path + "checkpoint.pth"
     torch.save(checkpoint, saveparafilepath)
-    logger.write("保存检查点完成，当前批次{}, 当然权重文件保存地址{}".format(epoch, saveparafilepath))
+    logger.success("保存检查点完成，当前批次{}, 当然权重文件保存地址{}".format(epoch_count, saveparafilepath))
 
     os.system('shutdown /s /t 0')       # 0秒之后Windows关机
     # os.system('/root/shutdown.sh')    # 极客云停机代码

@@ -4,9 +4,14 @@ Date: 2021-11-23 09:49:29
 LastEditTime: 2021-12-02 21:27:34
 LastEditors: zhonzxad
 '''
+# import os
+# import sys
+# BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# sys.path.append(BASE_DIR)
 import argparse
 
 import torch
+from loguru import logger
 
 from .FCN.fcn import FCN
 from .ResNet.ResNet import GetResNet
@@ -18,14 +23,9 @@ from .UNet.UNet_2Plus import UNet_2Plus
 from .UNet.UNet_3Plus import UNet_3Plus
 from .UNet.UNetBili import UNetVGG16
 
-# import os
-# import sys
-
-# BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# sys.path.append(BASE_DIR)
 
 class GetModel():
-    def __init__(self, args, loger):
+    def __init__(self, args):
         if type(args) == argparse.Namespace:
             self.args    = args
             self.IMGSIZE = self.args.IMGSIZE
@@ -33,10 +33,8 @@ class GetModel():
         else:
             self.IMGSIZE = args[0]
             self.NCLASS  = args[1]
-            
-        self.writer = loger
 
-    def weights_init(self, net, loger, init_type='normal', init_gain=0.02):
+    def weights_init(self, net, init_type='normal', init_gain=0.02):
         def init_func(m):
             classname = m.__class__.__name__
             if hasattr(m, 'weight') and classname.find('Conv') != -1:
@@ -55,10 +53,11 @@ class GetModel():
                 torch.nn.init.constant_(m.bias.data, 0.0)
         net.apply(init_func)
 
-        if loger is not None:
-            loger.write("使用{}方法初始化网络相关权重".format(init_type))
-        else:
-            print("使用{}方法初始化网络相关权重".format(init_type))
+        # if loger is not None:
+        #     loger.write("使用{}方法初始化网络相关权重".format(init_type))
+        # else:
+        #     print("使用{}方法初始化网络相关权重".format(init_type))
+        logger.info("使用{}方法初始化网络相关权重".format(init_type))
 
     def Createmodel(self, is_train=True):
         # 加载模型
@@ -72,7 +71,7 @@ class GetModel():
 
         # 初始化网络相关权重
         if is_train:
-            self.weights_init(model, loger=self.writer, init_type="kaiming")
+            self.weights_init(model, init_type="kaiming")
             model = model.train()
         else:
             model = model.eval()

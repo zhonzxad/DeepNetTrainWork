@@ -15,7 +15,7 @@ from models.utils.getloader import GetLoader
 from models.utils.getloss import loss_func
 from getmodel import GetModel
 from models.utils.getoptim import GetOptim
-from models.utils.Getlog import GetWriteLog
+from models.utils.getlog import GetWriteLog
 
 # 在Windows下使用vscode运行时 添加上这句话就会使用正确的相对路径设置
 # 需要import os和sys两个库
