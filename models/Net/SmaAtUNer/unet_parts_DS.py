@@ -10,7 +10,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from SmaAtUNer.SmartLayer import DepthwiseSeparableConv
+from SmaAtUNer.SmartLayer import DepthwiseSeparableConv, GroupNorm
 
 
 class DoubleConvDS(nn.Module):
@@ -20,12 +20,15 @@ class DoubleConvDS(nn.Module):
         super().__init__()
         if not mid_channels:
             mid_channels = out_channels
+
         self.double_conv = nn.Sequential(
             DepthwiseSeparableConv(in_channels, mid_channels, kernel_size=3, kernels_per_layer=kernels_per_layer, padding=1),
-            nn.BatchNorm2d(mid_channels),
+            # nn.BatchNorm2d(mid_channels),
+            GroupNorm(mid_channels),
             nn.ReLU(inplace=True),
             DepthwiseSeparableConv(mid_channels, out_channels, kernel_size=3, kernels_per_layer=kernels_per_layer, padding=1),
-            nn.BatchNorm2d(out_channels),
+            # nn.BatchNorm2d(out_channels),
+            GroupNorm(out_channels),
             nn.ReLU(inplace=True)
         )
 

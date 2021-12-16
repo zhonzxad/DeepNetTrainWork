@@ -175,8 +175,11 @@ class GAM(nn.Module):
     引自：Global Attention Mechanism: Retain Information to Enhance Channel-Spatial Interactions
     """
 
-    def __init__(self, in_channels, out_channels, rate=4):
+    def __init__(self, in_channels, out_channels=None, rate=4):
         super(GAM, self).__init__()
+
+        if out_channels is None:
+            out_channels = in_channels
 
         self.channel_attention = nn.Sequential(
             nn.Linear(in_channels, int(in_channels / rate)),
@@ -212,9 +215,10 @@ class GroupNorm(nn.Module):
         将 Channels 划分为多个 groups，再计算每个 group 内的均值和方法，以进行归一化。
         GB的计算与Batch Size无关，因此对于高精度图片小BatchSize的情况也是非常稳定的
     这是自己代码实现方式与官方的BG实现方式
+    更改自：https://github.com/kuangliu/pytorch-groupnorm/blob/master/groupnorm.py
     """
 
-    def __init__(self, num_features_chanel, num_groups_batch, usepytorchsimple=False, eps=1e-5):
+    def __init__(self, num_features_chanel, num_groups_batch=32, usepytorchsimple=False, eps=1e-5):
         super(GroupNorm, self).__init__()
         self.weight = nn.Parameter(torch.ones(1, num_features_chanel, 1, 1))
         self.bias = nn.Parameter(torch.zeros(1, num_features_chanel, 1, 1))
