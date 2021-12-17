@@ -173,7 +173,8 @@ def fit_one_epoch(net, gens, **kargs):
         else:
             output = model_train(img)
             # 计算损失 返回值按照 0/总loss, 1/celoss, 2/bceloss, 3/diceloss, 4/floss排布
-            loss = loss_func(output, png, label, weights, this_device)
+            loss   = loss_func(output, png, label, weights, this_device)
+            # 损失回传
             loss[0].backward()
             optimizer.step()
 
@@ -186,16 +187,16 @@ def fit_one_epoch(net, gens, **kargs):
         # 写tensorboard
         tags = ["train_loss", "CEloss", "BCEloss", "Diceloss", "f_score", "lr", "accuracy"]
         if tfwriter is not None:
-            tfwriter.add_scalar(tags[0],     total_loss / (batch_idx + 1))#, epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[1],     total_ce_loss / (batch_idx + 1))#, epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[2],     total_bce_loss / (batch_idx + 1))#, epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[3],     total_dice_loss / (batch_idx + 1))#, epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[4],     total_f_score / (batch_idx + 1))#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[0], total_loss / (batch_idx + 1))#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[1], total_ce_loss / (batch_idx + 1))#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[2], total_bce_loss / (batch_idx + 1))#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[3], total_dice_loss / (batch_idx + 1))#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[4], total_f_score / (batch_idx + 1))#, epoch*(batch_idx + 1))
             tfwriter.add_scalar(tags[5], get_lr(optimizer))#, epoch*(batch_idx + 1))
 
         #设置进度条右边显示的信息
-        tq_str = set_tqdm_post((total_loss, total_ce_loss, total_bce_loss, total_dice_loss, total_f_score), \
-                    batch_idx + 1, optimizer)
+        tq_str = set_tqdm_post((total_loss, total_ce_loss, total_bce_loss, total_dice_loss, total_f_score),
+                    (batch_idx + 1), optimizer)
         tqdm_bar.set_postfix_str(tq_str)
         # tqdm_bar.update(1)
 
@@ -265,14 +266,14 @@ def test(net, gen_vals, **kargs):
                 # print("\n output shape is {} || png shape is {}".format(output.shape, png.shape))
                 # 返回值按照 0/总loss, 1/celoss, 2/bceloss, 3/diceloss, 4/floss排布
                 loss = loss_func(output, png, label, weights, this_device)
-                grad_scaler_val.scale(loss[0])
-                # 优化梯度
-                grad_scaler_val.update()
+                # grad_scaler_val.scale(loss[0])
+                # # 优化梯度
+                # grad_scaler_val.update()
         else:
             # 输入测试图像
-            output    = model_eval(img)
+            output = model_eval(img)
             # 计算损失,返回值按照 0/总loss, 1/celoss, 2/bceloss, 3/diceloss, 4/floss排布
-            loss = loss_func(output, png, label, weights, this_device)
+            loss   = loss_func(output, png, label, weights, this_device)
 
         total_loss      += loss[0].item()
         total_ce_loss   += loss[1].item()
@@ -283,16 +284,16 @@ def test(net, gen_vals, **kargs):
         # 写tensorboard
         tags = ["train_loss_val", "CEloss_val", "BCEloss_val", "Diceloss_val", "f_score_val", "lr_val", "accuracy"]
         if tfwriter is not None:
-            tfwriter.add_scalar(tags[0],     total_loss / (batch_idx + 1))#, epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[1],     total_ce_loss / (batch_idx + 1))#, epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[2],     total_bce_loss / (batch_idx + 1))#, epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[3],     total_dice_loss / (batch_idx + 1))#, epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[4],     total_f_score / (batch_idx + 1))#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[0], total_loss / (batch_idx + 1))#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[1], total_ce_loss / (batch_idx + 1))#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[2], total_bce_loss / (batch_idx + 1))#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[3], total_dice_loss / (batch_idx + 1))#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[4], total_f_score / (batch_idx + 1))#, epoch*(batch_idx + 1))
             tfwriter.add_scalar(tags[5], get_lr(optimizer))#, epoch*(batch_idx + 1))
 
         #设置进度条右边显示的信息
-        tq_str = set_tqdm_post((total_loss, total_ce_loss, total_bce_loss, total_dice_loss, total_f_score), \
-                               batch_idx + 1, optimizer)
+        tq_str = set_tqdm_post((total_loss, total_ce_loss, total_bce_loss, total_dice_loss, total_f_score),
+                               (batch_idx + 1), optimizer)
         tqdm_bar_val.set_postfix_str(tq_str)
         # tqdm_bar_val.update(1)
 
@@ -443,7 +444,8 @@ if __name__ == '__main__':
     # 将优化器针对的损失进行特殊距离
     best_opt_loss = -float("inf")
 
-    # 定义一些非关键参数，用于输出相关的日志信息
+    # 定义一些非关键参数，以字典的形式传入训练中
+    # 用于输出相关的日志信息
     para_kargs = {
         "tf_writer" : tfwriter,
         "device" : this_device,
