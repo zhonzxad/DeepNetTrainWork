@@ -41,6 +41,14 @@ class SmaAtUNet(nn.Module):
         # self.Conv2D_3_In = InConv(self.n_channels, 64, k_size=3)
         # self.DCS_In      = DoubleConvDS(self.n_channels, 64, kernels_per_layer=self.kernels_per_layer)
 
+        factor = 2 if self.bilinear else 1
+
+        self.gam1  = GAM(64)
+        self.gam2  = GAM(128)
+        self.gam3  = GAM(256)
+        self.gam4  = GAM(512)
+        self.gam5  = GAM(1024 // factor)
+
         # self.cbam1 = CBAM(64, reduction_ratio=self.reduction_ratio)
         self.down1 = DownDS(64, 128, kernels_per_layer=self.kernels_per_layer)
         # self.cbam2 = CBAM(128, reduction_ratio=self.reduction_ratio)
@@ -48,15 +56,8 @@ class SmaAtUNet(nn.Module):
         # self.cbam3 = CBAM(256, reduction_ratio=self.reduction_ratio)
         self.down3 = DownDS(256, 512, kernels_per_layer=self.kernels_per_layer)
         # self.cbam4 = CBAM(512, reduction_ratio=self.reduction_ratio)
-        factor = 2 if self.bilinear else 1
         self.down4 = DownDS(512, 1024 // factor, kernels_per_layer=self.kernels_per_layer)
         # self.cbam5 = CBAM(1024 // factor, reduction_ratio=self.reduction_ratio)
-
-        self.gam1  = GAM(64)
-        self.gam2  = GAM(128)
-        self.gam3  = GAM(256)
-        self.gam4  = GAM(512)
-        self.gam5  = GAM(1024 // factor)
 
         self.up1_DS = UpDS(1024, 512 // factor, self.bilinear, kernels_per_layer=self.kernels_per_layer)
         self.up2_DS = UpDS(512, 256 // factor, self.bilinear, kernels_per_layer=self.kernels_per_layer)
