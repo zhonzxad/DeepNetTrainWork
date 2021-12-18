@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-11-23 09:49:29
-LastEditTime: 2021-12-02 21:27:34
+LastEditTime: 2021-12-17 21:38:26
 LastEditors: zhonzxad
 '''
 # import os
@@ -12,17 +12,25 @@ import argparse
 
 import torch
 from loguru import logger
+from models.Net.FCN.fcn import FCN
+from models.Net.ResNet.ResNet import GetResNet
+from models.Net.ResNet.resnet18 import RestNet18
+from models.Net.SegNet.SegNet import SegNet
+from models.Net.SmaAtUNer.SmaAt_UNet import SmaAtUNet
+from models.Net.UNet.UNet import UNet
+from models.Net.UNet.UNet_2Plus import UNet_2Plus
+from models.Net.UNet.UNet_3Plus import UNet_3Plus
+from models.Net.UNet.UNetBili import UNetVGG16
 
-from .FCN.fcn import FCN
-from .ResNet.ResNet import GetResNet
-from .ResNet.resnet18 import RestNet18
-from .SegNet.SegNet import SegNet
-from .SmaAtUNer.SmaAt_UNet import SmaAtUNet
-from .UNet.UNet import UNet
-from .UNet.UNet_2Plus import UNet_2Plus
-from .UNet.UNet_3Plus import UNet_3Plus
-from .UNet.UNetBili import UNetVGG16
-
+# from .FCN.fcn import FCN
+# from .ResNet.ResNet import GetResNet
+# from .ResNet.resnet18 import RestNet18
+# from .SegNet.SegNet import SegNet
+# from .SmaAtUNer.SmaAt_UNet import SmaAtUNet
+# from .UNet.UNet import UNet
+# from .UNet.UNet_2Plus import UNet_2Plus
+# from .UNet.UNet_3Plus import UNet_3Plus
+# from .UNet.UNetBili import UNetVGG16
 
 class GetModel():
     def __init__(self, args):

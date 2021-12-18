@@ -1,7 +1,7 @@
 '''
 Author: zhonzxad
 Date: 2021-12-02 16:55:18
-LastEditTime: 2021-12-02 20:46:49
+LastEditTime: 2021-12-17 21:39:28
 LastEditors: zhonzxad
 '''
 """ Parts of the U-Net model """
@@ -9,8 +9,8 @@ LastEditors: zhonzxad
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-from SmaAtUNer.SmartLayer import DepthwiseSeparableConv, GroupNorm
+from models.Net.Signal_model.layer import GroupNorm, GropConv
+from models.Net.SmaAtUNer.SmartLayer import DepthwiseSeparableConv
 
 
 class DoubleConvDS(nn.Module):
@@ -40,6 +40,7 @@ class DownDS(nn.Module):
     """Downscaling with maxpool then double conv
     使用maxpool将特征图缩小之后采用通道可分离卷积
     maxpool提取重要信息的操作，可以去掉不重要的信息，减少计算开销(改变图像的大小)
+    maxpool：引自，https://blog.csdn.net/L1778586311/article/details/112159479
     """
 
     def __init__(self, in_channels, out_channels, kernels_per_layer=1):
@@ -89,6 +90,7 @@ class UpDS(nn.Module):
         return self.conv(x)
 
 class InConv(nn.Module):
+
     def __init__(self, in_channels, out_channels, k_size):
         super(InConv, self).__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=k_size)
