@@ -4,8 +4,7 @@ import os
 import sys
 import platform
 import time
-
-import timm
+import pynvml
 
 # 在Windows下使用vscode运行时 添加上这句话就会使用正确的相对路径设置
 # 需要import os和sys两个库
@@ -20,6 +19,9 @@ from torchsummary import summary
 from tqdm import tqdm, trange
 from loguru import logger
 
+from train_fun import makedir, getgpudriver, formt_time
+from train_fun import set_tqdm_post, get_lr, set_lr
+
 from models.Net.getmodel import GetModel
 from models.utils.getearlystop import GetEarlyStopping
 from models.utils.getloader import GetLoader
@@ -27,67 +29,6 @@ from models.utils.getlog import GetWriteLog
 from models.utils.getloss import loss_func
 from models.utils.getoptim import GetOptim
 
-
-def get_lr(optimizer):
-    """获取学习率"""
-    for param_group in optimizer.param_groups:
-        return param_group['lr']
-
-def set_lr(optimizer, value:float):
-    """optimizer.param_groups：是长度为2的list,0表示params/lr/eps等参数，1表示优化器状态"""
-    optimizer.param_groups[0]['lr'] = value
-
-def set_tqdm_post(vals, batch_indx, optimizer):
-    """按照固定的顺序对loss相关信息进行输出"""
-    names = ["Loss", "CEloss", "BCEloss", "Diceloss", "F_SOCRE", ]
-    info = ""
-    for i in range(len(vals)):
-        if vals[i] > 0:
-            info += ("{}={:.5f},".format(names[i], (vals[i] / batch_indx)))
-        elif vals[i] < 0:
-            logger.warning("序列化损失函数时发生错误,存在{}损失值小于0的情况".format(names[i]))
-        else:
-            pass
-
-    info += ("lr={:.7f}".format(get_lr(optimizer)))
-
-    return info
-    # tqdmbar.set_postfix(Loss=("{:5f}".    format(total_loss / (batch_idx + 1))),
-    #                     CEloss=("{:5f}".  format(total_ce_loss / (batch_idx + 1))),
-    #                     BCEloss=("{:5f}". format(total_bce_loss / (batch_idx + 1))),
-    #                     Diceloss=("{:5f}".format(total_dice_loss / (batch_idx + 1))),
-    #                     F_SOCRE=("{:5f}". format(total_f_score / (batch_idx + 1))),
-    #                     lr=("{:7f}".      format(get_lr(optimizer))))
-
-def formt_time(timecount):
-    """将浮点秒转化为字符串时间"""
-    _time = int(timecount)
-    hour   = -1
-    minute = _time // 60
-    second = _time % 60
-    if minute >= 60:
-        hour   = minute // 60
-        minute = minute % 60
-    if hour == -1:
-        if minute == 0:
-            time_str = "{}秒".format(second)
-        else:
-            time_str = "{}分{}秒".format(minute, second)
-    else:
-        time_str = "{}小时{}分{}秒".format(hour, minute, second)
-
-    return time_str
-
-def MakeDir(path):
-    """创建文件夹"""
-    workpath = os.getcwd()
-    if not os.path.isabs(path):
-        path = os.path.join(workpath, path)
-
-    if not os.path.exists(path):
-        os.makedirs(path)
-
-    return path
 
 def fit_one_epoch(net, gens, **kargs):
     """"定义训练每一个epoch的步骤"""
@@ -348,7 +289,7 @@ if __name__ == '__main__':
 
     # 使用window平台还是Linux平台
     args.systemtype  = True if platform.system().lower() == 'windows' else False
-    args.systemtype_mac = True if platform.mac_ver()[0] is not "" else False
+    args.systemtype_mac = True if platform.mac_ver()[0] != "" else False
     # 当前是否使用cuda来进行加速
     this_device = torch.device("cuda:0" if torch.cuda.is_available() and args.UseGPU else "cpu")
 
@@ -357,12 +298,22 @@ if __name__ == '__main__':
         args.batch_size = 1
         args.load_tread = 1
         args.UseTfBoard = False
-        args.amp        = False
+        # args.amp        = False
     else:
         args.batch_size = 6
         args.load_tread = 16
         args.UseTfBoard = True
-        args.amp        = True
+        # args.amp        = False
+
+    # 不期望使用amp混合精度的列表
+    hope_gpu_name = ["960", "2080", "T4", ]
+    # 获取当前GPU名称
+    gpu_name      = getgpudriver()
+    for i in range(len(gpu_name)):
+        name = gpu_name[i]
+        # 如果不在期望列表，使用amp混合训练
+        if name not in hope_gpu_name:
+            args.amp = True
 
     # 为CPU设定随机种子使结果可靠，就是每个人的随机结果都尽可能保持一致
     np.random.seed(args.seed)
@@ -373,9 +324,9 @@ if __name__ == '__main__':
 
     # 加载日志对象
     #logger = GetWriteLog(writerpath=MakeDir("log/log/"))  # 需注释掉最前方引用的logger库
-    logger.add(MakeDir("log/log/") + "logfile_{time:MM-DD_HH:mm}.log", format="{time:DD Day HH:mm:ss} | {level} | {message}", filter="",
+    logger.add(makedir("log/log/") + "logfile_{time:MM-DD_HH:mm}.log", format="{time:DD Day HH:mm:ss} | {level} | {message}", filter="",
                            enqueue=True, encoding='utf-8', rotation="50 MB")
-    tfwriter = SummaryWriter(logdir=MakeDir("log/tfboard/"), comment="unet") \
+    tfwriter = SummaryWriter(logdir=makedir("log/tfboard/"), comment="unet") \
                     if args.systemtype == False or (args.systemtype == True and args.UseTfBoard) else None
 
     # 打印列表参数
@@ -414,7 +365,7 @@ if __name__ == '__main__':
 
     # 初始化 early_stopping 对象
     patience = args.early_stop # 当验证集损失在连续20次训练周期中都没有得到降低时，停止模型训练，以防止模型过拟合
-    path = MakeDir("savepoint/early_stopp/")
+    path = makedir("savepoint/early_stopp/")
     early_stopping = GetEarlyStopping(patience, path=path + "checkpoint.pth",
                                       verbose=True, savemode=args.save_mode)
     logger.success("优化器及早停模块加载完毕")
@@ -497,7 +448,7 @@ if __name__ == '__main__':
             'optimizer': optimizer,
             'loss' : ret_val,
         }
-        path = MakeDir("savepoint/model_data/")
+        path = makedir("savepoint/model_data/")
         saveparafilepath = path + "SmarUNEt_NewGN_NewGAM.pth"
         # 判断当前损失是否变小，变小才进行保存参数
         # 注意ret[0]是tensor格式，ret[1]才是平均损失（损失累加除以轮次）
@@ -527,7 +478,7 @@ if __name__ == '__main__':
         'model': model,
         'optimizer': optimizer,
     }
-    path = MakeDir("savepoint/model_data/")
+    path = makedir("savepoint/model_data/")
     saveparafilepath = path + "checkpoint.pth"
     torch.save(checkpoint, saveparafilepath)
     logger.success("保存检查点完成，当前批次{}, 当然权重文件保存地址{}".format(para_kargs["this_epoch"], saveparafilepath))
