@@ -283,7 +283,7 @@ def get_args():
 
     return args
 
-if __name__ == '__main__':
+def main():
     args        = get_args()
     start_epoch = 0                   # 起始的批次
 
@@ -325,9 +325,9 @@ if __name__ == '__main__':
     # 加载日志对象
     #logger = GetWriteLog(writerpath=MakeDir("log/log/"))  # 需注释掉最前方引用的logger库
     logger.add(makedir("log/log/") + "logfile_{time:MM-DD_HH:mm}.log", format="{time:DD Day HH:mm:ss} | {level} | {message}", filter="",
-                           enqueue=True, encoding='utf-8', rotation="50 MB")
+               enqueue=True, encoding='utf-8', rotation="50 MB")
     tfwriter = SummaryWriter(logdir=makedir("log/tfboard/"), comment="unet") \
-                    if args.systemtype == False or (args.systemtype == True and args.UseTfBoard) else None
+        if args.systemtype == False or (args.systemtype == True and args.UseTfBoard) else None
 
     # 打印列表参数
     # print(vars(args))
@@ -353,7 +353,7 @@ if __name__ == '__main__':
         model = model.to(this_device)
         # 开启GPU并行化处理
         model = torch.nn.DataParallel(model)
-    
+
     # tfwriter.add_graph(model=model, input_to_model=args.IMGSIZE)
     logger.success("模型初始化完毕")
 
@@ -385,10 +385,8 @@ if __name__ == '__main__':
         else:
             logger.info("没有找到检查点，从(epoch 1)开始")
 
-    if tfwriter is None:
-        logger.info("注意：没有使用tfboard记录数据")
-    if args.amp is True:
-        logger.info("注意：使用了amp混合精度训练")
+    logger.info("注意：没有使用tfboard记录数据") if tfwriter else logger.success("注意：使用tfboard记录数据")
+    logger.success("注意：使用了amp混合精度训练") if args.amp else logger.info("注意：没有使用amp混合精度训练")
 
     # 将最优损失设置为无穷大
     best_loss = float("inf")
@@ -431,7 +429,7 @@ if __name__ == '__main__':
         # 进行测试
         ret_val = \
             test(model, (gen_val, gen_target), **para_kargs)
-        
+
         # 判断是否满足早停
         early_stopping(ret_val[0], model.eval)
 
@@ -469,7 +467,7 @@ if __name__ == '__main__':
                 break
 
         # 设置进度条左边显示的信息
-        tqbar.set_description("Train Epoch Count")    
+        tqbar.set_description("Train Epoch Count")
         # 设置进度条右边显示的信息
         tqbar.set_postfix()
 
@@ -486,6 +484,9 @@ if __name__ == '__main__':
     os.system('shutdown /s /t 0')       # 0秒之后Windows关机
     # os.system('/root/shutdown.sh')    # 极客云停机代码
     # os.system("export $(cat /proc/1/environ |tr '\\0' '\\n' | grep MATCLOUD_CANCELTOKEN)&&/public/script/matncli node cancel -url https://matpool.com/api/public/node -save -name RTX2080Ti")    # 矩池云停机代码(包含保存相应环境)
-    # 若释放前不需要保存环境 
+    # 若释放前不需要保存环境
     # os.system("export $(cat /proc/1/environ |tr '\\0' '\\n' | grep MATCLOUD_CANCELTOKEN)&&/public/script/matncli node cancel -url https://matpool.com/api/public/node")
+
+if __name__ == '__main__':
+    main()
 
