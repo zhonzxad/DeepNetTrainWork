@@ -205,15 +205,8 @@ class GropConv(nn.Module):
     """
     def __init__(self, in_ch, out_ch, groups):
         super(GropConv, self).__init__()
-        self.conv = nn.Conv2d(
-            in_channels=in_ch,
-            out_channels=out_ch,
-            kernel_size=3,
-            stride=1,
-            padding=1,
-            groups=groups,
-            bias=False
-        )
+        self.conv = nn.Conv2d(in_channels=in_ch, out_channels=out_ch, kernel_size=3, groups=groups, bias=False)
+
 
     def forward(self, _input):
         out = self.conv(_input)
