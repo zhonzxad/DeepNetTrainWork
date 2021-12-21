@@ -65,7 +65,7 @@ class GetModel():
         #     loger.write("使用{}方法初始化网络相关权重".format(init_type))
         # else:
         #     print("使用{}方法初始化网络相关权重".format(init_type))
-        logger.info("使用{}方法初始化网络相关权重".format(init_type))
+        logger.success("使用{}方法初始化网络相关权重".format(init_type))
 
     def Createmodel(self, is_train=True):
         # 加载模型

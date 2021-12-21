@@ -28,7 +28,7 @@ from models.utils.getlog import GetWriteLog
 from models.utils.getoptim import GetOptim
 
 def set_lr(optimizer, value:float):
-    """optimizer.param_groups：是长度为2的list,0表示params/lr/eps等参数，1表示优化器状态"""
+    """optimizer.param_groups:是长度为2的list,0表示params/lr/eps等参数，1表示优化器状态"""
     optimizer.param_groups[0]['lr'] = value
 
 def formt_time(timecount):
@@ -221,8 +221,8 @@ def main():
         else:
             logger.info("没有找到检查点，从(epoch 1)开始")
 
-    logger.info("注意：没有使用tfboard记录数据") if tfwriter else logger.success("注意：使用tfboard记录数据")
-    logger.success("注意：使用了amp混合精度训练") if args.amp else logger.info("注意：没有使用amp混合精度训练")
+    logger.info("注意: 没有使用tfboard记录数据") if tfwriter is None else logger.success("注意: 使用tfboard记录数据")
+    logger.success("注意: 使用了amp混合精度训练") if args.amp else logger.info("注意: 没有使用amp混合精度训练")
 
     # 将最优损失设置为无穷大
     best_loss = float("inf")
