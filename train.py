@@ -25,7 +25,6 @@ from models.Net.getmodel import GetModel
 from models.utils.getearlystop import GetEarlyStopping
 from models.utils.getloader import GetLoader
 from models.utils.getlog import GetWriteLog
-from models.utils.getloss import loss_func
 from models.utils.getoptim import GetOptim
 
 def set_lr(optimizer, value:float):
@@ -284,19 +283,20 @@ def main():
             'loss' : ret_val,
         }
         path = makedir("savepoint/model_data/")
-        saveparafilepath = path + "SmarUNEt_NewGN_NewGAM.pth"
+        saveparafilepath = path + "SmarUNEt_NewGN_NewGAM"
         # 判断当前损失是否变小，变小才进行保存参数
         # 注意ret[0]是tensor格式，ret[1]才是平均损失（损失累加除以轮次）
         # 使用的是验证集上的损失，如果验证集损失一直在下降也是，说明模型还在训练
         if ret_val[1] < best_loss:
             best_loss = ret_val[1]
             torch.save(checkpoint, saveparafilepath)
-            logger.info("保存检查点完成，当前批次{}, 权重文件保存地址{}".format(epoch, saveparafilepath))
-        else:
-            logger.success("完成当前批次{}训练, 损失值较上一轮没有减小，未保存模型".format(epoch))
+            logger.info("保存检查点完成, 当前批次{}, 保存最优参数权重文件{}".format(epoch, saveparafilepath + "_bestepoch" + ".pth"))
+        # 如果不是最优的，直接保存默认的
+        torch.save(checkpoint, saveparafilepath + ".pth")
+        logger.success("完成当前批次{}训练, 损失值较上一轮没有减小，正常保存模型".format(epoch))
 
         # 若满足 early stopping 要求 且 当前批次>=10
-        if early_stopping.early_stop:
+        if early_stopping.get_early_stop_state:
             logger.info("命中早停模式，当前批次{}".format(epoch))
             if epoch >= 5:
                 logger.info("停止训练，当前批次{}".format(epoch))
@@ -308,6 +308,7 @@ def main():
         # 设置进度条右边显示的信息
         tqbar.set_postfix()
 
+    # 任务已经结束了，保存一个最终版本的参数
     checkpoint = {
         'epoch': para_kargs["this_epoch"],
         'model': model,

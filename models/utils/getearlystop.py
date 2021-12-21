@@ -7,10 +7,10 @@ LastEditors: zhonzxad
 import numpy as np
 import torch
 
-
 class GetEarlyStopping:
     """
     Early stops the training if validation loss doesn't improve after a given patience.
+    引自：https://github.com/Bjarten/early-stopping-pytorch/blob/master/pytorchtools.py
     """
     def __init__(self, patience=7, verbose=False, delta=0, savemode=False, path='checkpoint.pt', trace_func=print):
         """
@@ -52,6 +52,10 @@ class GetEarlyStopping:
             self.best_score = score
             self.save_checkpoint(val_loss, model)
             self.counter = 0
+
+    def get_early_stop_state(self):
+        """获取早停模块判断结果，为True表示已达到早停"""
+        return self.early_stop
 
     def save_checkpoint(self, val_loss, model):
         '''
