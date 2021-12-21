@@ -9,9 +9,10 @@
 ## Requirements
 * python 3.6.2
 * pytorch 1.7.1
-* 其余参考 pip-requirements.txt && conda-requirements.txt
+* 依赖tensorboardX，tqdm
+* 其余参考 profile&store 下 pip-requirements.txt && conda-requirements.txt
 
-### 导出环境说明
+### 导入导出环境命令说明
 * 导出conda安装使用命令conda list -e > requirements.txt 
 * 导入使用conda install --yes --file requirements.txt
 * 导出pip安装使用命令pip freeze > requirements.txt
