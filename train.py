@@ -66,15 +66,16 @@ def getgpudriver():
     pynvml.nvmlInit()
     device_count = pynvml.nvmlDeviceGetCount()           # 几块显卡
     numbers_list = []
+
     for i in range(device_count):
-        handle = pynvml.nvmlDeviceGetHandleByIndex(i)  # 这里的0是GPU id
+        handle = pynvml.nvmlDeviceGetHandleByIndex(i)    # 这里的0是GPU id
         meminfo = pynvml.nvmlDeviceGetMemoryInfo(handle)
         drive_name = str(pynvml.nvmlDeviceGetName(handle))[2:-1]
         gpu_model_number = str(drive_name.rpartition(" ")[-1]) \
             if str(drive_name.rpartition(" ")[-1]) != "Ti" else str(drive_name.rpartition(" ")[-2])
         numbers_list.append(gpu_model_number)
-        logger.info("当前显卡为:{}.".format(pynvml.nvmlDeviceGetName(handle))  +
-                    "总显存大小{:.0f}G,已用{:.0f}G,剩余{:.0f}G".format((meminfo.total / 1024**2), (meminfo.used / 1024**2), (meminfo.free / 1024**2))) #第二块显卡总的显存大小
+        logger.info("当前显卡为:{}.".format(drive_name) +
+                    "总显存大小{:.0f} G,已用{:.0f} G,剩余{:.0f} G".format((meminfo.total / 1024**2), (meminfo.used / 1024**2), (meminfo.free / 1024**2))) #第二块显卡总的显存大小
 
     return numbers_list
 
