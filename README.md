@@ -17,3 +17,11 @@
 * 导入使用conda install --yes --file requirements.txt
 * 导出pip安装使用命令pip freeze > requirements.txt
 * 导入使用pip install -r requirements.txt
+
+---
+## LICENSE
+GNU Lesser General Public License v2.1
+
+[![](https://img.shields.io/badge/license-GPL%20v2.1-brightgreen?style=plastic)](https://github.com/zhonzxad/DeepNetTrainWork/tree/main)
+![](https://img.shields.io/badge/language-python-blue.svg?style=plastic)
+
