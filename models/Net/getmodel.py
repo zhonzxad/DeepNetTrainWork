@@ -16,7 +16,7 @@ from models.Net.FCN.fcn import FCN
 from models.Net.ResNet.ResNet import GetResNet
 from models.Net.ResNet.resnet18 import RestNet18
 from models.Net.SegNet.SegNet import SegNet
-from models.Net.SmaAtUNer.SmaAt_UNet import SmaAtUNet
+from models.Net.Attention_UNet.Attention_UNet import At_UNet
 from models.Net.UNet.UNet import UNet
 from models.Net.UNet.UNet_2Plus import UNet_2Plus
 from models.Net.UNet.UNet_3Plus import UNet_3Plus
@@ -59,13 +59,8 @@ class GetModel():
             elif classname.find('BatchNorm2d') != -1:
                 torch.nn.init.normal_(m.weight.data, 1.0, 0.02)
                 torch.nn.init.constant_(m.bias.data, 0.0)
-        net.apply(init_func)
 
-        # if loger is not None:
-        #     loger.write("使用{}方法初始化网络相关权重".format(init_type))
-        # else:
-        #     print("使用{}方法初始化网络相关权重".format(init_type))
-        logger.success("使用{}方法初始化网络相关权重".format(init_type))
+        net.apply(init_func)
 
     def Createmodel(self, is_train=True):
         # 加载模型
@@ -75,13 +70,26 @@ class GetModel():
         # model = RestNet18(in_channels=IMGSIZE[2], n_classes=CLASSNUM)
         # model   = SegNet(input_channels=IMGSIZE[2], num_class=CLASSNUM)
         # model   = FCN(input_channels=IMGSIZE[2], num_class=CLASSNUM)
-        model = SmaAtUNet(n_channels=self.IMGSIZE[2], n_classes=self.NCLASS)
+        model = At_UNet(n_channels=self.IMGSIZE[2], n_classes=self.NCLASS)
 
-        # 初始化网络相关权重
-        if is_train:
-            self.weights_init(model, init_type="kaiming")
-            model = model.train()
-        else:
-            model = model.eval()
+        # 根据是否为训练集设置训练
+        model = model.train() if is_train else model.eval()
 
         return model
+
+    def init_weights(self, model, type="kaiming"):
+        assert type in [
+            "kaiming",
+            "normal",
+            "xavier",
+            "orthogonal",
+        ], "Input device is not valid"
+
+        # 初始化网络相关权重
+        self.weights_init(model, init_type=type)
+
+        # if loger is not None:
+        #     loger.write("使用{}方法初始化网络相关权重".format(init_type))
+        # else:
+        #     print("使用{}方法初始化网络相关权重".format(init_type))
+        logger.success("使用{}方法初始化网络相关权重".format(type))

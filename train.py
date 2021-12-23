@@ -96,7 +96,7 @@ def get_args():
     parser.add_argument('--early_stop', type=int,
                         help='Early stoping number', default=5)
     parser.add_argument('--seed', type=int,
-                        help='Seed', default=2021)
+                        help='Seed', default=42)    # 迷信数字
     parser.add_argument('--log_path', type=str,
                         help='log save path', default=r'log/')
     parser.add_argument('--save_mode', type=bool,
@@ -127,6 +127,7 @@ def main():
     args.systemtype  = True if platform.system().lower() == 'windows' else False
     args.systemtype_mac = True if platform.mac_ver()[0] != "" else False
     # 当前是否使用cuda来进行加速
+    args.UseGPU = False
     this_device = torch.device("cuda:0" if torch.cuda.is_available() and args.UseGPU else "cpu")
 
     # 根据平台的不同，设置不同batch的大小
@@ -174,8 +175,9 @@ def main():
     gen_target   = [1,] # loader.makedataTarget()
     logger.success("数据集加载完毕")
 
-    model_class = GetModel((args.IMGSIZE, args.nclass))
-    model = model_class.Createmodel(is_train=True)
+    modeler = GetModel((args.IMGSIZE, args.nclass))
+    model = modeler.Createmodel(is_train=True)
+    modeler.init_weights(model, "kaiming")
     logger.success("模型创建及初始化完毕")
 
     if this_device.type == "cuda":
@@ -194,7 +196,7 @@ def main():
     logger.success("模型初始化完毕")
 
     # 测试网络结构
-    # summary(model, input_size=(args.IMGSIZE[2], args.IMGSIZE[0], args.IMGSIZE[1]))
+    summary(model, input_size=(args.IMGSIZE[2], args.IMGSIZE[0], args.IMGSIZE[1]), device=this_device.type)
 
     # 创建优化器
     optimizer, scheduler = GetOptim(model, lr=args.lr[0])

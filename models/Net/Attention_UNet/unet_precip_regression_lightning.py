@@ -1,7 +1,7 @@
 import argparse
 from unet_parts_tradition import *
 from unet_parts_DS import DoubleConvDS, UpDS, DownDS
-from SmartLayer import CBAM
+from models.Net.Signal_model.layer import CBAM
 import pytorch_lightning as pl
 from regression_lightning import Precip_regression_base
 

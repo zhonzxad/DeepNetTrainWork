@@ -47,8 +47,8 @@ class ChannelAttention(nn.Module):
         avg_values = self.avg_pool(x)
         max_values = self.max_pool(x)
         # 在通道注意力机制中使用全连接层来
-        CBAMUseLinner = True
-        if CBAMUseLinner:
+        CBAM_use_linner = True
+        if CBAM_use_linner:
             out = self.MLP_linner(avg_values) + self.MLP_linner(max_values)
             scale = x * torch.sigmoid(out).unsqueeze(2).unsqueeze(3).expand_as(x)
         else:
@@ -72,7 +72,8 @@ class SpatialAttention(nn.Module):
         out = torch.cat([avg_out, max_out], dim=1)
         out = self.conv(out)
         # 原版的做法是只使用激活函数作为恢复特征，新版做法增加bn层
-        if True:
+        CBAM_use_newfun = True
+        if CBAM_use_newfun:
             out = self.bn(out)
             scale = x * torch.sigmoid(out)
         else:

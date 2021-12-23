@@ -10,7 +10,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from models.Net.Signal_model.layer import GroupNorm, GropConv
-from models.Net.SmaAtUNer.SmartLayer import DepthwiseSeparableConv
+from models.Net.Attention_UNet.Attention_Layer import DepthwiseSeparableConv
 
 
 class DoubleConvDS(nn.Module):
