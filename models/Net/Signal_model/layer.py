@@ -116,7 +116,7 @@ class SELayer(nn.Module):
         )
 
     def forward(self, x):
-        b, c, _, _ = x.size()
+        b, c, _, _ = x.shape # x.size()
         y = self.avg_pool(x).view(b, c)
         y = self.fc(y).view(b, c, 1, 1)
         return x * y.expand_as(x)
@@ -207,7 +207,7 @@ class GropConv(nn.Module):
     引自：https://www.cnblogs.com/shine-lee/p/10243114.html
     参考：https://blog.yani.ai/filter-group-tutorial/
     """
-    def __init__(self, in_ch, out_ch, groups):
+    def __init__(self, in_ch, out_ch, groups=8):
         super(GropConv, self).__init__()
         self.conv = nn.Conv2d(in_channels=in_ch, out_channels=out_ch, kernel_size=3, groups=groups, bias=False)
 
@@ -221,13 +221,13 @@ class DilConv(nn.Module):
     空洞卷积
     https://blog.csdn.net/u014767662/article/details/88574643
     """
-    def __init__(self, C_in, C_out, kernel_size, stride, padding, dilation, affine=True):
+    def __init__(self, chane_in, chane_out, kernel_size, stride, padding, dilation, affine=True):
         super(DilConv, self).__init__()
         self.op = nn.Sequential(
             nn.ReLU(inplace=False),
-            nn.Conv2d(C_in, C_in, kernel_size=kernel_size, stride=stride, padding=padding, dilation=dilation, groups=C_in, bias=False),
-            nn.Conv2d(C_in, C_out, kernel_size=1, padding=0, bias=False),
-            nn.BatchNorm2d(C_out, eps=1e-3, affine=affine),
+            nn.Conv2d(chane_in, chane_in, kernel_size=kernel_size, stride=stride, padding=padding, dilation=dilation, groups=chane_in, bias=False),
+            nn.Conv2d(chane_in, chane_out, kernel_size=1, padding=0, bias=False),
+            nn.BatchNorm2d(chane_out, eps=1e-3, affine=affine),
         )
 
     def forward(self, x):
