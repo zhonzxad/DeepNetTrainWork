@@ -23,12 +23,12 @@ class DoubleConvDS(nn.Module):
 
         self.double_conv = nn.Sequential(
             DepthwiseSeparableConv(in_channels, mid_channels, kernel_size=3, kernels_per_layer=kernels_per_layer, padding=1),
-            # nn.BatchNorm2d(mid_channels),
-            GroupNorm(mid_channels),
+            nn.BatchNorm2d(mid_channels),
+            # GroupNorm(mid_channels),
             nn.ReLU(inplace=True),
             DepthwiseSeparableConv(mid_channels, out_channels, kernel_size=3, kernels_per_layer=kernels_per_layer, padding=1),
-            # nn.BatchNorm2d(out_channels),
-            GroupNorm(out_channels),
+            nn.BatchNorm2d(out_channels),
+            # GroupNorm(out_channels),
             nn.ReLU(inplace=True)
         )
 

@@ -14,10 +14,13 @@ https://blog.csdn.net/weixin_30793735/article/details/88915612
 class Flatten(nn.Module):
     """按照第一维展平"""
     def __init__(self):
+        super(Flatten, self).__init__()
         pass
 
     def forward(self, x):
-        return x.view(x.size(0), -1)
+        batch = x.shape[0]
+        ret = x.view(batch, -1)
+        return ret
 
 class ChannelAttention(nn.Module):
     def __init__(self, input_channels, reduction_ratio=16):
