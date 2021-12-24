@@ -53,12 +53,12 @@ def dataset_collate(batch):
     return images, pngs, seg_labels
 
 class GetLoader():
-    def __init__(self, IMGSIZE=[384,384,3], CLASSNUM=2, SystemType=True, BatchSize=2, num_workers=1):
-        self.imgsize     = IMGSIZE
-        self.nclass      = CLASSNUM
-        self.batchsize   = BatchSize
-        self.num_workers = num_workers
-        self.SystemType  = SystemType  # false表示处于linux环境下
+    def __init__(self, args):
+        self.imgsize     = args.IMGSIZE
+        self.nclass      = args.n_class
+        self.batchsize   = args.batch_size
+        self.num_workers = args.load_tread
+        self.SystemType  = args.systemtype  # false表示处于linux环境下
 
         if self.SystemType:
             self.tra_img = r"G:/DataBase/userdata/BXG/CutFromData-4/train/img-resize-3/"

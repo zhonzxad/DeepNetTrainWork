@@ -76,14 +76,16 @@ def getgpudriver():
         numbers_list.append(gpu_model_number)
         gpu_ids.append(i)
         logger.info("当前显卡为:{}.".format(drive_name) +
-                    "总显存大小{:.0f} G,已用{:.0f} G,剩余{:.0f} G".format((meminfo.total / 1024**2), (meminfo.used / 1024**2), (meminfo.free / 1024**2))) #第二块显卡总的显存大小
+                    "总显存大小{:.0f} G,已用{:.0f} G,剩余{:.0f} G".format((meminfo.total / 1024**2),
+                    (meminfo.used / 1024**2), (meminfo.free / 1024**2))) #第二块显卡总的显存大小
+        break # 只考虑存在所有宿主机都存在的是同一种显卡的情况
 
     return numbers_list, gpu_ids
 
 # 定义命令行参数
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--nclass', type=int,
+    parser.add_argument('--n_class', type=int,
                         help='Number of classes', default=2)
     parser.add_argument('--batch_size', type=int,
                         help='batch size', default=1)
@@ -166,7 +168,7 @@ def main():
     torch.manual_seed(args.seed)
 
     # 不同分类之间的权重系数，默认都为1（均衡的）
-    cls_weights = np.ones([args.nclass], np.float32)
+    cls_weights = np.ones([args.n_class], np.float32)
 
     # 加载日志对象
     #logger = GetWriteLog(writerpath=MakeDir("log/log/"))  # 需注释掉最前方引用的logger库
@@ -179,12 +181,12 @@ def main():
     # print(vars(args))
     logger.info(vars(args))
 
-    loader = GetLoader(args.IMGSIZE, args.nclass, args.systemtype, args.batch_size, args.load_tread)
+    loader = GetLoader(args)
     gen, gen_val = loader.makedata()
     gen_target   = [1,] # loader.makedataTarget()
     logger.success("数据集加载完毕")
 
-    modeler = GetModel((args.IMGSIZE, args.nclass))
+    modeler = GetModel(args)
     model = modeler.Createmodel(is_train=True)
     modeler.init_weights(model, "kaiming")
     logger.success("模型创建及初始化完毕")
@@ -194,12 +196,12 @@ def main():
         # os.environ["CUDA_VISIBLE_DEVICES"] = "cuda:0"
         torch.cuda.manual_seed(args.seed)
         # 那么cuDNN使用的非确定性算法就会自动寻找最适合当前配置的高效算法，来达到优化运行效率的问题
-        torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = True
         # 将模型设置为GPU
         model = model.to(this_device)
         if args.UseMultiGPU:
             # 开启GPU并行化处理
+            torch.backends.cudnn.deterministic = True
             model = torch.nn.DataParallel(model, gpu_ids)
 
     # tfwriter.add_graph(model=model, input_to_model=args.IMGSIZE)
@@ -250,7 +252,7 @@ def main():
         "device" : this_device,
         "gpuids" : gpu_ids,
         "log" : logger,
-        "CLASSNUM" : args.nclass,
+        "CLASSNUM" : args.n_class,
         "IMGSIZE" : args.IMGSIZE,
         "optimizer" : optimizer,
         "amp" : args.amp,
