@@ -101,14 +101,10 @@ def get_args():
                         help='Early stoping number', default=5)
     parser.add_argument('--seed', type=int,
                         help='Seed', default=42)    # 迷信数字
-    parser.add_argument('--log_path', type=str,
-                        help='log save path', default=r'log/')
     parser.add_argument('--save_mode', type=bool,
                         help='true save mode false save dic', default=True)
     parser.add_argument('--resume', type=bool,
                         help='user resume weight', default=True)
-    parser.add_argument('--gpu', type=str,
-                        help='GPU ID', default='0')
     parser.add_argument('--UseGPU', type=bool,
                         help='is use cuda as env', default=True)
     parser.add_argument('--UseMultiGPU', type=bool,
