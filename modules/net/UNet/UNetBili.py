@@ -134,11 +134,11 @@ class UNetVGG16(nn.Module):
 
 # def _initialize_weights(self, *stages):
 #     for modules in stages:
-#         for module in modules.modules():
-#             if isinstance(module, nn.Conv2d):
-#                 nn.init.kaiming_normal_(module.weight)
-#                 if module.bias is not None:
-#                     module.bias.data.zero_()
-#             elif isinstance(module, nn.BatchNorm2d):
-#                 module.weight.data.fill_(1)
-#                 module.bias.data.zero_()
+#         for little_funtion in modules.modules():
+#             if isinstance(little_funtion, nn.Conv2d):
+#                 nn.init.kaiming_normal_(little_funtion.weight)
+#                 if little_funtion.bias is not None:
+#                     little_funtion.bias.data.zero_()
+#             elif isinstance(little_funtion, nn.BatchNorm2d):
+#                 little_funtion.weight.data.fill_(1)
+#                 little_funtion.bias.data.zero_()
