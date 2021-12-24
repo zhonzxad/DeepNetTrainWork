@@ -7,30 +7,30 @@ class AverageMeter(object):
     """计算并存储平均值和当前值"""
 
     def __init__(self):
-        self.count = 0
-        self.sum   = 0
-        self.this_val   = 0
-        self.avg   = 0
+        self.count    = 0
+        self.sum      = 0
+        self.avg_val  = 0
+        self.this_val = 0
 
         self.reset()
 
     def reset(self):
         self.this_val = 0
-        self.avg = 0
-        self.sum = 0
-        self.count = 0
+        self.avg_val  = 0
+        self.sum      = 0
+        self.count    = 0
 
     def update(self, val, n=1):
         self.this_val = val
         self.sum     += val
         self.count   += n
-        self.avg      = self.sum / self.count
+        self.avg_val  = self.sum / self.count
 
     def get_val(self):
         return self.this_val
 
     def get_avg(self):
-        return self.avg
+        return self.avg_val
 
     def get_count(self):
         return self.count

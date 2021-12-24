@@ -119,6 +119,8 @@ def get_args():
                         help='net run on system, True is windows', default=True)
     parser.add_argument("--systemtype_mac", type=bool,
                         help='net run on system, True is mac', default=False)
+    parser.add_argument('--local_rank', default=-1, type=int,
+                        help='node rank for distributed training')  # DDP多卡参数
     args = parser.parse_args()
 
     return args
@@ -156,7 +158,7 @@ def main():
         if name not in hope_gpu_name:
             args.amp = True
     # 当设备中存在的GPU数量大于1时，开启GPU并行计算
-    if len(gpu_ids) > 1:
+    if torch.cuda.device_count() > 1:
         args.UseMultiGPU = True
 
     # 为CPU设定随机种子使结果可靠，就是每个人的随机结果都尽可能保持一致
@@ -234,6 +236,7 @@ def main():
     logger.info("注意: 没有使用tfboard记录数据") if tfwriter is None else logger.success("注意: 使用tfboard记录数据")
     logger.success("注意: 使用了amp混合精度训练") if args.amp else logger.info("注意: 没有使用amp混合精度训练")
     logger.success("注意: 使用了GPU加速训练") if this_device.type == "cuda" else logger.info("注意: 没有使用GPU加速训练")
+    logger.info("注意: 系统检测多GPU，并行训练") if args.UseMultiGPU == True else logger.success("注意: 单卡训练")
 
     # 将最优损失设置为无穷大
     best_loss = float("inf")
@@ -264,15 +267,15 @@ def main():
         para_kargs["this_epoch"] = epoch
         # 训练
         # 返回值按照 0/总loss, 1/count, 2/celoss, 3/bceloss, 4/diceloss, 5/floss, 6/lr
-        time_start = time.time()
-        ret_train = \
-            fit_one_epoch(model, (gen, gen_target), **para_kargs)
-        time_end = time.time()
-
-        # 每轮训练输出一些日志信息
-        logger.info("第{}轮训练完成,本轮训练轮次{},耗时{},最终损失为{}".format(epoch, ret_train[1],
-                                                            formt_time((time_end - time_start)),
-                                                            ret_train[0].item()))
+        # time_start = time.time()
+        # ret_train = \
+        #     fit_one_epoch(model, (gen, gen_target), **para_kargs)
+        # time_end = time.time()
+        #
+        # # 每轮训练输出一些日志信息
+        # logger.info("第{}轮训练完成,本轮训练轮次{},耗时{},最终损失为{}".format(epoch, ret_train[1],
+        #                                                     formt_time((time_end - time_start)),
+        #                                                     ret_train[0].item()))
 
         # 进行测试
         ret_val = \

@@ -7,8 +7,8 @@ import os
 import sys
 import torch
 from tqdm import tqdm, trange
-import time
 from loguru import logger
+from torch.autograd import Variable
 
 from modules.utils.getloss import loss_func
 from modules.utils.funtion.averagemeter import AverageMeter
@@ -100,17 +100,10 @@ def fit_one_epoch(net, gens, **kargs):
         # print("\nNo in RangeNet img shape is {} || png shape is {}".format(img.shape, png.shape))
 
         with torch.no_grad():
-            # img = torch.autograd.Va   riable(torch.from_numpy(img).type(torch.FloatTensor))
-            # png = torch.autograd.Variable(torch.from_numpy(png).type(torch.FloatTensor)).long()
-            # seg_labels = torch.autograd.Variable(torch.from_numpy(seg_labels).type(torch.FloatTensor))
-            img     = torch.from_numpy(img).type(torch.FloatTensor)
-            png     = torch.from_numpy(png).type(torch.FloatTensor)
-            label   = torch.from_numpy(label).type(torch.FloatTensor)
-            weights = torch.from_numpy(cls_weights)
-            # img = torch.autograd.Variable(img).type(torch.FloatTensor)
-            # png = torch.autograd.Variable(png).type(torch.FloatTensor)
-            # seg_labels = torch.autograd.Variable(seg_labels).type(torch.FloatTensor)
-            # seg_labels = seg_labels.transpose(1, 3).transpose(2, 3)
+            img     = Variable(torch.from_numpy(img).type(torch.FloatTensor), requires_grad=True)
+            png     = Variable(torch.from_numpy(png).type(torch.FloatTensor), requires_grad=True)
+            label   = Variable(torch.from_numpy(label).type(torch.FloatTensor), requires_grad=True)
+            weights = Variable(torch.from_numpy(cls_weights), requires_grad=True)
             # logger.write("\n img shape is {} || png shape is {} || seg_labels shape is {}".format(img.shape, png.shape, seg_labels.shape))
 
             if this_device.type == "cuda":
@@ -177,7 +170,8 @@ def fit_one_epoch(net, gens, **kargs):
 
     # tqdm_bar.close()
     # 返回值按照 0/总loss, 1/count, 2/celoss, 3/bceloss, 4/diceloss, 5/floss, 6/lr
-    return [loss[0], (batch_idx + 1), loss[1], loss[2], loss[3], loss[4], get_lr(optimizer)]
+    # assert (batch_idx - 1 == total_loss.get_count()), "循环次数与计算损失次数不相等"
+    return [loss[0], total_loss.get_count(), loss[1], loss[2], loss[3], loss[4], get_lr(optimizer)]
 
 def test_epoch(net, gen_vals, **kargs):
     """测试方法"""
@@ -196,6 +190,10 @@ def test_epoch(net, gen_vals, **kargs):
 
     # 设置网络为验证集模式
     model_eval = net.eval()
+
+    # 释放无关内存
+    if hasattr(torch.cuda, 'empty_cache'):
+        torch.cuda.empty_cache()
 
     # 创建混合精度训练
     grad_scaler_val = torch.cuda.amp.GradScaler(enabled=amp)
@@ -232,24 +230,26 @@ def test_epoch(net, gen_vals, **kargs):
                 label   = label.to(this_device)
                 weights = weights.to(this_device)
 
-        if amp == True:
-            # 混合精度计算
-            with torch.cuda.amp.autocast(enabled=amp):
-                # 输入测试图像
-                output    = model_eval(img)
+        # 在验证和测试阶段不需要计算梯度反向传播
+        with torch.no_grad():
+            if amp == True:
+                # 混合精度计算
+                with torch.cuda.amp.autocast(enabled=amp):
+                    # 输入测试图像
+                    output    = model_eval(img)
 
-                # 计算损失
-                # print("\n output shape is {} || png shape is {}".format(output.shape, png.shape))
-                # 返回值按照 0/总loss, 1/celoss, 2/bceloss, 3/diceloss, 4/floss排布
-                loss = loss_func(output, png, label, weights, this_device)
-                # grad_scaler_val.scale(loss[0])
-                # # 优化梯度
-                # grad_scaler_val.update()
-        else:
-            # 输入测试图像
-            output = model_eval(img)
-            # 计算损失,返回值按照 0/总loss, 1/celoss, 2/bceloss, 3/diceloss, 4/floss排布
-            loss   = loss_func(output, png, label, weights, this_device)
+                    # 计算损失
+                    # print("\n output shape is {} || png shape is {}".format(output.shape, png.shape))
+                    # 返回值按照 0/总loss, 1/celoss, 2/bceloss, 3/diceloss, 4/floss排布
+                    loss = loss_func(output, png, label, weights, this_device)
+                    # grad_scaler_val.scale(loss[0])
+                    # # 优化梯度
+                    # grad_scaler_val.update()
+            else:
+                # 输入测试图像
+                output = model_eval(img)
+                # 计算损失,返回值按照 0/总loss, 1/celoss, 2/bceloss, 3/diceloss, 4/floss排布
+                loss   = loss_func(output, png, label, weights, this_device)
 
         total_loss.update(loss[0].item())
         total_ce_loss.update(loss[1].item())
@@ -277,4 +277,5 @@ def test_epoch(net, gen_vals, **kargs):
 
     # tqdm_bar_val.close()
     # 返回值按照 0/总loss, 1/count, 2/celoss, 3/bceloss, 4/diceloss, 5/floss
-    return [loss[0], (batch_idx_val + 1), loss[1], loss[2], loss[3], loss[4]]
+    # assert (batch_idx_val - 1 == total_loss.get_count()), "循环次数与计算损失次数不相等"
+    return [loss[0], total_loss.get_count(), loss[1], loss[2], loss[3], loss[4]]
