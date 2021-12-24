@@ -11,13 +11,14 @@ http://www.manongjc.com/detail/16-egzyzijukzuqmwv.html
 """
 
 import os
+import re
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
 from torch.utils.data import Dataset, DataLoader
 
-import torch.distributed
-# import torch.distributed as dist
+# import torch.distributed
+import torch.distributed as dist
 
 
 class DDP():
@@ -35,15 +36,31 @@ class DDP():
     CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node=4 main.py
     """
     
-    def __init__(self, local_rank, device_ids, batch_size):
+    def __init__(self, device_ids, batch_size):
         super(DDP, self).__init__()
-        # 1) 初始化
-        torch.distributed.init_process_group(backend="nccl")
 
-        # 2） 配置每个进程的gpu
-        self.local_rank = local_rank
+        # 1. 获取环境信息
+        self.rank = int(os.environ['SLURM_PROCID'])
+        self.world_size = int(os.environ['SLURM_NTASKS'])
+        self.local_rank = int(os.environ['SLURM_LOCALID'])
+        self.node_list = str(os.environ['SLURM_NODELIST'])
+
+        # 对ip进行操作
+        node_parts = re.findall('[0-9]+', self.node_list)
+        host_ip = '{}.{}.{}.{}'.format(node_parts[1], node_parts[2], node_parts[3], node_parts[4])
+
+        # 注意端口一定要没有被使用
+        port = "23456"
+
+        # 使用TCP初始化方法
+        init_method = 'tcp://{}:{}'.format(host_ip, port)
+
+        # 多进程初始化,初始化通信环境
+        dist.init_process_group("nccl", init_method=init_method,
+                                world_size=self.world_size, rank=self.rank)
+
+        # 指定每个节点上的device
         torch.cuda.set_device(self.local_rank)
-        self.device = torch.device("cuda", self.local_rank)
 
         ngpus_per_node = len(device_ids)
         self.batch_size = int(batch_size / ngpus_per_node)
@@ -52,10 +69,23 @@ class DDP():
         # torch.distributed.is_nccl_available ()
 
     def get_device(self):
-        return self.device
+        return torch.device("cuda", self.local_rank)
 
     def get_local_rank(self):
         return self.local_rank
 
     def get_batchsize(self):
         return self.batch_size
+
+"""
+        # 1) 初始化
+        torch.distributed.init_process_group(backend="nccl")
+
+        # 2） 配置每个进程的gpu
+        self.local_rank = torch.distributed.get_rank()
+        torch.cuda.set_device(self.local_rank)
+        self.device = torch.device("cuda", self.local_rank)
+
+        ngpus_per_node = len(device_ids)
+        self.batch_size = int(batch_size / ngpus_per_node)
+"""

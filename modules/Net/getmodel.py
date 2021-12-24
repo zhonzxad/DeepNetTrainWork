@@ -38,9 +38,8 @@ from modules.net.funtion.init_weight import init_weight
 class GetModel():
     def __init__(self, args):
         if type(args) == argparse.Namespace:
-            self.args    = args
-            self.IMGSIZE = self.args.IMGSIZE
-            self.NCLASS  = self.args.nclass
+            self.IMGSIZE = args.IMGSIZE
+            self.NCLASS  = args.n_class
         else:
             self.IMGSIZE = args[0]
             self.NCLASS  = args[1]

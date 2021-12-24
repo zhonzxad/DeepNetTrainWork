@@ -60,6 +60,7 @@ class GetLoader():
         self.num_workers = args.load_thread
         self.UseMultiGPU = args.UseMultiGPU
         self.SystemType  = args.systemtype  # false表示处于linux环境下
+        self.local_rank  = args.local_rank
 
         if self.SystemType:
             self.tra_img = r"G:/DataBase/userdata/BXG/CutFromData-4/train/img-resize-3/"
@@ -89,6 +90,10 @@ class GetLoader():
         val_dataset   = UserDataLoader(self.val_img, self.val_lab,
                                         image_size=self.imgsize, num_classes=self.nclass)
 
+        if self.UseMultiGPU:
+            train_dataset = DistributedSampler(train_dataset, num_replicas=self.local_rank, rank=self.local_rank)
+            val_dataset   = DistributedSampler(val_dataset, num_replicas=self.local_rank, rank=self.local_rank)
+
         # pin_memory:如果设置为True，那么data loader将会在返回它们之前，将tensors拷贝到CUDA中的固定内存
         # collate_fn: 将一个list的sample组成一个mini-batch的函数
         # drop_last:如果设置为True：比如你的batch_size设置为64，而一个epoch只有100个样本，那么训练的时候后面的36个就被扔掉了…
@@ -96,12 +101,12 @@ class GetLoader():
         gen = DataLoader(train_dataset, shuffle=True, batch_size=self.batchsize,
                             num_workers=self.num_workers, pin_memory=True,
                             drop_last=False, collate_fn=dataset_collate,
-                            sampler=DistributedSampler(train_dataset) if self.UseMultiGPU else None
+                            sampler=train_dataset if self.UseMultiGPU else None
                          )
         gen_val = DataLoader(val_dataset, shuffle=False, batch_size=self.batchsize,
                             num_workers=self.num_workers, pin_memory=True,
                             drop_last=True, collate_fn=dataset_collate,
-                             sampler=DistributedSampler(val_dataset) if self.UseMultiGPU else None
+                             sampler=val_dataset if self.UseMultiGPU else None
                              )
 
         return gen, gen_val
@@ -119,15 +124,19 @@ class GetLoader():
         val_dataset   = UnetDataset(val_lines,   self.imgsize, self.nclass,
                                       False, self.VOCdevkit_path, self.VOCFileName)
 
-        gen           = DataLoader(train_dataset, shuffle = True, batch_size=self.batchsize, 
-                                  num_workers=self.num_workers, pin_memory=True,
-                                  drop_last=True, collate_fn=dataset_collate,
-                                   sampler=DistributedSampler(train_dataset) if self.UseMultiGPU else None
-                                   )
-        gen_val       = DataLoader(val_dataset  , shuffle = True, batch_size = self.batchsize, 
+        if self.UseMultiGPU:
+            train_dataset = DistributedSampler(train_dataset, num_replicas=self.local_rank, rank=self.local_rank)
+            val_dataset   = DistributedSampler(val_dataset, num_replicas=self.local_rank, rank=self.local_rank)
+
+        gen     = DataLoader(train_dataset, shuffle = True, batch_size=self.batchsize,
+                            num_workers=self.num_workers, pin_memory=True,
+                            drop_last=True, collate_fn=dataset_collate,
+                             sampler=train_dataset if self.UseMultiGPU else None
+                             )
+        gen_val = DataLoader(val_dataset  , shuffle = True, batch_size = self.batchsize,
                                     num_workers=self.num_workers, pin_memory=True,
                                     drop_last=True, collate_fn=dataset_collate,
-                                   sampler=DistributedSampler(val_dataset) if self.UseMultiGPU else None,
+                                   sampler=val_dataset if self.UseMultiGPU else None,
                                    )
 
         return gen, gen_val

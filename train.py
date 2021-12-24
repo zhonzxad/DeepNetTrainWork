@@ -201,7 +201,7 @@ def main():
         # 将模型设置为GPU，当设备中存在的GPU数量大于1时，开启GPU并行计算
         if torch.cuda.device_count() > 1:
             args.UseMultiGPU = True
-            ddp = DDP(local_rank=args.local_rank, device_ids=gpu_ids, batch_size=args.batch_size)
+            ddp = DDP(device_ids=gpu_ids, batch_size=args.batch_size)
             this_device = ddp.get_device()
             args.batch_size = ddp.get_batchsize()
             model = torch.nn.parallel.DistributedDataParallel(model.cuda(),
