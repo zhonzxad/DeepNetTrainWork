@@ -21,12 +21,6 @@ class AverageMeter(object):
         self.count = 0
 
     def update(self, val, n=1):
-<<<<<<< HEAD:modules/utils/module/funtion.py
-        self.val    = val
-        self.sum   += val * n
-        self.count += n
-        self.avg    = self.sum / self.count
-=======
         self.this_val = val
         self.sum     += val
         self.count   += n
@@ -34,7 +28,6 @@ class AverageMeter(object):
 
     def get_val(self):
         return self.this_val
->>>>>>> NewLoader:modules/utils/funtion/averagemeter.py
 
     def get_avg(self):
         return self.avg

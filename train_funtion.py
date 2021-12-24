@@ -11,7 +11,6 @@ import time
 from loguru import logger
 
 from modules.utils.getloss import loss_func
-from modules.utils.module.funtion import AverageMeter
 from modules.utils.funtion.averagemeter import AverageMeter
 
 # 在Windows下使用vscode运行时 添加上这句话就会使用正确的相对路径设置
