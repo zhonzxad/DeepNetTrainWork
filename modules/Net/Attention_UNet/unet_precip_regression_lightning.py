@@ -1,7 +1,11 @@
 import argparse
 from unet_parts_tradition import *
 from unet_parts_conv import DoubleConvDS, UpDS, DownDS
+<<<<<<< HEAD:modules/Net/Attention_UNet/unet_precip_regression_lightning.py
 from modules.Net.Net_funtion.layer import CBAM
+=======
+from modules.net.Net_funtion.layer import CBAM
+>>>>>>> NewLoader:modules/net/Attention_UNet/unet_precip_regression_lightning.py
 import pytorch_lightning as pl
 from regression_lightning import Precip_regression_base
 

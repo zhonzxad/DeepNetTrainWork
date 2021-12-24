@@ -13,6 +13,7 @@ import argparse
 import torch
 import torch.nn as nn
 from loguru import logger
+<<<<<<< HEAD:modules/Net/getmodel.py
 from modules.Net.FCN.fcn import FCN
 from modules.Net.ResNet.ResNet import GetResNet
 from modules.Net.ResNet.resnet18 import RestNet18
@@ -24,6 +25,19 @@ from modules.Net.UNet.UNet_3Plus import UNet_3Plus
 from modules.Net.UNet.UNetBili import UNetVGG16
 
 from modules.Net.Net_funtion.init_weight import init_weight
+=======
+from modules.net.FCN.fcn import FCN
+from modules.net.ResNet.ResNet import GetResNet
+from modules.net.ResNet.resnet18 import RestNet18
+from modules.net.SegNet.SegNet import SegNet
+from modules.net.Attention_UNet.Attention_UNet import At_UNet
+from modules.net.UNet.UNet import UNet
+from modules.net.UNet.UNet_2Plus import UNet_2Plus
+from modules.net.UNet.UNet_3Plus import UNet_3Plus
+from modules.net.UNet.UNetBili import UNetVGG16
+
+from modules.net.Net_funtion.init_weight import init_weight
+>>>>>>> NewLoader:modules/net/getmodel.py
 
 # from .FCN.fcn import FCN
 # from .ResNet.ResNet import GetResNet

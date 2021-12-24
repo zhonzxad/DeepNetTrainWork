@@ -17,10 +17,17 @@ https://github.com/HansBambel/SmaAt-UNet/blob/master/models/SmaAt_UNet.py
 3）s < 1 fractionally strided convolution,相当于对原图先作了upsampling操作扩大原图，然后再卷积，这样得到的结果图会变大。
 """
 
+<<<<<<< HEAD:modules/Net/Attention_UNet/Attention_UNet.py
 from modules.Net.Net_funtion.layer import CBAM, GAM
 # from SmaAtUNer.unet_parts import OutConv
 from modules.Net.Attention_UNet.unet_parts_conv import DoubleConvDS, DownDS, InConv
 from modules.Net.Attention_UNet.unet_parts_conv import OutConv, UNetUp_Tradition, UpDS
+=======
+from modules.net.Net_funtion.layer import CBAM, GAM
+# from SmaAtUNer.unet_parts import OutConv
+from modules.net.Attention_UNet.unet_parts_conv import DoubleConvDS, DownDS, InConv
+from modules.net.Attention_UNet.unet_parts_conv import OutConv, UNetUp_Tradition, UpDS
+>>>>>>> NewLoader:modules/net/Attention_UNet/Attention_UNet.py
 from torch import nn
 
 class At_UNet(nn.Module):

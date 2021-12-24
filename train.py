@@ -21,7 +21,7 @@ from loguru import logger
 
 from train_funtion import fit_one_epoch, test_epoch
 
-from modules.Net.getmodel import GetModel
+from modules.net.getmodel import GetModel
 from modules.utils.getearlystop import GetEarlyStopping
 from modules.utils.getloader import GetLoader
 from modules.utils.getlog import GetWriteLog

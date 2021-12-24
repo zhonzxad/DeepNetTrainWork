@@ -12,6 +12,7 @@ from loguru import logger
 
 from modules.utils.getloss import loss_func
 from modules.utils.module.funtion import AverageMeter
+from modules.utils.funtion.averagemeter import AverageMeter
 
 # 在Windows下使用vscode运行时 添加上这句话就会使用正确的相对路径设置
 # 需要import os和sys两个库
@@ -22,6 +23,22 @@ def get_lr(optimizer):
     """获取学习率"""
     for param_group in optimizer.param_groups:
         return param_group['lr']
+
+def set_tqdm_post_avg(vals, optimizer):
+    """按照固定的顺序对loss相关信息进行输出"""
+    names = ["Loss", "CEloss", "BCEloss", "Diceloss", "F_SOCRE", ]
+    info = ""
+    for i in range(len(vals)):
+        if vals[i] > 0:
+            info += ("{}={:.5f},".format(names[i], vals[i]))
+        elif vals[i] < 0:
+            logger.warning("序列化损失函数时发生错误,存在{}损失值小于0的情况".format(names[i]))
+        else:
+            pass
+
+    info += ("lr={:.7f}".format(get_lr(optimizer)))
+
+    return info
 
 def set_tqdm_post(vals, batch_indx, optimizer):
     """按照固定的顺序对loss相关信息进行输出"""
@@ -47,11 +64,11 @@ def set_tqdm_post(vals, batch_indx, optimizer):
 
 def fit_one_epoch(net, gens, **kargs):
     """"定义训练每一个epoch的步骤"""
-    total_ce_loss   = 0
-    total_bce_loss  = 0
-    total_dice_loss = 0
-    total_f_score   = 0
-    total_loss      = 0
+    total_ce_loss   = AverageMeter()
+    total_bce_loss  = AverageMeter()
+    total_dice_loss = AverageMeter()
+    total_f_score   = AverageMeter()
+    total_loss      = AverageMeter()
 
     amp         = kargs["amp"]
     this_device = kargs["device"]
@@ -135,25 +152,27 @@ def fit_one_epoch(net, gens, **kargs):
             loss[0].backward()
             optimizer.step()
 
-        total_loss      += loss[0].item()
-        total_ce_loss   += loss[1].item()
-        total_bce_loss  += loss[2].item()
-        total_dice_loss += loss[3].item()
-        total_f_score   += loss[4].item()
+        total_loss.update(loss[0].item())
+        total_ce_loss.update(loss[1].item())
+        total_bce_loss.update(loss[2].item())
+        total_dice_loss.update(loss[3].item())
+        total_f_score.update(loss[4].item())
 
         # 写tensorboard
         tags = ["train_loss", "CEloss", "BCEloss", "Diceloss", "f_score", "lr", "accuracy"]
         if tfwriter is not None:
-            tfwriter.add_scalar(tags[0], total_loss / (batch_idx + 1))#, epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[1], total_ce_loss / (batch_idx + 1))#, epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[2], total_bce_loss / (batch_idx + 1))#, epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[3], total_dice_loss / (batch_idx + 1))#, epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[4], total_f_score / (batch_idx + 1))#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[0], total_loss.get_avg())#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[1], total_ce_loss.get_avg())#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[2], total_bce_loss.get_avg())#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[3], total_dice_loss.get_avg())#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[4], total_f_score.get_avg())#, epoch*(batch_idx + 1))
             tfwriter.add_scalar(tags[5], get_lr(optimizer))#, epoch*(batch_idx + 1))
 
-        #设置进度条右边显示的信息
-        tq_str = set_tqdm_post((total_loss, total_ce_loss, total_bce_loss, total_dice_loss, total_f_score),
-                               (batch_idx + 1), optimizer)
+        # 设置进度条右边显示的信息
+        # tq_str = set_tqdm_post((total_loss, total_ce_loss, total_bce_loss, total_dice_loss, total_f_score),
+        #                        (batch_idx + 1), optimizer)
+        tq_str = set_tqdm_post_avg((total_loss.get_avg(), total_ce_loss.get_avg(), total_bce_loss.get_avg(),
+                                total_dice_loss.get_avg(), total_f_score.get_avg()), optimizer)
         tqdm_bar.set_postfix_str(tq_str)
         # tqdm_bar.update(1)
 
@@ -163,11 +182,11 @@ def fit_one_epoch(net, gens, **kargs):
 
 def test_epoch(net, gen_vals, **kargs):
     """测试方法"""
-    total_ce_loss   = 0
-    total_bce_loss  = 0
-    total_dice_loss = 0
-    total_f_score   = 0
-    total_loss      = 0
+    total_ce_loss   = AverageMeter()
+    total_bce_loss  = AverageMeter()
+    total_dice_loss = AverageMeter()
+    total_f_score   = AverageMeter()
+    total_loss      = AverageMeter()
 
     amp         = kargs["amp"]
     this_device = kargs["device"]
@@ -233,26 +252,28 @@ def test_epoch(net, gen_vals, **kargs):
             # 计算损失,返回值按照 0/总loss, 1/celoss, 2/bceloss, 3/diceloss, 4/floss排布
             loss   = loss_func(output, png, label, weights, this_device)
 
-        total_loss      += loss[0].item()
-        total_ce_loss   += loss[1].item()
-        total_bce_loss  += loss[2].item()
-        total_dice_loss += loss[3].item()
-        total_f_score   += loss[4].item()
+        total_loss.update(loss[0].item())
+        total_ce_loss.update(loss[1].item())
+        total_bce_loss.update(loss[2].item())
+        total_dice_loss.update(loss[3].item())
+        total_f_score.update(loss[4].item())
 
         # 写tensorboard
         tags = ["train_loss_val", "CEloss_val", "BCEloss_val", "Diceloss_val", "f_score_val", "lr_val", "accuracy"]
         if tfwriter is not None:
-            tfwriter.add_scalar(tags[0], total_loss / (batch_idx_val + 1))#, epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[1], total_ce_loss / (batch_idx_val + 1))#, epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[2], total_bce_loss / (batch_idx_val + 1))#, epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[3], total_dice_loss / (batch_idx_val + 1))#, epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[4], total_f_score / (batch_idx_val + 1))#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[0], total_loss.get_avg())#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[1], total_ce_loss.get_avg())#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[2], total_bce_loss.get_avg())#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[3], total_dice_loss.get_avg())#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[4], total_f_score.get_avg())#, epoch*(batch_idx + 1))
             tfwriter.add_scalar(tags[5], get_lr(optimizer))#, epoch*(batch_idx + 1))
 
         #设置进度条右边显示的信息
-        tq_str = set_tqdm_post((total_loss, total_ce_loss, total_bce_loss, total_dice_loss, total_f_score),
-                               (batch_idx_val + 1), optimizer)
-        tqdm_bar_val.set_postfix_str(tq_str)
+        # tq_str = set_tqdm_post((total_loss, total_ce_loss, total_bce_loss, total_dice_loss, total_f_score),
+        #                        (batch_idx_val + 1), optimizer)
+        tq_str_val = set_tqdm_post_avg((total_loss.get_avg(), total_ce_loss.get_avg(), total_bce_loss.get_avg(),
+                                    total_dice_loss.get_avg(), total_f_score.get_avg()), optimizer)
+        tqdm_bar_val.set_postfix_str(tq_str_val)
         # tqdm_bar_val.update(1)
 
     # tqdm_bar_val.close()
