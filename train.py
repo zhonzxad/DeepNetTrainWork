@@ -152,7 +152,7 @@ def main():
         # args.amp        = False
 
     # 不期望使用amp混合精度的列表
-    hope_gpu_name     = ["960", "2080", "T4", ]
+    hope_gpu_name     = ["960", "2080", "T4", "K80"]
     # 获取当前GPU名称
     gpu_name, gpu_ids = getgpudriver()
     for i in range(len(gpu_name)):
@@ -160,6 +160,7 @@ def main():
         # 如果不在期望列表，使用amp混合训练
         if name not in hope_gpu_name:
             args.amp = True
+            break
 
     # 为CPU设定随机种子使结果可靠，就是每个人的随机结果都尽可能保持一致
     np.random.seed(args.seed)
@@ -203,7 +204,8 @@ def main():
             ddp = DDP(local_rank=args.local_rank, device_ids=gpu_ids, batch_size=args.batch_size)
             this_device = ddp.get_device()
             args.batch_size = ddp.get_batchsize()
-            model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.local_rank],
+            model = torch.nn.parallel.DistributedDataParallel(model.cuda(),
+                                                              device_ids=[args.local_rank],
                                                               output_device=args.local_rank,
                                                               # find_unused_parameters=True,
                                                               )
