@@ -15,10 +15,16 @@ class AverageMeter(object):
         self.count = 0
 
     def update(self, val, n=1):
-        self.val = val
-        self.sum += val * n
+        self.val    = val
+        self.sum   += val * n
         self.count += n
-        self.avg = self.sum / self.count
+        self.avg    = self.sum / self.count
+
+    def get_avg(self):
+        return self.avg
+
+    def get_count(self):
+        return self.count
 
 def str2bool(v):
     if isinstance(v, bool):

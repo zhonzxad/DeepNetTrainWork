@@ -87,7 +87,7 @@ def msssim(img1, img2, window_size=11, size_average=True, val_range=None, normal
     mssim = torch.stack(mssim)
     mcs = torch.stack(mcs)
 
-    # Normalize (to avoid NaNs during training unstable models, not compliant with original definition)
+    # Normalize (to avoid NaNs during training unstable modules, not compliant with original definition)
     if normalize:
         mssim = (mssim + 1) / 2
         mcs = (mcs + 1) / 2

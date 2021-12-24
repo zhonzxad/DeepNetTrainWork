@@ -10,12 +10,12 @@ from tensorboardX import SummaryWriter
 from tqdm import tqdm
 from progressbar import ProgressBar, Percentage, Bar, Timer, ETA
 
-from models.utils.getearlystop import GetEarlyStopping
-from models.utils.getloader import GetLoader
-from models.utils.getloss import loss_func
+from modules.utils.getearlystop import GetEarlyStopping
+from modules.utils.getloader import GetLoader
+from modules.utils.getloss import loss_func
 from getmodel import GetModel
-from models.utils.getoptim import GetOptim
-from models.utils.getlog import GetWriteLog
+from modules.utils.getoptim import GetOptim
+from modules.utils.getlog import GetWriteLog
 
 # 在Windows下使用vscode运行时 添加上这句话就会使用正确的相对路径设置
 # 需要import os和sys两个库

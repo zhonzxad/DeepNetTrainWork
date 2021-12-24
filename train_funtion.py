@@ -10,7 +10,8 @@ from tqdm import tqdm, trange
 import time
 from loguru import logger
 
-from models.utils.getloss import loss_func
+from modules.utils.getloss import loss_func
+from modules.utils.module.funtion import AverageMeter
 
 # 在Windows下使用vscode运行时 添加上这句话就会使用正确的相对路径设置
 # 需要import os和sys两个库

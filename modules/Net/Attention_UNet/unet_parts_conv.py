@@ -9,8 +9,8 @@ LastEditors: zhonzxad
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from models.Net.Net_funtion.layer import GroupNorm, GropConv, DilConv
-from models.Net.Attention_UNet.Attention_Layer import DepthwiseSeparableConv
+from modules.Net.Net_funtion.layer import GroupNorm, GropConv, DilConv
+from modules.Net.Attention_UNet.Attention_Layer import DepthwiseSeparableConv
 
 
 class DoubleConvDS(nn.Module):
