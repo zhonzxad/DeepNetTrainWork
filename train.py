@@ -65,6 +65,7 @@ def getgpudriver():
     pynvml.nvmlInit()
     device_count = pynvml.nvmlDeviceGetCount()           # 几块显卡
     numbers_list = []
+    gpu_ids      = []
 
     for i in range(device_count):
         handle = pynvml.nvmlDeviceGetHandleByIndex(i)    # 这里的0是GPU id
@@ -73,10 +74,11 @@ def getgpudriver():
         gpu_model_number = str(drive_name.rpartition(" ")[-1]) \
             if str(drive_name.rpartition(" ")[-1]) != "Ti" else str(drive_name.rpartition(" ")[-2])
         numbers_list.append(gpu_model_number)
+        gpu_ids.append(i)
         logger.info("当前显卡为:{}.".format(drive_name) +
                     "总显存大小{:.0f} G,已用{:.0f} G,剩余{:.0f} G".format((meminfo.total / 1024**2), (meminfo.used / 1024**2), (meminfo.free / 1024**2))) #第二块显卡总的显存大小
 
-    return numbers_list
+    return numbers_list, gpu_ids
 
 # 定义命令行参数
 def get_args():
@@ -107,6 +109,8 @@ def get_args():
                         help='GPU ID', default='0')
     parser.add_argument('--UseGPU', type=bool,
                         help='is use cuda as env', default=True)
+    parser.add_argument('--UseMultiGPU', type=bool,
+                        help='is use Multi cuda as env', default=False)
     parser.add_argument('--UseTfBoard', type=bool,
                         help='is use record tf board', default=False)
     parser.add_argument('--amp', action='store_true',
@@ -143,14 +147,17 @@ def main():
         # args.amp        = False
 
     # 不期望使用amp混合精度的列表
-    hope_gpu_name = ["960", "2080", "T4", ]
+    hope_gpu_name     = ["960", "2080", "T4", ]
     # 获取当前GPU名称
-    gpu_name      = getgpudriver()
+    gpu_name, gpu_ids = getgpudriver()
     for i in range(len(gpu_name)):
         name = gpu_name[i]
         # 如果不在期望列表，使用amp混合训练
         if name not in hope_gpu_name:
             args.amp = True
+    # 当设备中存在的GPU数量大于1时，开启GPU并行计算
+    if len(gpu_ids) > 1:
+        args.UseMultiGPU = True
 
     # 为CPU设定随机种子使结果可靠，就是每个人的随机结果都尽可能保持一致
     np.random.seed(args.seed)
@@ -189,8 +196,9 @@ def main():
         torch.backends.cudnn.benchmark = True
         # 将模型设置为GPU
         model = model.to(this_device)
-        # 开启GPU并行化处理
-        model = torch.nn.DataParallel(model)
+        if args.UseMultiGPU:
+            # 开启GPU并行化处理
+            model = torch.nn.DataParallel(model, gpu_ids)
 
     # tfwriter.add_graph(model=model, input_to_model=args.IMGSIZE)
     logger.success("模型初始化完毕")
@@ -237,6 +245,7 @@ def main():
     para_kargs = {
         "tf_writer" : tfwriter,
         "device" : this_device,
+        "gpuids" : gpu_ids,
         "log" : logger,
         "CLASSNUM" : args.nclass,
         "IMGSIZE" : args.IMGSIZE,

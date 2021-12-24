@@ -17,7 +17,7 @@ https://github.com/HansBambel/SmaAt-UNet/blob/master/models/SmaAt_UNet.py
 3）s < 1 fractionally strided convolution,相当于对原图先作了upsampling操作扩大原图，然后再卷积，这样得到的结果图会变大。
 """
 
-from models.Net.Signal_model.layer import CBAM, GAM
+from models.Net.Net_funtion.layer import CBAM, GAM
 # from SmaAtUNer.unet_parts import OutConv
 from models.Net.Attention_UNet.unet_parts_conv import DoubleConvDS, DownDS, InConv
 from models.Net.Attention_UNet.unet_parts_conv import OutConv, UNetUp_Tradition, UpDS

@@ -9,7 +9,7 @@ LastEditors: zhonzxad
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from models.Net.Signal_model.layer import GroupNorm, GropConv, DilConv
+from models.Net.Net_funtion.layer import GroupNorm, GropConv, DilConv
 from models.Net.Attention_UNet.Attention_Layer import DepthwiseSeparableConv
 
 

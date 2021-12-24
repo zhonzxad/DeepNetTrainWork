@@ -23,7 +23,7 @@ from models.Net.UNet.UNet_2Plus import UNet_2Plus
 from models.Net.UNet.UNet_3Plus import UNet_3Plus
 from models.Net.UNet.UNetBili import UNetVGG16
 
-from models.Net.Signal_model.init_weight import init_weight
+from models.Net.Net_funtion.init_weight import init_weight
 
 # from .FCN.fcn import FCN
 # from .ResNet.ResNet import GetResNet

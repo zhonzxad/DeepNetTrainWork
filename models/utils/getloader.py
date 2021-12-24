@@ -10,12 +10,12 @@ import sys
 import numpy as np
 import torch
 # 在文件被引用的初始使用绝对路径
-from models.utils.makedata.unetdataloader import UnetDataset
-from models.utils.makedata.userdataset import UserDataLoader
-from models.utils.makedata.userdataset_transfer import UserDataLoaderTrans
+from models.utils.database.unetdataloader import UnetDataset
+from models.utils.database.userdataset import UserDataLoader
+from models.utils.database.userdataset_transfer import UserDataLoaderTrans
 from torch.utils.data import DataLoader
 
-# from makedata import *
+# from database import *
 
 """
 train_dataser = MakeVOCDataSet.MakeVOCDataSet(args.root_path.join("train"))

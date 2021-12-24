@@ -54,6 +54,7 @@ def fit_one_epoch(net, gens, **kargs):
 
     amp         = kargs["amp"]
     this_device = kargs["device"]
+    gpu_ids     = kargs["gpuids"]
     optimizer   = kargs["optimizer"]
     tfwriter    = kargs["tf_writer"]
     cls_weights = kargs["cls_weight"]
@@ -169,6 +170,7 @@ def test_epoch(net, gen_vals, **kargs):
 
     amp         = kargs["amp"]
     this_device = kargs["device"]
+    gpu_ids     = kargs["gpuids"]
     optimizer   = kargs["optimizer"]
     tfwriter    = kargs["tf_writer"]
     cls_weights = kargs["cls_weight"]
