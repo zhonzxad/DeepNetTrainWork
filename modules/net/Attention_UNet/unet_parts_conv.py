@@ -4,13 +4,13 @@ Date: 2021-12-02 16:55:18
 LastEditTime: 2021-12-17 21:39:28
 LastEditors: zhonzxad
 '''
-""" Parts of the U-Net model """
+""" Parts of the U-net model """
 # Base model taken from: https://github.com/milesial/Pytorch-UNet
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from models.Net.Net_funtion.layer import GroupNorm, GropConv, DilConv
-from models.Net.Attention_UNet.Attention_Layer import DepthwiseSeparableConv
+from modules.net.Net_funtion.layer import GroupNorm, GropConv, DilConv
+from modules.net.Attention_UNet.Attention_Layer import DepthwiseSeparableConv
 
 
 class DoubleConvDS(nn.Module):

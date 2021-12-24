@@ -1,7 +1,7 @@
 import argparse
 from unet_parts_tradition import *
 from unet_parts_conv import DoubleConvDS, UpDS, DownDS
-from models.Net.Net_funtion.layer import CBAM
+from modules.net.Net_funtion.layer import CBAM
 import pytorch_lightning as pl
 from regression_lightning import Precip_regression_base
 

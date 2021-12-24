@@ -21,11 +21,11 @@ from loguru import logger
 
 from train_funtion import fit_one_epoch, test_epoch
 
-from models.Net.getmodel import GetModel
-from models.utils.getearlystop import GetEarlyStopping
-from models.utils.getloader import GetLoader
-from models.utils.getlog import GetWriteLog
-from models.utils.getoptim import GetOptim
+from modules.net.getmodel import GetModel
+from modules.utils.getearlystop import GetEarlyStopping
+from modules.utils.getloader import GetLoader
+from modules.utils.getlog import GetWriteLog
+from modules.utils.getoptim import GetOptim
 
 def set_lr(optimizer, value:float):
     """optimizer.param_groups:是长度为2的list,0表示params/lr/eps等参数，1表示优化器状态"""
