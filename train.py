@@ -18,6 +18,7 @@ from tensorboardX import SummaryWriter
 from torchsummary import summary
 from tqdm import tqdm, trange
 from loguru import logger
+import torch.distributed
 
 from train_funtion import fit_one_epoch, test_epoch
 
@@ -83,11 +84,11 @@ def getgpudriver():
 # 定义命令行参数
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--nclass', type=int,
+    parser.add_argument('--n_class', type=int,
                         help='Number of classes', default=2)
     parser.add_argument('--batch_size', type=int,
                         help='batch size', default=1)
-    parser.add_argument('--load_tread', type=int,
+    parser.add_argument('--load_thread', type=int,
                         help='load data thread', default=1)
     parser.add_argument('--nepoch', type=int,
                         help='Total epoch num', default=50)
@@ -166,7 +167,7 @@ def main():
     torch.manual_seed(args.seed)
 
     # 不同分类之间的权重系数，默认都为1（均衡的）
-    cls_weights = np.ones([args.nclass], np.float32)
+    cls_weights = np.ones([args.n_class], np.float32)
 
     # 加载日志对象
     #logger = GetWriteLog(writerpath=MakeDir("log/log/"))  # 需注释掉最前方引用的logger库
@@ -179,12 +180,12 @@ def main():
     # print(vars(args))
     logger.info(vars(args))
 
-    loader = GetLoader(args.IMGSIZE, args.nclass, args.systemtype, args.batch_size, args.load_tread)
+    loader = GetLoader(args)
     gen, gen_val = loader.makedata()
     gen_target   = [1,] # loader.makedataTarget()
     logger.success("数据集加载完毕")
 
-    modeler = GetModel((args.IMGSIZE, args.nclass))
+    modeler = GetModel(args)
     model = modeler.Createmodel(is_train=True)
     modeler.init_weights(model, "kaiming")
     logger.success("模型创建及初始化完毕")
@@ -250,7 +251,7 @@ def main():
         "device" : this_device,
         "gpuids" : gpu_ids,
         "log" : logger,
-        "CLASSNUM" : args.nclass,
+        "CLASSNUM" : args.n_class,
         "IMGSIZE" : args.IMGSIZE,
         "optimizer" : optimizer,
         "amp" : args.amp,
@@ -322,6 +323,8 @@ def main():
         tqbar.set_description("Train Epoch Count")
         # 设置进度条右边显示的信息
         tqbar.set_postfix()
+
+        torch.distributed.barrier() # 进程等待同步
 
     # 任务已经结束了，保存一个最终版本的参数
     checkpoint = {

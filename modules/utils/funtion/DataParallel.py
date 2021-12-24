@@ -16,7 +16,6 @@ import torch.nn as nn
 from torch.autograd import Variable
 from torch.utils.data import Dataset, DataLoader
 
-from torch.utils.data.distributed import DistributedSampler
 import torch.distributed
 # import torch.distributed as dist
 
@@ -51,5 +50,3 @@ class DDP(nn.Module):
 
     def get_local_rank(self):
         return self.local_rank
-
-DDP()
