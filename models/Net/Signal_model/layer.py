@@ -218,16 +218,17 @@ class GropConv(nn.Module):
 
 class DilConv(nn.Module):
     """
-    空洞卷积
+    空洞卷积,https://zhuanlan.zhihu.com/p/50369448
     https://blog.csdn.net/u014767662/article/details/88574643
     """
-    def __init__(self, chane_in, chane_out, kernel_size, stride, padding, dilation, affine=True):
+    def __init__(self, in_chane, out_chane, kernel_size, stride, padding, dilation):
         super(DilConv, self).__init__()
         self.op = nn.Sequential(
             nn.ReLU(inplace=False),
-            nn.Conv2d(chane_in, chane_in, kernel_size=kernel_size, stride=stride, padding=padding, dilation=dilation, groups=chane_in, bias=False),
-            nn.Conv2d(chane_in, chane_out, kernel_size=1, padding=0, bias=False),
-            nn.BatchNorm2d(chane_out, eps=1e-3, affine=affine),
+            nn.Conv2d(in_chane, in_chane, kernel_size=kernel_size, stride=stride, padding=padding,
+                      dilation=dilation, groups=in_chane, bias=False),
+            nn.Conv2d(in_chane, out_chane, kernel_size=1, padding=padding, bias=False),
+            # nn.BatchNorm2d(out_chane),  # 仍需要进行批处理，但是放到外侧的模块中顺序处理
         )
 
     def forward(self, x):

@@ -127,7 +127,7 @@ def main():
     args.systemtype  = True if platform.system().lower() == 'windows' else False
     args.systemtype_mac = True if platform.mac_ver()[0] != "" else False
     # 当前是否使用cuda来进行加速
-    args.UseGPU = False
+    args.UseGPU = True
     this_device = torch.device("cuda:0" if torch.cuda.is_available() and args.UseGPU else "cpu")
 
     # 根据平台的不同，设置不同batch的大小
@@ -196,7 +196,7 @@ def main():
     logger.success("模型初始化完毕")
 
     # 测试网络结构
-    summary(model, input_size=(args.IMGSIZE[2], args.IMGSIZE[0], args.IMGSIZE[1]), device=this_device.type)
+    # summary(model, input_size=(args.IMGSIZE[2], args.IMGSIZE[0], args.IMGSIZE[1]), device=this_device.type)
 
     # 创建优化器
     optimizer, scheduler = GetOptim(model, lr=args.lr[0])
@@ -225,6 +225,7 @@ def main():
 
     logger.info("注意: 没有使用tfboard记录数据") if tfwriter is None else logger.success("注意: 使用tfboard记录数据")
     logger.success("注意: 使用了amp混合精度训练") if args.amp else logger.info("注意: 没有使用amp混合精度训练")
+    logger.success("注意: 使用了GPU加速训练") if this_device.type == "cuda" else logger.info("注意: 没有使用GPU加速训练")
 
     # 将最优损失设置为无穷大
     best_loss = float("inf")

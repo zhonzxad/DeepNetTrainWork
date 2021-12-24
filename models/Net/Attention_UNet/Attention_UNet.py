@@ -19,8 +19,8 @@ https://github.com/HansBambel/SmaAt-UNet/blob/master/models/SmaAt_UNet.py
 
 from models.Net.Signal_model.layer import CBAM, GAM
 # from SmaAtUNer.unet_parts import OutConv
-from models.Net.Attention_UNet.unet_parts_DS import DoubleConvDS, DownDS, InConv
-from models.Net.Attention_UNet.unet_parts_DS import OutConv, UNetUp_Tradition, UpDS
+from models.Net.Attention_UNet.unet_parts_conv import DoubleConvDS, DownDS, InConv
+from models.Net.Attention_UNet.unet_parts_conv import OutConv, UNetUp_Tradition, UpDS
 from torch import nn
 
 class At_UNet(nn.Module):
@@ -41,35 +41,35 @@ class At_UNet(nn.Module):
 
         factor = 2 if self.bilinear else 1
 
-        # self.att_mode_1 = GAM(64)
-        # self.att_mode_2 = GAM(128)
-        # self.att_mode_3 = GAM(256)
-        # self.att_mode_4 = GAM(512)
-        # self.att_mode_5 = GAM(1024 // factor)
+        self.att_mode_1 = GAM(64)
+        self.att_mode_2 = GAM(128)
+        self.att_mode_3 = GAM(256)
+        self.att_mode_4 = GAM(512)
+        self.att_mode_5 = GAM(1024 // factor)
 
-        self.att_mode_1 = CBAM(64, reduction_ratio=self.reduction_ratio)
-        self.att_mode_2 = CBAM(128, reduction_ratio=self.reduction_ratio)
-        self.att_mode_3 = CBAM(256, reduction_ratio=self.reduction_ratio)
-        self.att_mode_4 = CBAM(512, reduction_ratio=self.reduction_ratio)
-        self.att_mode_5 = CBAM(1024 // factor, reduction_ratio=self.reduction_ratio)
+        # self.att_mode_1 = CBAM(64, reduction_ratio=self.reduction_ratio)
+        # self.att_mode_2 = CBAM(128, reduction_ratio=self.reduction_ratio)
+        # self.att_mode_3 = CBAM(256, reduction_ratio=self.reduction_ratio)
+        # self.att_mode_4 = CBAM(512, reduction_ratio=self.reduction_ratio)
+        # self.att_mode_5 = CBAM(1024 // factor, reduction_ratio=self.reduction_ratio)
 
         self.down1 = DownDS(64, 128, kernels_per_layer=self.kernels_per_layer)
         self.down2 = DownDS(128, 256, kernels_per_layer=self.kernels_per_layer)
         self.down3 = DownDS(256, 512, kernels_per_layer=self.kernels_per_layer)
         self.down4 = DownDS(512, 1024 // factor, kernels_per_layer=self.kernels_per_layer)
 
-        self.up1_DS = UpDS(1024, 512 // factor, self.bilinear, kernels_per_layer=self.kernels_per_layer)
-        self.up2_DS = UpDS(512, 256 // factor, self.bilinear, kernels_per_layer=self.kernels_per_layer)
-        self.up3_DS = UpDS(256, 128 // factor, self.bilinear, kernels_per_layer=self.kernels_per_layer)
-        self.up4_DS = UpDS(128, 64, self.bilinear, kernels_per_layer=self.kernels_per_layer)
+        self.up1 = UpDS(1024, 512 // factor, self.bilinear, kernels_per_layer=self.kernels_per_layer)
+        self.up2 = UpDS(512, 256 // factor, self.bilinear, kernels_per_layer=self.kernels_per_layer)
+        self.up3 = UpDS(256, 128 // factor, self.bilinear, kernels_per_layer=self.kernels_per_layer)
+        self.up4 = UpDS(128, 64, self.bilinear, kernels_per_layer=self.kernels_per_layer)
 
-        # self.up1_Conv = UNetUp_Tradition(1024, 512)
-        # self.up2_Conv = UNetUp_Tradition(512, 256)
-        # self.up3_Conv = UNetUp_Tradition(256, 128)
-        # self.up4_Conv = UNetUp_Tradition(128, 64)
+        # self.up1 = UNetUp_Tradition(1024, 512)
+        # self.up2 = UNetUp_Tradition(512, 256)
+        # self.up3 = UNetUp_Tradition(256, 128)
+        # self.up4 = UNetUp_Tradition(128, 64)
 
-        self.out_DS = OutConv(64, self.n_classes)
-        # self.out_Conv = OutConv(64 // 2, self.n_classes)
+        self.out = OutConv(64, self.n_classes)
+        # self.out = OutConv(64 // 2, self.n_classes)
 
     def forward(self, inputs):
         x = inputs
@@ -85,11 +85,11 @@ class At_UNet(nn.Module):
         x5 = self.down4(x4)
         x5_att = self.att_mode_5(x5)
 
-        x = self.up1_DS(x5_att, x4_att)
-        x = self.up2_DS(x, x3_att)
-        x = self.up3_DS(x, x2_att)
-        x = self.up4_DS(x, x1_att)
+        x = self.up1(x5_att, x4_att)
+        x = self.up2(x, x3_att)
+        x = self.up3(x, x2_att)
+        x = self.up4(x, x1_att)
 
-        logits = self.out_DS(x)
+        logits = self.out(x)
 
         return logits

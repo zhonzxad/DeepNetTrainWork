@@ -9,7 +9,7 @@ LastEditors: zhonzxad
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from models.Net.Signal_model.layer import GroupNorm, GropConv
+from models.Net.Signal_model.layer import GroupNorm, GropConv, DilConv
 from models.Net.Attention_UNet.Attention_Layer import DepthwiseSeparableConv
 
 
@@ -22,13 +22,16 @@ class DoubleConvDS(nn.Module):
             mid_channels = out_channels
 
         self.double_conv = nn.Sequential(
-            DepthwiseSeparableConv(in_channels, mid_channels, kernel_size=3, kernels_per_layer=kernels_per_layer, padding=1),
-            nn.BatchNorm2d(mid_channels),
-            # GroupNorm(mid_channels),
+            # DepthwiseSeparableConv(in_channels, mid_channels, kernel_size=3, kernels_per_layer=kernels_per_layer, padding=1),
+            DilConv(in_channels, mid_channels, kernel_size=3, stride=1, padding=1, dilation=2),
+            # nn.BatchNorm2d(mid_channels),
+            GroupNorm(mid_channels),
             nn.ReLU(inplace=True),
-            DepthwiseSeparableConv(mid_channels, out_channels, kernel_size=3, kernels_per_layer=kernels_per_layer, padding=1),
-            nn.BatchNorm2d(out_channels),
-            # GroupNorm(out_channels),
+
+            # DepthwiseSeparableConv(mid_channels, out_channels, kernel_size=3, kernels_per_layer=kernels_per_layer, padding=1),
+            DilConv(mid_channels, out_channels, kernel_size=3, stride=1, padding=1, dilation=2),
+            # nn.BatchNorm2d(out_channels),
+            GroupNorm(out_channels),
             nn.ReLU(inplace=True)
         )
 
