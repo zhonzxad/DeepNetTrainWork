@@ -16,7 +16,7 @@ import torch
 import torch.backends.cudnn as cudnn
 from tensorboardX import SummaryWriter
 from torchsummary import summary
-from tqdm import tqdm, trange
+from tqdm import tqdm
 from loguru import logger
 
 from train2test_epoch import fit_one_epoch, test_epoch
@@ -62,6 +62,7 @@ def makedir(path):
     return path
 
 def getgpudriver():
+    """处理显卡相关参数的信息"""
     pynvml.nvmlInit()
     device_count = pynvml.nvmlDeviceGetCount()           # 几块显卡
     numbers_list = []
@@ -82,8 +83,8 @@ def getgpudriver():
 
     return numbers_list, gpu_ids
 
-# 定义命令行参数
 def get_args():
+    """定义命令行参数"""
     parser = argparse.ArgumentParser()
     parser.add_argument('--n_class', type=int,
                         help='Number of classes', default=2)
@@ -265,15 +266,15 @@ def main():
         para_kargs["this_epoch"] = epoch
         # 训练
         # 返回值按照 0/总loss, 1/count, 2/celoss, 3/bceloss, 4/diceloss, 5/floss, 6/lr
-        # time_start = time.time()
-        # ret_train = \
-        #     fit_one_epoch(model, (gen, gen_target), **para_kargs)
-        # time_end = time.time()
-        #
-        # # 每轮训练输出一些日志信息
-        # logger.info("第{}轮训练完成,本轮训练轮次{},耗时{},最终损失为{}".format(epoch, ret_train[1],
-        #                                                     formt_time((time_end - time_start)),
-        #                                                     ret_train[0].item()))
+        time_start = time.time()
+        ret_train = \
+            fit_one_epoch(model, (gen, gen_target), **para_kargs)
+        time_end = time.time()
+
+        # 每轮训练输出一些日志信息
+        logger.info("第{}轮训练完成,本轮训练轮次{},耗时{},最终损失为{}".format(epoch, ret_train[1],
+                                                            formt_time((time_end - time_start)),
+                                                            ret_train[0].item()))
 
         # 进行测试
         ret_val = \
@@ -295,18 +296,20 @@ def main():
             'optimizer': optimizer,
             'loss' : ret_val,
         }
-        path = makedir("savepoint/model_data/")
-        saveparafilepath = path + "SmarUNEt_NewGN_NewGAM"
+        saveparafilepath = makedir("savepoint/model_data/")
+        file_name = "SmarUNEt_NewGN_NewGAM.pth"
         # 判断当前损失是否变小，变小才进行保存参数
         # 注意ret[0]是tensor格式，ret[1]才是平均损失（损失累加除以轮次）
         # 使用的是验证集上的损失，如果验证集损失一直在下降也是，说明模型还在训练
         if ret_val[1] < best_loss:
             best_loss = ret_val[1]
-            torch.save(checkpoint, saveparafilepath)
-            logger.info("保存检查点完成, 当前批次{}, 保存最优参数权重文件{}".format(epoch, saveparafilepath + "_bestepoch" + ".pth"))
+            beat_file_path = saveparafilepath + file_name.replace(".pth", "_best.pth")
+            torch.save(checkpoint, beat_file_path)
+            logger.info("保存检查点完成, 当前批次{}, 保存最优参数权重文件{}".format(epoch, beat_file_path))
         # 如果不是最优的，直接保存默认的
-        torch.save(checkpoint, saveparafilepath + ".pth")
-        logger.success("完成当前批次{}训练, 损失值较上一轮没有减小，正常保存模型".format(epoch))
+        total_file_path = saveparafilepath + file_name
+        torch.save(checkpoint, total_file_path)
+        logger.success("完成当前批次{}训练, 损失值较上一轮没有减小，正常保存模型文件".format(epoch, total_file_path))
 
         # 若满足 early stopping 要求 且 当前批次>=10
         if early_stopping.get_early_stop_state:

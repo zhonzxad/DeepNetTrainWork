@@ -23,7 +23,7 @@ from modules.nets.UNet.UNet_2Plus import UNet_2Plus
 from modules.nets.UNet.UNet_3Plus import UNet_3Plus
 from modules.nets.UNet.UNetBili import UNetVGG16
 
-from modules.nets.funtion.init_weight import init_weight
+from modules.nets.funtion.init_weight import initweight
 
 # from .FCN.fcn import FCN
 # from .ResNet.ResNet import GetResNet
@@ -35,7 +35,8 @@ from modules.nets.funtion.init_weight import init_weight
 # from .UNet.UNet_3Plus import UNet_3Plus
 # from .UNet.UNetBili import UNetVGG16
 
-class GetModel():
+class GetModel:
+
     def __init__(self, args):
         if type(args) == argparse.Namespace:
             self.IMGSIZE = args.IMGSIZE
@@ -72,7 +73,7 @@ class GetModel():
         ], "Input device is not valid"
 
         # 初始化网络相关权重
-        init_weight(model, type).init()
+        initweight(model, type).init()
 
         # if loger is not None:
         #     loger.write("使用{}方法初始化网络相关权重".format(init_type))

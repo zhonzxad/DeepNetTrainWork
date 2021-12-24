@@ -7,13 +7,19 @@ import torch
 import torch.nn as nn
 import math
 
-class init_weight():
+class initweight():
     """
     权重初始化相关类
     net.modules()迭代的返回: AlexNet,Sequential,Conv2d,ReLU,MaxPool2d,LRN,AvgPool3d....,Conv2d,...,Conv2d,...,Linear,
     这里,只有Conv2d和Linear才有参数
     net.children()只返回实际存在的子模块: Sequential,Sequential,Sequential,Sequential,Sequential,Sequential,Sequential,Linear
     """
+
+    def __init__(self, net, init_type='normal', init_gain=0.02):
+        super(initweight, self).__init__()
+        self.net = net
+        self.init_type = init_type
+        self.init_gain = init_gain
 
     def init_func(self, m):
         classname = m.__class__.__name__
@@ -50,12 +56,7 @@ class init_weight():
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
 
-    def __init__(self, net, init_type='normal', init_gain=0.02):
-        super(init_weight, self).__init__()
-        self.net = net
-        self.init_type = init_type
-        self.init_gain = init_gain
-
     def init(self):
+        """应用网络设置"""
         self.net.apply(self.init_func_2)
 
