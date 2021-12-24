@@ -19,7 +19,7 @@ from torchsummary import summary
 from tqdm import tqdm, trange
 from loguru import logger
 
-from train_funtion import fit_one_epoch, test_epoch
+from train2test_epoch import fit_one_epoch, test_epoch
 
 from modules.nets.getmodel import GetModel
 from modules.utils.getearlystop import GetEarlyStopping
