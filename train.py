@@ -28,6 +28,8 @@ from modules.utils.getloader import GetLoader
 from modules.utils.getlog import GetWriteLog
 from modules.utils.getoptim import GetOptim
 
+from modules.utils.funtion.DataParallel import DDP
+
 def set_lr(optimizer, value:float):
     """optimizer.param_groups:是长度为2的list,0表示params/lr/eps等参数，1表示优化器状态"""
     optimizer.param_groups[0]['lr'] = value
@@ -158,9 +160,6 @@ def main():
         # 如果不在期望列表，使用amp混合训练
         if name not in hope_gpu_name:
             args.amp = True
-    # 当设备中存在的GPU数量大于1时，开启GPU并行计算
-    if torch.cuda.device_count() > 1:
-        args.UseMultiGPU = True
 
     # 为CPU设定随机种子使结果可靠，就是每个人的随机结果都尽可能保持一致
     np.random.seed(args.seed)
@@ -197,11 +196,19 @@ def main():
         # 那么cuDNN使用的非确定性算法就会自动寻找最适合当前配置的高效算法，来达到优化运行效率的问题
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = True
-        # 将模型设置为GPU
-        model = model.to(this_device)
-        if args.UseMultiGPU:
-            # 开启GPU并行化处理
-            model = torch.nn.DataParallel(model, gpu_ids)
+
+        # 将模型设置为GPU，当设备中存在的GPU数量大于1时，开启GPU并行计算
+        if torch.cuda.device_count() > 1:
+            args.UseMultiGPU = True
+            ddp = DDP(local_rank=args.local_rank, device_ids=gpu_ids, batch_size=args.batch_size)
+            this_device = ddp.get_device()
+            args.batch_size = ddp.get_batchsize()
+            model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.local_rank],
+                                                              output_device=args.local_rank,
+                                                              # find_unused_parameters=True,
+                                                              )
+        else:
+            model = model.to(this_device)
 
     # tfwriter.add_graph(model=model, input_to_model=args.IMGSIZE)
     logger.success("模型初始化完毕")
@@ -268,15 +275,15 @@ def main():
         para_kargs["this_epoch"] = epoch
         # 训练
         # 返回值按照 0/总loss, 1/count, 2/celoss, 3/bceloss, 4/diceloss, 5/floss, 6/lr
-        # time_start = time.time()
-        # ret_train = \
-        #     fit_one_epoch(model, (gen, gen_target), **para_kargs)
-        # time_end = time.time()
-        #
-        # # 每轮训练输出一些日志信息
-        # logger.info("第{}轮训练完成,本轮训练轮次{},耗时{},最终损失为{}".format(epoch, ret_train[1],
-        #                                                     formt_time((time_end - time_start)),
-        #                                                     ret_train[0].item()))
+        time_start = time.time()
+        ret_train = \
+            fit_one_epoch(model, (gen, gen_target), **para_kargs)
+        time_end = time.time()
+
+        # 每轮训练输出一些日志信息
+        logger.info("第{}轮训练完成,本轮训练轮次{},耗时{},最终损失为{}".format(epoch, ret_train[1],
+                                                            formt_time((time_end - time_start)),
+                                                            ret_train[0].item()))
 
         # 进行测试
         ret_val = \
@@ -291,33 +298,34 @@ def main():
             best_opt_loss = ret_val[5]
             scheduler.step(ret_val[5])
 
-        # 一些保存的参数
-        checkpoint = {
-            'epoch': epoch,
-            'model': model,
-            'optimizer': optimizer,
-            'loss' : ret_val,
-        }
-        path = makedir("savepoint/model_data/")
-        saveparafilepath = path + "SmarUNEt_NewGN_NewGAM"
-        # 判断当前损失是否变小，变小才进行保存参数
-        # 注意ret[0]是tensor格式，ret[1]才是平均损失（损失累加除以轮次）
-        # 使用的是验证集上的损失，如果验证集损失一直在下降也是，说明模型还在训练
-        if ret_val[1] < best_loss:
-            best_loss = ret_val[1]
-            torch.save(checkpoint, saveparafilepath)
-            logger.info("保存检查点完成, 当前批次{}, 保存最优参数权重文件{}".format(epoch, saveparafilepath + "_bestepoch" + ".pth"))
-        # 如果不是最优的，直接保存默认的
-        torch.save(checkpoint, saveparafilepath + ".pth")
-        logger.success("完成当前批次{}训练, 损失值较上一轮没有减小，正常保存模型".format(epoch))
+        if args.local_rank == 0:
+            # 一些保存的参数
+            checkpoint = {
+                'epoch': epoch,
+                'model': model,
+                'optimizer': optimizer,
+                'loss' : ret_val,
+            }
+            path = makedir("savepoint/model_data/")
+            saveparafilepath = path + "SmarUNEt_NewGN_NewGAM"
+            # 判断当前损失是否变小，变小才进行保存参数
+            # 注意ret[0]是tensor格式，ret[1]才是平均损失（损失累加除以轮次）
+            # 使用的是验证集上的损失，如果验证集损失一直在下降也是，说明模型还在训练
+            if ret_val[1] < best_loss:
+                best_loss = ret_val[1]
+                torch.save(checkpoint, saveparafilepath)
+                logger.info("保存检查点完成, 当前批次{}, 保存最优参数权重文件{}".format(epoch, saveparafilepath + "_bestepoch" + ".pth"))
+            # 如果不是最优的，直接保存默认的
+            torch.save(checkpoint, saveparafilepath + ".pth")
+            logger.success("完成当前批次{}训练, 损失值较上一轮没有减小，正常保存模型".format(epoch))
 
-        # 若满足 early stopping 要求 且 当前批次>=10
-        if early_stopping.get_early_stop_state:
-            logger.info("命中早停模式，当前批次{}".format(epoch))
-            if epoch >= 5:
-                logger.info("停止训练，当前批次{}".format(epoch))
-                # os.system('/root/shutdown.sh')
-                break
+            # 若满足 early stopping 要求 且 当前批次>=10
+            if early_stopping.get_early_stop_state:
+                logger.info("命中早停模式，当前批次{}".format(epoch))
+                if epoch >= 5:
+                    logger.info("停止训练，当前批次{}".format(epoch))
+                    # os.system('/root/shutdown.sh')
+                    break
 
         # 设置进度条左边显示的信息
         tqbar.set_description("Train Epoch Count")

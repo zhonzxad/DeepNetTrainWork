@@ -76,9 +76,6 @@ def fit_one_epoch(net, gens, **kargs):
     tfwriter    = kargs["tf_writer"]
     cls_weights = kargs["cls_weight"]
 
-    # 定义多卡
-    if len(gpu_ids) > 1:
-        net = torch.nn.parallel.DistributedDataParallel(net, find_unused_parameters=True)
     # 定义网络为训练模式
     model_train = net.train()
 
