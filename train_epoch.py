@@ -116,7 +116,7 @@ def fit_one_epoch(net, gens, **kargs):
         optimizer.zero_grad()
 
         # 混合精度计算
-        if amp == True:
+        if amp:
             with torch.cuda.amp.autocast(enabled=amp):
                 # 网络计算
                 output = model_train(img)
@@ -232,7 +232,7 @@ def test_epoch(net, gen_vals, **kargs):
 
         # 在验证和测试阶段不需要计算梯度反向传播
         with torch.no_grad():
-            if amp == True:
+            if amp:
                 # 混合精度计算
                 with torch.cuda.amp.autocast(enabled=amp):
                     # 输入测试图像
