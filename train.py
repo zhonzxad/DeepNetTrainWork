@@ -4,7 +4,7 @@ import os
 import sys
 import platform
 import time
-import pynvml
+from typing import List, Tuple
 
 # 在Windows下使用vscode运行时 添加上这句话就会使用正确的相对路径设置
 # 需要import os和sys两个库
@@ -18,6 +18,7 @@ from tensorboardX import SummaryWriter
 from torchsummary import summary
 from tqdm import tqdm
 from loguru import logger
+import pynvml
 
 from train_epoch import fit_one_epoch, test_epoch
 
@@ -31,7 +32,7 @@ def set_lr(optimizer, value:float):
     """optimizer.param_groups:是长度为2的list,0表示params/lr/eps等参数，1表示优化器状态"""
     optimizer.param_groups[0]['lr'] = value
 
-def format_time(timecount):
+def format_time(timecount:float) -> str:
     """将浮点秒转化为字符串时间"""
     _time = int(timecount)
     hour   = -1
@@ -50,8 +51,9 @@ def format_time(timecount):
 
     return time_str
 
-def makedir(_path):
+def makedir(_path:str="") -> str:
     """创建文件夹"""
+    # python里的str是不可变对象，因此不存在修改一个字符串这个说法，任何对字符串的运算都会产生一个新字符串作为结果
     workpath = os.getcwd()
     if not os.path.isabs(_path):
         _path = os.path.join(workpath, _path)
@@ -61,7 +63,7 @@ def makedir(_path):
 
     return _path
 
-def get_gpu_info():
+def get_gpu_info() -> Tuple[List[str], List[int]]:
     """处理显卡相关参数的信息"""
     pynvml.nvmlInit()
     device_count = pynvml.nvmlDeviceGetCount()           # 几块显卡
@@ -169,8 +171,10 @@ def main():
 
     # 加载日志对象
     #logger = GetWriteLog(writerpath=MakeDir("log/log/"))  # 需注释掉最前方引用的logger库
-    logger.add(makedir("log/log/") + "logfile_{time:MM-DD_HH:mm}.log", format="{time:DD Day HH:mm:ss} | {level} | {message}", filter="",
+    logger.add(makedir("log/log/") + "logfile_{time:MM-DD_HH:mm}.txt",
+               format="{time:DD Day HH:mm:ss} | {level} | {message}", filter="",
                enqueue=True, encoding='utf-8', rotation="50 MB")
+    # 加载tensorboard记录日志对象
     tfwriter = SummaryWriter(logdir=makedir("log/tfboard/"), comment="unet") \
         if args.systemtype == False or (args.systemtype == True and args.UseTfBoard) else None
 
