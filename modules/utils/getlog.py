@@ -25,7 +25,7 @@ class GetWriteLog:
         assert (self.writerpath is not "")
 
         creat_time = dt.datetime.now().strftime("%m-%d_%H:%M") # 10-25_15:08
-        # frontpath  = os.path.abspath()
+        # frontpath  = os._path.abspath()
         self.file_name = self.writerpath + creat_time + ".txt"
         # self.file = open(file=self.file_name, mode='w', encoding="utf-8") # 用于读写，且清空文件
 

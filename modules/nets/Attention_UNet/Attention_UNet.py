@@ -8,8 +8,8 @@ https://github.com/HansBambel/SmaAt-UNet/blob/master/models/SmaAt_UNet.py
 '''
 # import os
 # import sys
-# BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # __file__获取执行文件相对路径，整行为取上一级的上一级目录
-# sys.path.append(BASE_DIR)
+# BASE_DIR = os._path.dirname(os._path.dirname(os._path.abspath(__file__)))  # __file__获取执行文件相对路径，整行为取上一级的上一级目录
+# sys._path.append(BASE_DIR)
 """Notion
 对于标准的k*k的卷积核，stride为s，分三种情况分析：
 1）s > 1 在卷积同时并伴随了downsampling操作，卷积后图像变小。

@@ -6,8 +6,8 @@ LastEditors: zhonzxad
 '''
 # import os
 # import sys
-# BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# sys.path.append(BASE_DIR)
+# BASE_DIR = os._path.dirname(os._path.dirname(os._path.abspath(__file__)))
+# sys._path.append(BASE_DIR)
 import argparse
 import torch
 import torch.nn as nn

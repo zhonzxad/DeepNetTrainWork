@@ -202,7 +202,7 @@ def test(model, val_loader, cls_weights):
 # 定义命令行参数
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--root_path', type=str, help='Root path for dataset',
+    parser.add_argument('--root_path', type=str, help='Root _path for dataset',
                         default=r'dataset/')
     parser.add_argument('--nclass', type=int,
                         help='Number of classes', default=2)
@@ -221,7 +221,7 @@ def get_args():
     parser.add_argument('--seed', type=int,
                         help='Seed', default=2021)
     parser.add_argument('--log_path', type=str,
-                        help='log save path', default=r'log/')
+                        help='log save _path', default=r'log/')
     parser.add_argument('--save_mode', type=bool,
                         help='true save mode false save dic', default=True)
     parser.add_argument('--resume', type=bool,

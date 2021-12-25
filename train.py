@@ -31,7 +31,7 @@ def set_lr(optimizer, value:float):
     """optimizer.param_groups:是长度为2的list,0表示params/lr/eps等参数，1表示优化器状态"""
     optimizer.param_groups[0]['lr'] = value
 
-def formt_time(timecount):
+def format_time(timecount):
     """将浮点秒转化为字符串时间"""
     _time = int(timecount)
     hour   = -1
@@ -50,18 +50,18 @@ def formt_time(timecount):
 
     return time_str
 
-def makedir(path):
+def makedir(_path):
     """创建文件夹"""
     workpath = os.getcwd()
-    if not os.path.isabs(path):
-        path = os.path.join(workpath, path)
+    if not os.path.isabs(_path):
+        _path = os.path.join(workpath, _path)
 
-    if not os.path.exists(path):
-        os.makedirs(path)
+    if not os.path.exists(_path):
+        os.makedirs(_path)
 
-    return path
+    return _path
 
-def getgpudriver():
+def get_gpu_info():
     """处理显卡相关参数的信息"""
     pynvml.nvmlInit()
     device_count = pynvml.nvmlDeviceGetCount()           # 几块显卡
@@ -150,7 +150,7 @@ def main():
     # 不期望使用amp混合精度的列表
     hope_gpu_name     = ["960", "2080", "T4", ]
     # 获取当前GPU名称
-    gpu_name, gpu_ids = getgpudriver()
+    gpu_name, gpu_ids = get_gpu_info()
     for i in range(len(gpu_name)):
         name = gpu_name[i]
         # 如果不在期望列表，使用amp混合训练
@@ -274,7 +274,7 @@ def main():
 
         # 每轮训练输出一些日志信息
         logger.info("第{}轮训练完成,本轮训练轮次{},耗时{},最终损失为{}".format(epoch, ret_train[1],
-                                                            formt_time((time_end - time_start)),
+                                                            format_time((time_end - time_start)),
                                                             ret_train[0].item()))
 
         # 进行测试
