@@ -19,7 +19,7 @@ from torchsummary import summary
 from tqdm import tqdm
 from loguru import logger
 
-from train2test_epoch import fit_one_epoch, test_epoch
+from train_epoch import fit_one_epoch, test_epoch
 
 from modules.nets.getmodel import GetModel
 from modules.utils.getearlystop import GetEarlyStopping
@@ -128,7 +128,7 @@ def main():
     args        = get_args()
     start_epoch = 0                   # 起始的批次
 
-    # 使用window平台还是Linux平台
+    # 使用window平台还是Linux平台, 为True表示为Windows平台
     args.systemtype  = True if platform.system().lower() == 'windows' else False
     args.systemtype_mac = True if platform.mac_ver()[0] != "" else False
     # 当前是否使用cuda来进行加速
@@ -136,7 +136,7 @@ def main():
     this_device = torch.device("cuda:0" if torch.cuda.is_available() and args.UseGPU else "cpu")
 
     # 根据平台的不同，设置不同batch的大小
-    if args.systemtype == True:
+    if args.systemtype:
         args.batch_size = 1
         args.load_tread = 1
         args.UseTfBoard = False
@@ -217,6 +217,7 @@ def main():
                                       verbose=True, savemode=args.save_mode)
     logger.success("优化器及早停模块加载完毕")
 
+    # 是否使用预训练参数权重继续训练
     if args.resume:
         path = "./savepoint/model_data/SmarUNEt_DiceCELoss_KMInit____.pth"
         if os.path.isfile(path):
