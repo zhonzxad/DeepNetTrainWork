@@ -5,7 +5,6 @@
  * @LastEditors: zhonzxad
 -->
 # UNet 分割类型框架集合
----
 #### 使用集成环境安装
 * 导出conda安装使用命令conda list -e > requirements.txt 
 * 导入使用conda install --yes --file requirements.txt
@@ -24,7 +23,7 @@
 * tqdm 4.62.3 使用进度条来计算时间, 使用:
 `pip install tqdm`
 * 依赖platform, argparse等基础库
----
+
 其余参考 
 `profile&store 下 pip-requirements.txt && conda-requirements.txt`
 
