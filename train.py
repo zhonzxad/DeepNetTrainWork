@@ -150,13 +150,17 @@ def main():
         # args.amp        = False
 
     # 不期望使用amp混合精度的列表
-    hope_gpu_name     = ["960", "2080", "T4", ]
+    hope_gpu_not_use_amp = ["960", "2080", "T4", ]
+    hope_gpu_use_amp = ["3080", "9000", "A5000", ]
     # 获取当前GPU名称
     gpu_name, gpu_ids = get_gpu_info()
     for i in range(len(gpu_name)):
         name = gpu_name[i]
-        # 如果不在期望列表，使用amp混合训练
-        if name not in hope_gpu_name:
+        # # 如果不在期望列表，使用amp混合训练
+        # if name not in hope_gpu_not_use_amp:
+        #     args.amp = True
+        # 如果在期望列表，使用amp混合训练
+        if name in hope_gpu_use_amp:
             args.amp = True
     # 当设备中存在的GPU数量大于1时，开启GPU并行计算
     if torch.cuda.device_count() > 1:
