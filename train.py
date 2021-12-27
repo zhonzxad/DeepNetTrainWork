@@ -20,7 +20,7 @@ from tqdm import tqdm
 from loguru import logger
 import pynvml
 
-from train_epoch import train_in_epoch, test_epoch
+from train_in import train_in_epoch, test_in_epoch
 
 from modules.nets.getmodel import GetModel
 from modules.utils.getearlystop import GetEarlyStopping
@@ -283,7 +283,7 @@ def main():
 
         # 进行测试
         ret_val = \
-            test_epoch(model, (gen_val, gen_target), **para_kargs)
+            test_in_epoch(model, (gen_val, gen_target), **para_kargs)
 
         # 判断是否满足早停
         early_stopping(ret_val[0], model.eval)

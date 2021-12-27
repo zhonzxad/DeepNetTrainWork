@@ -173,7 +173,7 @@ def train_in_epoch(net, gens, **kargs):
     # assert (batch_idx - 1 == total_loss.get_count()), "循环次数与计算损失次数不相等"
     return [loss[0], total_loss.get_count(), loss[1], loss[2], loss[3], loss[4], get_lr(optimizer)]
 
-def test_epoch(net, gen_vals, **kargs):
+def test_in_epoch(net, gen_vals, **kargs):
     """测试方法"""
     total_ce_loss   = AverageMeter()
     total_bce_loss  = AverageMeter()
