@@ -20,7 +20,7 @@ from tqdm import tqdm
 from loguru import logger
 import pynvml
 
-from train_epoch import fit_one_epoch, test_epoch
+from train_epoch import train_in_epoch, test_epoch
 
 from modules.nets.getmodel import GetModel
 from modules.utils.getearlystop import GetEarlyStopping
@@ -273,7 +273,7 @@ def main():
         # 返回值按照 0/总loss, 1/count, 2/celoss, 3/bceloss, 4/diceloss, 5/floss, 6/lr
         time_start = time.time()
         ret_train = \
-            fit_one_epoch(model, (gen, gen_target), **para_kargs)
+            train_in_epoch(model, (gen, gen_target), **para_kargs)
         time_end = time.time()
 
         # 每轮训练输出一些日志信息

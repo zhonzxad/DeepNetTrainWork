@@ -61,7 +61,7 @@ def set_tqdm_post(vals, batch_indx, optimizer):
     #                     F_SOCRE=("{:5f}". format(total_f_score / (batch_idx + 1))),
     #                     lr=("{:7f}".      format(get_lr(optimizer))))
 
-def fit_one_epoch(net, gens, **kargs):
+def train_in_epoch(net, gens, **kargs):
     """"定义训练每一个epoch的步骤"""
     total_ce_loss   = AverageMeter()
     total_bce_loss  = AverageMeter()
