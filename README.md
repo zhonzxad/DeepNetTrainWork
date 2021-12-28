@@ -5,7 +5,7 @@
  * @LastEditors: zhonzxad
 -->
 # UNet 分割类型框架集合
-#### 使用集成环境安装
+#### 使用conda导出所有安装的集成环境
 * 导出conda安装使用命令conda list -e > requirements.txt 
 * 导入使用conda install --yes --file requirements.txt
 * 导出pip安装使用命令pip freeze > requirements.txt
@@ -24,7 +24,10 @@
 `pip install tqdm`
 * 依赖platform, argparse等基础库
 
+
 其余参考 
+`requirements.txt`
+以及
 `profile&store 下 pip-requirements.txt && conda-requirements.txt`
 
 ---
