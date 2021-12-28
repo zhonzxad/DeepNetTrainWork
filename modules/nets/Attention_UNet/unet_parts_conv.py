@@ -4,15 +4,16 @@ Date: 2021-12-02 16:55:18
 LastEditTime: 2021-12-17 21:39:28
 LastEditors: zhonzxad
 '''
-""" Parts of the U-net model """
-# Base model taken from: https://github.com/milesial/Pytorch-UNet
+""" Parts of the U-net model 
+Base model taken from: https://github.com/milesial/Pytorch-UNet
+"""
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from modules.nets.funtion.layer import GroupNorm, GropConv, DilConv
+from modules.nets.funtion.layer import GroupNorm, GropConv, DilConv, GhostModule
 from modules.nets.Attention_UNet.Attention_Layer import DepthwiseSeparableConv
-
 
 class DoubleConvDS(nn.Module):
     """(convolution(深度可分离卷积) => [批处理归一化] => ReLU) * 2"""
@@ -51,7 +52,9 @@ class DownDS(nn.Module):
         super().__init__()
         self.maxpool_conv = nn.Sequential(
             nn.MaxPool2d(2),
-            DoubleConvDS(in_channels, out_channels, kernels_per_layer=kernels_per_layer)
+            # DoubleConvDS(in_channels, out_channels, kernels_per_layer=kernels_per_layer),
+            # 使用Ghost模块缩减计算量
+            GhostModule(in_channels, out_channels),
         )
 
     def forward(self, x):
@@ -70,10 +73,13 @@ class UpDS(nn.Module):
             # 根据scale_factor指定的上采样倍数及mode采样方式
             # 或者直接使用nn.UpsamplingBilinear2d
             self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
-            self.conv = DoubleConvDS(in_channels, out_channels, in_channels // 2, kernels_per_layer=kernels_per_layer)
+            # self.conv = DoubleConvDS(in_channels, out_channels, in_channels // 2, kernels_per_layer=kernels_per_layer)
+
         else:
             self.up = nn.ConvTranspose2d(in_channels, in_channels // 2, kernel_size=2, stride=2)
-            self.conv = DoubleConvDS(in_channels, out_channels, kernels_per_layer=kernels_per_layer)
+            # self.conv = DoubleConvDS(in_channels, out_channels, kernels_per_layer=kernels_per_layer)
+        # 使用Ghost模块缩减计算量
+        self.conv = GhostModule(in_channels, out_channels)
 
     def forward(self, x1, x2):
         x1 = self.up(x1)

@@ -54,6 +54,11 @@ class At_UNet(nn.Module):
         # self.att_mode_4 = CBAM(512, reduction_ratio=self.reduction_ratio)
         # self.att_mode_5 = CBAM(1024 // factor, reduction_ratio=self.reduction_ratio)
 
+        # self.down1 = DownDS(64, 128, kernels_per_layer=self.kernels_per_layer)
+        # self.down2 = DownDS(128, 256, kernels_per_layer=self.kernels_per_layer)
+        # self.down3 = DownDS(256, 512, kernels_per_layer=self.kernels_per_layer)
+        # self.down4 = DownDS(512, 1024 // factor, kernels_per_layer=self.kernels_per_layer)
+
         self.down1 = DownDS(64, 128, kernels_per_layer=self.kernels_per_layer)
         self.down2 = DownDS(128, 256, kernels_per_layer=self.kernels_per_layer)
         self.down3 = DownDS(256, 512, kernels_per_layer=self.kernels_per_layer)
