@@ -118,7 +118,7 @@ def get_args():
                         help='Use mixed precision', default=False)
     parser.add_argument("--systemtype", type=bool,
                         help='net run on system, True is windows', default=True)
-    parser.add_argument("--systemtype_mac", type=bool,
+    parser.add_argument("--is_use_sysmac", type=bool,
                         help='net run on system, True is mac', default=False)
     parser.add_argument('--local_rank', default=-1, type=int,
                         help='node rank for distributed training')  # DDP多卡参数
@@ -131,8 +131,8 @@ def main():
     start_epoch = 0                   # 起始的批次
 
     # 使用window平台还是Linux平台, 为True表示为Windows平台
-    args.systemtype  = True if platform.system().lower() == 'windows' else False
-    args.systemtype_mac = True if platform.mac_ver()[0] != "" else False
+    args.systemtype    = True if platform.system().lower() == 'windows' else False
+    args.is_use_sysmac = True if platform.mac_ver()[0] != "" else False
     # 当前是否使用cuda来进行加速
     args.UseGPU = True
     this_device = torch.device("cuda:0" if torch.cuda.is_available() and args.UseGPU else "cpu")
