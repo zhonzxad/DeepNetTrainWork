@@ -237,7 +237,8 @@ class DilConv(nn.Module):
 
 class GhostModule(nn.Module):
     """Ghost module
-    提出一个仅通过少量计算（论文称为cheap operations）就能生成大量特征图的结构——Ghost Module
+    提出一个仅通过少量计算（论文称为cheap operations）就能生成大量特征图的结构Ghost Module
+    其主要目的是缩减计算量
     引自：https://arxiv.org/pdf/1911.11907.pdf
     """
     def __init__(self, inp, oup, kernel_size=1, ratio=2, dw_size=3, stride=1, relu=True):

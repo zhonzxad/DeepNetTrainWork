@@ -19,6 +19,7 @@ from torchsummary import summary
 from tqdm import tqdm
 from loguru import logger
 import pynvml
+from modules.nets.funtion.user_summary import count_param
 
 from train_in import train_in_epoch, test_in_epoch
 
@@ -213,7 +214,8 @@ def main():
     logger.success("模型初始化完毕")
 
     # 测试网络结构
-    # summary(model, input_size=(args.IMGSIZE[2], args.IMGSIZE[0], args.IMGSIZE[1]), device=this_device.type)
+    summary(model, input_size=(args.IMGSIZE[2], args.IMGSIZE[0], args.IMGSIZE[1]), device=this_device.type)
+    # count = count_param(model=model)
 
     # 创建优化器
     optimizer, scheduler = GetOptim(model, lr=args.lr[0])

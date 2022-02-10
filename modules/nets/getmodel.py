@@ -35,6 +35,8 @@ from modules.nets.funtion.init_weight import initweight
 # from .UNet.UNet_3Plus import UNet_3Plus
 # from .UNet.UNetBili import UNetVGG16
 
+import torchvision.models as models
+
 class GetModel:
 
     def __init__(self, args):
@@ -55,6 +57,9 @@ class GetModel:
         # model   = SegNet(input_channels=IMGSIZE[2], num_class=CLASSNUM)
         # model   = FCN(input_channels=IMGSIZE[2], num_class=CLASSNUM)
         model = At_UNet(n_channels=self.IMGSIZE[2], n_classes=self.NCLASS)
+
+        # Pytorch官方例程中的相关网络
+        # model = models.alexnet()
 
         # # 根据是否为训练集设置训练
         # if is_train:

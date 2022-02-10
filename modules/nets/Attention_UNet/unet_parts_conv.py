@@ -16,7 +16,9 @@ from modules.nets.funtion.layer import GroupNorm, GropConv, DilConv, GhostModule
 from modules.nets.Attention_UNet.Attention_Layer import DepthwiseSeparableConv
 
 class DoubleConvDS(nn.Module):
-    """(convolution(深度可分离卷积) => [批处理归一化] => ReLU) * 2"""
+    """(convolution(深度可分离卷积) => [批处理归一化] => ReLU) * 2
+    深度可分离卷积，降低了参数量，也注意到了不同通道之间信息的融合
+    """
 
     def __init__(self, in_channels, out_channels, mid_channels=None, kernels_per_layer=1):
         super().__init__()
@@ -24,14 +26,14 @@ class DoubleConvDS(nn.Module):
             mid_channels = out_channels
 
         self.double_conv = nn.Sequential(
-            # DepthwiseSeparableConv(in_channels, mid_channels, kernel_size=3, kernels_per_layer=kernels_per_layer, padding=1),
-            DilConv(in_channels, mid_channels, kernel_size=3, stride=1, padding=1, dilation=2),
+            DepthwiseSeparableConv(in_channels, mid_channels, kernel_size=3, kernels_per_layer=kernels_per_layer, padding=1),
+            # DilConv(in_channels, mid_channels, kernel_size=3, stride=1, padding=1, dilation=2),
             # nn.BatchNorm2d(mid_channels),
             GroupNorm(mid_channels),
             nn.ReLU(inplace=True),
 
-            # DepthwiseSeparableConv(mid_channels, out_channels, kernel_size=3, kernels_per_layer=kernels_per_layer, padding=1),
-            DilConv(mid_channels, out_channels, kernel_size=3, stride=1, padding=1, dilation=2),
+            DepthwiseSeparableConv(mid_channels, out_channels, kernel_size=3, kernels_per_layer=kernels_per_layer, padding=1),
+            # DilConv(mid_channels, out_channels, kernel_size=3, stride=1, padding=1, dilation=2),
             # nn.BatchNorm2d(out_channels),
             GroupNorm(out_channels),
             nn.ReLU(inplace=True)
@@ -52,9 +54,9 @@ class DownDS(nn.Module):
         super().__init__()
         self.maxpool_conv = nn.Sequential(
             nn.MaxPool2d(2),
-            # DoubleConvDS(in_channels, out_channels, kernels_per_layer=kernels_per_layer),
-            # 使用Ghost模块缩减计算量
-            GhostModule(in_channels, out_channels),
+            DoubleConvDS(in_channels, out_channels, kernels_per_layer=kernels_per_layer),
+            # 使用Ghost
+            # GhostModule(in_channels, out_channels),
         )
 
     def forward(self, x):
@@ -82,7 +84,10 @@ class UpDS(nn.Module):
         self.conv = GhostModule(in_channels, out_channels)
 
     def forward(self, x1, x2):
+        # 先进行上采样
         x1 = self.up(x1)
+        # 然后开始通道合并
+
         # input is b*C*H*W
         diffY = x2.size()[2] - x1.size()[2]
         diffX = x2.size()[3] - x1.size()[3]
