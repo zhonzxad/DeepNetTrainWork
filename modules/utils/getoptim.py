@@ -27,11 +27,12 @@ import torch
 
 # 设置学习率
 def UserOptim1(model, lr):
-    optimizer = torch.optim.RMSprop(model.parameters(), lr=lr, alpha=0.9, eps=1e-07)
+    # optimizer = torch.optim.RMSprop(model.parameters(), lr=lr, alpha=0.9, eps=1e-07)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, eps=1e-8)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode="min", \
                                                             verbose = True, \
                                                             factor=0.75, patience=1, cooldown=1, \
-                                                            eps=1e-7)
+                                                            eps=1e-8)
 
     return optimizer, scheduler
 
@@ -48,8 +49,7 @@ def UserOptim3(model, lr):
     return optimizer, scheduler
 
 def UserOptim4(model, lr, momentum=0.9, weight_decay=0.001, lr_gamma=0.001, lr_decay=0.75):
-    """
-    从迁移学习框架库中学习到的优化器用法
+    """从迁移学习框架库中学习到的优化器用法
     lr: 0.01
     weight_decay: 0.001 # 5e-4
     momentum: 0.9
