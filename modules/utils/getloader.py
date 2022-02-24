@@ -53,6 +53,7 @@ def dataset_collate(batch):
     return images, pngs, seg_labels
 
 class GetLoader():
+
     def __init__(self, args):
         self.imgsize     = args.IMGSIZE
         self.nclass      = args.n_class
@@ -69,7 +70,7 @@ class GetLoader():
             self.tra_img = r"G:/DataBase/userdata/BXG/CutFromData/train/img-resize-3/"
             self.tra_lab = r"G:/DataBase/userdata/BXG/CutFromData/train/label-changerange/"
             self.val_img = r"G:/DataBase/userdata/BXG/CutFromData/val/img-resize-3/"
-            self.val_lab = r"G:/DataBase/userdata/BXG/CutFromData/val/label-resize-3/"
+            self.val_lab = r"G:/DataBase/userdata/BXG/CutFromData/val/label-changerange/"
         else:
             self.tra_img = r"/mnt/work/database/BXG/train/img-resize-3/"
             self.tra_lab = r"/mnt/work/database/BXG/train/label-resize-3/"

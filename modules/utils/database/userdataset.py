@@ -98,7 +98,7 @@ class UserDataLoader(Dataset):
 
     def png_to_onehot(self, png):
         """
-        Converts a segmentation label (H, W, C) to (H, W, K) where the last dim is a one
+        Converts a segmentation label (H, W, chanel) to (H, W, nclass) where the last dim is a one
         hot encoding vector, C is usually 1 or 3, and K is the number of class.
         """
         colormap = [[0, 0, 0], [128, 0, 0],]
@@ -108,6 +108,7 @@ class UserDataLoader(Dataset):
             class_map = np.all(equality, axis=-1)
             semantic_map.append(class_map)
         semantic_map = np.stack(semantic_map, axis=-1).astype(np.float32)
+
         return semantic_map
 
     def __getitem__(self, index):
@@ -131,8 +132,10 @@ class UserDataLoader(Dataset):
         # jpg = jpg.resize((self.image_size[0], self.image_size[1]), Image.BILINEAR)
         # png = png.resize((self.image_size[0], self.image_size[1]), Image.BILINEAR)
 
-        # 处理jpg格式变换
-        jpg = np.transpose(np.array(jpg).reshape(self.image_size[0], self.image_size[1], self.image_size[2]), [2, 0, 1])
+        # 处理jpg格式变换,变换成为 768*768*3/1，再调换成3/1*768*768
+        jpg = np.array(jpg)
+        jpg = jpg.reshape( (self.image_size[0], self.image_size[1], -1) )
+        jpg = np.transpose(jpg, [2, 0, 1])
         # jpg = np.array(jpg)
         # jpg = torch.from_numpy(jpg)
 
