@@ -61,15 +61,15 @@ class GetLoader():
         self.SystemType  = args.systemtype  # false表示处于linux环境下
 
         if self.SystemType:
-            self.tra_img = r"G:/DataBase/userdata/BXG/CutFromData-4/train/img-resize-3/"
-            self.tra_lab = r"G:/DataBase/userdata/BXG/CutFromData-4/train/label-resize-3/"
-            self.val_img = r"G:/DataBase/userdata/BXG/CutFromData-4/val/img-resize-3/"
-            self.val_lab = r"G:/DataBase/userdata/BXG/CutFromData-4/val/label-resize-3/"
-
             # self.tra_img = r"G:/DataBase/userdata/BXG/CutFromData-4/train/img-resize-3/"
             # self.tra_lab = r"G:/DataBase/userdata/BXG/CutFromData-4/train/label-resize-3/"
             # self.val_img = r"G:/DataBase/userdata/BXG/CutFromData-4/val/img-resize-3/"
             # self.val_lab = r"G:/DataBase/userdata/BXG/CutFromData-4/val/label-resize-3/"
+
+            self.tra_img = r"G:/DataBase/userdata/BXG/CutFromData/train/img-resize-3/"
+            self.tra_lab = r"G:/DataBase/userdata/BXG/CutFromData/train/label-changerange/"
+            self.val_img = r"G:/DataBase/userdata/BXG/CutFromData/val/img-resize-3/"
+            self.val_lab = r"G:/DataBase/userdata/BXG/CutFromData/val/label-resize-3/"
         else:
             self.tra_img = r"/mnt/work/database/BXG/train/img-resize-3/"
             self.tra_lab = r"/mnt/work/database/BXG/train/label-resize-3/"

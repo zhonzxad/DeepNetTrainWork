@@ -98,7 +98,7 @@ def get_args():
     parser.add_argument('--nepoch', type=int,
                         help='Total epoch num', default=50)
     parser.add_argument('--IMGSIZE', type=list, 
-                        help='IMGSIZE', default=[384, 384, 3])
+                        help='IMGSIZE', default=[768, 768, 1])
     parser.add_argument('--lr', type=list, 
                         help='Learning rate', default=[0.001, 0.01])
     parser.add_argument('--early_stop', type=int,
@@ -142,7 +142,7 @@ def main():
     if args.systemtype:
         args.batch_size = 1
         args.load_tread = 1
-        args.UseTfBoard = False
+        args.UseTfBoard = True
         # args.amp        = False
     else:
         args.batch_size = 6
@@ -214,7 +214,7 @@ def main():
     logger.success("模型初始化完毕")
 
     # 测试网络结构
-    summary(model, input_size=(args.IMGSIZE[2], args.IMGSIZE[0], args.IMGSIZE[1]), device=this_device.type)
+    # summary(model, input_size=(args.IMGSIZE[2], args.IMGSIZE[0], args.IMGSIZE[1]), device=this_device.type)
     # count = count_param(model=model)
 
     # 创建优化器
@@ -308,7 +308,7 @@ def main():
             'loss' : ret_val,
         }
         saveparafilepath = makedir("savepoint/model_data/")
-        file_name = "SmarUNEt_NewGN_NewGAM.pth"
+        file_name = "SmarUNet_20220223.pth"
         # 判断当前损失是否变小，变小才进行保存参数
         # 注意ret[0]是tensor格式，ret[1]才是平均损失（损失累加除以轮次）
         # 使用的是验证集上的损失，如果验证集损失一直在下降也是，说明模型还在训练

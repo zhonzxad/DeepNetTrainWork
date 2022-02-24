@@ -122,21 +122,24 @@ class UserDataLoader(Dataset):
         if self.labelpath_list.count(shotname + ".png") == 0:
             raise RuntimeError("未找到原图对应的标签文件")
 
-        jpg = Image.open(imgfilepath).convert("RGB")    # 统一转为三通道格式读取
+        jpg = Image.open(imgfilepath).convert("L")    # 统一转为三通道格式读取
         png = Image.open(labelfilepath).convert('L')    # 统一转为单通道格式读取
 
-        jpg = jpg.resize((self.image_size[0], self.image_size[1]), Image.BILINEAR)
-        png = png.resize((self.image_size[0], self.image_size[1]), Image.BILINEAR)
+        # 20220224 不需要做出resize，这里的resize是从配置文件中设置的
+        # 现在的方式是由文件原始大小决定，此时应确保原始文件的正确性
+        # Image.BILINEAR 双线性插值
+        # jpg = jpg.resize((self.image_size[0], self.image_size[1]), Image.BILINEAR)
+        # png = png.resize((self.image_size[0], self.image_size[1]), Image.BILINEAR)
 
         # 处理jpg格式变换
-        jpg = np.transpose(np.array(jpg), [2, 0, 1])
+        jpg = np.transpose(np.array(jpg).reshape(self.image_size[0], self.image_size[1], self.image_size[2]), [2, 0, 1])
         # jpg = np.array(jpg)
         # jpg = torch.from_numpy(jpg)
 
         # 处理png格式变化
         # 产生数组
         png = np.array(png)
-        png[png >= self.num_classes] = self.num_classes
+        # png[png >= self.num_classes] = self.num_classes
         seg_labels = png.copy()
         # png = np.transpose(np.array(png), [2,0,1])
         # png = png.unsqueeze(dim=-1)
