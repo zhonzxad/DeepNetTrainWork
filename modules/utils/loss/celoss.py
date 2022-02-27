@@ -36,9 +36,9 @@ def AchieveCE_2(inputs, target):
     nt, ht, wt = target.size()
 
     inputs = torch.softmax(inputs, dim=1)
-    
+
     temp_inputs = inputs.transpose(1, 2).transpose(2, 3).contiguous().view(-1, c) # [n*h*w, c]
-    temp_target = target.long().view(-1)  # [n*h*w]
+    temp_target = target.view(-1).long()  # [n*h*w]
     # print("\n temp_inputs shape is {} || temp_target shape is {}".format(temp_inputs.shape, temp_target.shape))
     # 以下两个float操作的作用是在amp作用下，防止出现某些精度为nan的情况
     # temp_inputs = temp_inputs.float()
@@ -51,12 +51,13 @@ def AchieveCE_3(pred, target, num_classes=2):
     n, c, h, w = pred.size()
     nt, ht, wt = target.size()
 
-    pred = torch.softmax(pred, dim=1)
+    # inputs = torch.softmax(inputs, dim=1)
+    pred = torch.sigmoid(pred)
 
     pred = pred.transpose(1, 2).transpose(2, 3).contiguous().view(-1, c)
 
     target = target.contiguous().view(-1).long()   # 全部转换为[n*h*w]形式
-    
+
     CE_loss = nn.CrossEntropyLoss()(pred, target)
 
     return CE_loss
@@ -99,10 +100,10 @@ class CELoss2d(nn.Module):
     # 针对celoss或者bceloss的情况，在使用amp计算时容易出现nan的情况，需要强制将
     # half精度转回float32, 也就是x=x.float()
     # 对于二分类问题，sigmoid等价于softmax
- 
+
     def forward(self, pred, target):
 
-        return AchieveCE_2(pred, target)
+        return AchieveCE_3(pred, target)
 
         
 
