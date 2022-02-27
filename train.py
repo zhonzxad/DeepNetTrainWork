@@ -21,7 +21,7 @@ from loguru import logger
 import pynvml
 from modules.nets.funtion.user_summary import count_param
 
-from train_in import train_in_epoch, test_in_epoch
+from train_in_epoch import train_in_epoch, test_in_epoch
 
 from modules.nets.getmodel import GetModel
 from modules.utils.getearlystop import GetEarlyStopping
