@@ -12,6 +12,19 @@ from torch import nn
 https://blog.csdn.net/weixin_30793735/article/details/88915612 
 """
 
+class h_swish(nn.Module):
+    """h_swish激活函数
+    性能比肩Relu
+    """
+    def __init__(self, inplace = True):
+        super(h_swish,self).__init__()
+        self.relu = nn.ReLU6(inplace=inplace)
+
+    def forward(self, x):
+        sigmoid = self.relu(x + 3) / 6
+        x = x * sigmoid
+        return x
+
 class Flatten(nn.Module):
     """按照第一维展平"""
     def __init__(self):
@@ -22,35 +35,6 @@ class Flatten(nn.Module):
         batch = x.shape[0]
         ret = x.view(batch, -1)
         return ret
-
-class simam_module(torch.nn.Module):
-    """无参注意力机制SimAM
-    code from：https://github.com/ZjjConan/SimAM
-    info：https://cloud.tencent.com/developer/article/1854055?from=article.detail.1919484
-    """
-    def __init__(self, channels = None, e_lambda = 1e-4):
-        super(simam_module, self).__init__()
-
-        self.activaton = nn.Sigmoid()
-        self.e_lambda = e_lambda
-
-    def __repr__(self):
-        s = self.__class__.__name__ + '('
-        s += ('lambda=%f)' % self.e_lambda)
-        return s
-
-    def forward(self, x):
-        e_lambda = 1e-4
-        b, c, h, w = x.size()
-
-        n = w * h - 1
-
-        x_minus_mu_square = (x - x.mean(dim=[2,3], keepdim=True)).pow(2)
-        y = x_minus_mu_square / \
-            (4 * (x_minus_mu_square.sum(dim=[2,3], keepdim=True) / n + e_lambda)) + \
-            0.5
-
-        return x * self.activaton(y)
 
 class ChannelAttention(nn.Module):
     def __init__(self, input_channels, reduction_ratio=16):
