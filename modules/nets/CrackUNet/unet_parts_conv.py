@@ -13,7 +13,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from modules.nets.funtion.layer import GroupNorm, GropConv, DilConv, GhostModule
-from modules.nets.Attention_UNet.Attention_Layer import DepthwiseSeparableConv
+from modules.nets.CrackUNet.Attention_Layer import DepthwiseSeparableConv
 
 class DoubleConvDS(nn.Module):
     """(convolution(深度可分离卷积) => [批处理归一化] => ReLU) * 2
@@ -105,7 +105,8 @@ class UpDS(nn.Module):
         return self.conv(x)
 
 class InConv(nn.Module):
-
+    """普通卷积
+    """
     def __init__(self, in_channels, out_channels, k_size):
         super(InConv, self).__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=k_size)
@@ -114,6 +115,8 @@ class InConv(nn.Module):
         return self.conv(x)
 
 class OutConv(nn.Module):
+    """普通卷积
+    """
     def __init__(self, in_channels, out_channels):
         super(OutConv, self).__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=1)

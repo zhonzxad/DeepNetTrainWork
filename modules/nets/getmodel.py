@@ -17,7 +17,7 @@ from modules.nets.FCN.fcn import FCN
 from modules.nets.ResNet.ResNet import GetResNet
 from modules.nets.ResNet.resnet18 import RestNet18
 from modules.nets.SegNet.SegNet import SegNet
-from modules.nets.Attention_UNet.Attention_UNet import At_UNet
+from modules.nets.CrackUNet.CrackUNet import At_UNet
 from modules.nets.UNet.UNet import UNet
 from modules.nets.UNet.UNet_2Plus import UNet_2Plus
 from modules.nets.UNet.UNet_3Plus import UNet_3Plus

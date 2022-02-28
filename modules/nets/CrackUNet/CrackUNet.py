@@ -20,8 +20,8 @@ from torch import nn
 
 from modules.nets.funtion.attention_layer import CBAM, GAM, CoorAtt_User
 # from SmaAtUNer.unet_parts import OutConv
-from modules.nets.Attention_UNet.unet_parts_conv import DoubleConvDS, DownDS, InConv
-from modules.nets.Attention_UNet.unet_parts_conv import OutConv, UNetUp_Tradition, UpDS
+from modules.nets.CrackUNet.unet_parts_conv import DoubleConvDS, DownDS, InConv
+from modules.nets.CrackUNet.unet_parts_conv import OutConv, UNetUp_Tradition, UpDS
 
 
 class At_UNet(nn.Module):
