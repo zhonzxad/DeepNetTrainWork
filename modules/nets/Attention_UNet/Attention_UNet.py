@@ -18,7 +18,8 @@ https://github.com/HansBambel/SmaAt-UNet/blob/master/models/SmaAt_UNet.py
 """
 from torch import nn
 
-from modules.nets.funtion.layer import CBAM, GAM
+from modules.nets.funtion.layer import GAM
+from modules.nets.funtion.attention_layer import CBAM
 # from SmaAtUNer.unet_parts import OutConv
 from modules.nets.Attention_UNet.unet_parts_conv import DoubleConvDS, DownDS, InConv
 from modules.nets.Attention_UNet.unet_parts_conv import OutConv, UNetUp_Tradition, UpDS
