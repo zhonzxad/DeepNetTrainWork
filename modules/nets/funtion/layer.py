@@ -25,69 +25,6 @@ class h_swish(nn.Module):
         x = x * sigmoid
         return x
 
-class SELayer(nn.Module):
-    """
-    Squeeze.将H×W×C*H的特征图压缩为1×1×C ，一般是用global average pooling实现
-    Excitation.得到Squeeze的1×1×C的特征图后，使用FC全连接层，对每个通道的重要性进行预测，得到不同channel的重要性大小。有两个全连接，一个降维，一个恢复维度。
-    Scale.这里Scale就是一个简单的加权操作,最后将学习到的各个channel的激活值（sigmoid激活，值0~1）乘以之前的feature map的对应channel上。
-    """
-    def __init__(self, in_chanel, reduction=16):
-        super(SELayer, self).__init__()
-        self.avg_pool = nn.AdaptiveAvgPool2d(1) # 全局自适应池化
-        self.fc = nn.Sequential(
-            nn.Linear(in_chanel, in_chanel // reduction, bias=False),
-            nn.ReLU(inplace=True),
-            nn.Linear(in_chanel // reduction, in_chanel, bias=False),
-            nn.Sigmoid()
-        )
-
-    def forward(self, x):
-        b, c, _, _ = x.shape # x.size()
-        y = self.avg_pool(x).view(b, c)
-        y = self.fc(y).view(b, c, 1, 1)
-        return x * y.expand_as(x)
-
-class GAM(nn.Module):
-    """
-    GAM 全局注意力机制(GAM)，相教于传统通道注意力和空间注意力能更好的涨点。
-    CBAM依次进行通道和空间注意力操作，而BAM并行进行。但它们都忽略了通道与空间的相互作用，从而丢失了跨维信息
-    GAM 一种注意力机制能够在减少信息弥散的情况下也能放大全局维交互特征
-    引自：Global Attention Mechanism: Retain Information to Enhance Channel-Spatial Interactions
-    """
-
-    def __init__(self, in_channels, out_channels=None, rate=4):
-        super(GAM, self).__init__()
-
-        if out_channels is None:
-            out_channels = in_channels
-
-        self.channel_attention = nn.Sequential(
-            nn.Linear(in_channels, int(in_channels / rate)),
-            nn.ReLU(inplace=True),
-            nn.Linear(int(in_channels / rate), in_channels)
-        )
-
-        self.spatial_attention = nn.Sequential(
-            nn.Conv2d(in_channels, int(in_channels / rate), kernel_size=7, padding=3),
-            nn.BatchNorm2d(int(in_channels / rate)),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(int(in_channels / rate), out_channels, kernel_size=7, padding=3),
-            nn.BatchNorm2d(out_channels)
-        )
-
-    def forward(self, x):
-        b, c, h, w = x.shape
-        x_permute = x.permute(0, 2, 3, 1).view(b, -1, c)
-        x_att_permute = self.channel_attention(x_permute).view(b, h, w, c)
-        x_channel_att = x_att_permute.permute(0, 3, 1, 2)    # b,c,h,w
-
-        x = x * x_channel_att
-
-        x_spatial_att = self.spatial_attention(x).sigmoid()
-        out = x * x_spatial_att
-
-        return out
-
 class GroupNorm(nn.Module):
     """
     Group Normbalization（GN）是一种新的深度学习归一化方式，可以替代BN，GN优化了BN在比较小的mini-batch情况下表现不太好的劣势
