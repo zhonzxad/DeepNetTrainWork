@@ -134,7 +134,7 @@ class UserDataLoader(Dataset):
 
         # 处理jpg格式变换,变换成为 768*768*3/1，再调换成3/1*768*768
         jpg = np.array(jpg)
-        jpg = jpg.reshape( (self.image_size[0], self.image_size[1], -1) )
+        jpg = jpg.reshape( (self.image_size[0], self.image_size[1], self.image_size[2]) )
         jpg = np.transpose(jpg, [2, 0, 1])
         # jpg = np.array(jpg)
         # jpg = torch.from_numpy(jpg)

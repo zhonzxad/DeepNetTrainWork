@@ -212,8 +212,11 @@ class CoorAtt_User(nn.Module):
     """Coordinate Attention 特殊实现版
     info：https://blog.csdn.net/practical_sharp/article/details/115789065
     """
-    def __init__(self, in_channels, out_channels, reduction = 32):
+    def __init__(self, in_channels, out_channels=None, reduction = 32):
         super(CoorAtt_User, self).__init__()
+        if out_channels is None:
+            out_channels = in_channels
+
         self.poolh = nn.AdaptiveAvgPool2d((None, 1))
         self.poolw = nn.AdaptiveAvgPool2d((1,None))
 
@@ -260,19 +263,19 @@ class CoordAtt(nn.Module):
     code from: https://github.com/Andrew-Qibin/CoordAttention
     info：https://cloud.tencent.com/developer/article/1829677?from=article.detail.1919484
     """
-    def __init__(self, inp, oup, reduction=32):
+    def __init__(self, in_chanel, ou_chanel, reduction=32):
         super(CoordAtt, self).__init__()
         self.pool_h = nn.AdaptiveAvgPool2d((None, 1))
         self.pool_w = nn.AdaptiveAvgPool2d((1, None))
 
-        mip = max(8, inp // reduction)
+        mid_chanel = max(8, in_chanel // reduction)
 
-        self.conv1 = nn.Conv2d(inp, mip, kernel_size=1, stride=1, padding=0)
-        self.bn1 = nn.BatchNorm2d(mip)
+        self.conv1 = nn.Conv2d(in_chanel, mid_chanel, kernel_size=1, stride=1, padding=0)
+        self.bn1 = nn.BatchNorm2d(mid_chanel)
         self.act = h_swish()
 
-        self.conv_h = nn.Conv2d(mip, oup, kernel_size=1, stride=1, padding=0)
-        self.conv_w = nn.Conv2d(mip, oup, kernel_size=1, stride=1, padding=0)
+        self.conv_h = nn.Conv2d(mid_chanel, ou_chanel, kernel_size=1, stride=1, padding=0)
+        self.conv_w = nn.Conv2d(mid_chanel, ou_chanel, kernel_size=1, stride=1, padding=0)
 
 
     def forward(self, x):

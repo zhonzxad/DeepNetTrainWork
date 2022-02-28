@@ -42,18 +42,18 @@ class At_UNet(nn.Module):
 
         factor = 2 if self.bilinear else 1
 
-        # self.att_mode_1 = GAM(64)
-        # self.att_mode_2 = GAM(128)
-        # self.att_mode_3 = GAM(256)
-        # self.att_mode_4 = GAM(512)
-        # self.att_mode_5 = GAM(1024 // factor)
-        CoorAtt_User(64, )
+        self.att_mode_1 = CoorAtt_User(64)
+        self.att_mode_2 = CoorAtt_User(128)
+        self.att_mode_3 = CoorAtt_User(256)
+        self.att_mode_4 = CoorAtt_User(512)
+        self.att_mode_5 = CoorAtt_User(1024 // factor)
 
-        self.att_mode_1 = CBAM(64, reduction_ratio=self.reduction_ratio)
-        self.att_mode_2 = CBAM(128, reduction_ratio=self.reduction_ratio)
-        self.att_mode_3 = CBAM(256, reduction_ratio=self.reduction_ratio)
-        self.att_mode_4 = CBAM(512, reduction_ratio=self.reduction_ratio)
-        self.att_mode_5 = CBAM(1024 // factor, reduction_ratio=self.reduction_ratio)
+
+        # self.att_mode_1 = CBAM(64, reduction_ratio=self.reduction_ratio)
+        # self.att_mode_2 = CBAM(128, reduction_ratio=self.reduction_ratio)
+        # self.att_mode_3 = CBAM(256, reduction_ratio=self.reduction_ratio)
+        # self.att_mode_4 = CBAM(512, reduction_ratio=self.reduction_ratio)
+        # self.att_mode_5 = CBAM(1024 // factor, reduction_ratio=self.reduction_ratio)
 
         # self.down1 = DownDS(64, 128, kernels_per_layer=self.kernels_per_layer)
         # self.down2 = DownDS(128, 256, kernels_per_layer=self.kernels_per_layer)
