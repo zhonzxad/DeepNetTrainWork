@@ -12,19 +12,6 @@ from torch import nn
 https://blog.csdn.net/weixin_30793735/article/details/88915612 
 """
 
-class h_swish(nn.Module):
-    """h_swish激活函数
-    性能比肩Relu
-    """
-    def __init__(self, inplace = True):
-        super(h_swish,self).__init__()
-        self.relu = nn.ReLU6(inplace=inplace)
-
-    def forward(self, x):
-        sigmoid = self.relu(x + 3) / 6
-        x = x * sigmoid
-        return x
-
 class GroupNorm(nn.Module):
     """
     Group Normbalization（GN）是一种新的深度学习归一化方式，可以替代BN，GN优化了BN在比较小的mini-batch情况下表现不太好的劣势

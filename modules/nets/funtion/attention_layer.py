@@ -119,7 +119,9 @@ class CBAM(nn.Module):
         chanel_out = self.channel_att(x)
         space_out = self.spatial_att(chanel_out)
 
-        return space_out * chanel_out
+        out = space_out * chanel_out
+
+        return out
 
 class simam(torch.nn.Module):
     """无参注意力机制SimAM
@@ -250,7 +252,8 @@ class CoorAtt_User(nn.Module):
         attention_w = self.sigmoid(self.conv_w(x_w))
 
         # re-weight
-        return identity * attention_h * attention_w
+        out = identity * attention_h * attention_w
+        return out
 
 class CoordAtt(nn.Module):
     """协同注意力官方实现
@@ -290,4 +293,5 @@ class CoordAtt(nn.Module):
         a_h = self.conv_h(x_h).sigmoid()
         a_w = self.conv_w(x_w).sigmoid()
 
-        return identity * a_w * a_h
+        out = identity * a_w * a_h
+        return out

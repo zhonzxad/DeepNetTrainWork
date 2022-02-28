@@ -18,7 +18,7 @@ https://github.com/HansBambel/SmaAt-UNet/blob/master/models/SmaAt_UNet.py
 """
 from torch import nn
 
-from modules.nets.funtion.attention_layer import CBAM, GAM, Coordinate
+from modules.nets.funtion.attention_layer import CBAM, GAM, CoorAtt_User
 # from SmaAtUNer.unet_parts import OutConv
 from modules.nets.Attention_UNet.unet_parts_conv import DoubleConvDS, DownDS, InConv
 from modules.nets.Attention_UNet.unet_parts_conv import OutConv, UNetUp_Tradition, UpDS
@@ -47,7 +47,7 @@ class At_UNet(nn.Module):
         # self.att_mode_3 = GAM(256)
         # self.att_mode_4 = GAM(512)
         # self.att_mode_5 = GAM(1024 // factor)
-        Coordinate(64, )
+        CoorAtt_User(64, )
 
         self.att_mode_1 = CBAM(64, reduction_ratio=self.reduction_ratio)
         self.att_mode_2 = CBAM(128, reduction_ratio=self.reduction_ratio)
