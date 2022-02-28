@@ -150,50 +150,6 @@ class simam(torch.nn.Module):
 
         return x * self.activaton(y)
 
-class Coordinate(nn.Module):
-    """Coordinate Attention非官方实现
-    code from: https://github.com/Andrew-Qibin/CoordAttention
-    info：https://cloud.tencent.com/developer/article/1829677?from=article.detail.1919484
-    """
-    def __init__(self, channel, h, w, reduction=16):
-        super(Coordinate, self).__init__()
-
-        self.h = h
-        self.w = w
-
-        self.avg_pool_x = nn.AdaptiveAvgPool2d((h, 1))
-        self.avg_pool_y = nn.AdaptiveAvgPool2d((1, w))
-
-        self.conv_1x1 = nn.Conv2d(in_channels=channel, out_channels=channel//reduction,
-                                  kernel_size=1, stride=1, bias=False)
-
-        self.relu = nn.ReLU()
-        self.bn = nn.BatchNorm2d(channel//reduction)
-
-        self.F_h = nn.Conv2d(in_channels=channel//reduction, out_channels=channel,
-                             kernel_size=1, stride=1, bias=False)
-        self.F_w = nn.Conv2d(in_channels=channel//reduction, out_channels=channel,
-                             kernel_size=1, stride=1, bias=False)
-
-        self.sigmoid_h = nn.Sigmoid()
-        self.sigmoid_w = nn.Sigmoid()
-
-    def forward(self, x):
-
-        x_h = self.avg_pool_x(x).permute(0, 1, 3, 2)
-        x_w = self.avg_pool_y(x)
-
-        x_cat_conv_relu = self.relu(self.conv_1x1(torch.cat((x_h, x_w), 3)))
-
-        x_cat_conv_split_h, x_cat_conv_split_w = x_cat_conv_relu.split([self.h, self.w], 3)
-
-        s_h = self.sigmoid_h(self.F_h(x_cat_conv_split_h.permute(0, 1, 3, 2)))
-        s_w = self.sigmoid_w(self.F_w(x_cat_conv_split_w))
-
-        out = x * s_h.expand_as(x) * s_w.expand_as(x)
-
-        return out
-
 class GAM(nn.Module):
     """
     GAM 全局注意力机制(GAM)，相教于传统通道注意力和空间注意力能更好的涨点。
@@ -250,12 +206,12 @@ class h_swish(nn.Module):
         x = x * sigmoid
         return x
 
-class CoorAttention(nn.Module):
+class CoorAtt_User(nn.Module):
     """Coordinate Attention 特殊实现版
     info：https://blog.csdn.net/practical_sharp/article/details/115789065
     """
     def __init__(self, in_channels, out_channels, reduction = 32):
-        super(CoorAttention, self).__init__()
+        super(CoorAtt_User, self).__init__()
         self.poolh = nn.AdaptiveAvgPool2d((None, 1))
         self.poolw = nn.AdaptiveAvgPool2d((1,None))
 
@@ -267,15 +223,16 @@ class CoorAttention(nn.Module):
 
         self.conv_h = nn.Conv2d(middle, out_channels, kernel_size=1, stride=1, padding=0)
         self.conv_w = nn.Conv2d(middle, out_channels, kernel_size=1, stride=1, padding=0)
+
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
         # inout x shape [b, c, h, w]
         identity = x
         batch_size, c, h, w = x.size()  # [b, c, h, w]
+
         # X Avg Pool
         x_h = self.poolh(x)    # [b, c, h, 1]
-
         # Y Avg Pool
         x_w = self.poolw(x)        # [b, c, 1, w]
         x_w = x_w.permute(0, 1, 3, 2) # [b, c, w, 1]
@@ -284,12 +241,53 @@ class CoorAttention(nn.Module):
         # Concat + Conv2d + BatchNorm + Non-linear
         y = torch.cat((x_h, x_w), dim=2)   # [batch_size, c, h+w, 1]
         y = self.act(self.bn1(self.conv1(y)))  # [batch_size, c, h+w, 1]
+
         # split
         x_h, x_w = torch.split(y, [h,w], dim=2)  # [batch_size, c, h, 1]  and [batch_size, c, w, 1]
         x_w = x_w.permute(0, 1, 3, 2) # 把dim=2和dim=3交换一下，也即是[batch_size,c,w,1] -> [batch_size, c, 1, w]
         # Conv2d + Sigmoid
         attention_h = self.sigmoid(self.conv_h(x_h))
         attention_w = self.sigmoid(self.conv_w(x_w))
+
         # re-weight
         return identity * attention_h * attention_w
 
+class CoordAtt(nn.Module):
+    """协同注意力官方实现
+    code from: https://github.com/Andrew-Qibin/CoordAttention
+    info：https://cloud.tencent.com/developer/article/1829677?from=article.detail.1919484
+    """
+    def __init__(self, inp, oup, reduction=32):
+        super(CoordAtt, self).__init__()
+        self.pool_h = nn.AdaptiveAvgPool2d((None, 1))
+        self.pool_w = nn.AdaptiveAvgPool2d((1, None))
+
+        mip = max(8, inp // reduction)
+
+        self.conv1 = nn.Conv2d(inp, mip, kernel_size=1, stride=1, padding=0)
+        self.bn1 = nn.BatchNorm2d(mip)
+        self.act = h_swish()
+
+        self.conv_h = nn.Conv2d(mip, oup, kernel_size=1, stride=1, padding=0)
+        self.conv_w = nn.Conv2d(mip, oup, kernel_size=1, stride=1, padding=0)
+
+
+    def forward(self, x):
+        identity = x
+
+        n,c,h,w = x.size()
+        x_h = self.pool_h(x)
+        x_w = self.pool_w(x).permute(0, 1, 3, 2)
+
+        y = torch.cat([x_h, x_w], dim=2)
+        y = self.conv1(y)
+        y = self.bn1(y)
+        y = self.act(y)
+
+        x_h, x_w = torch.split(y, [h, w], dim=2)
+        x_w = x_w.permute(0, 1, 3, 2)
+
+        a_h = self.conv_h(x_h).sigmoid()
+        a_w = self.conv_w(x_w).sigmoid()
+
+        return identity * a_w * a_h
