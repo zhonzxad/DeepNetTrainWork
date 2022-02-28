@@ -90,25 +90,29 @@ class GhostModule(nn.Module):
     其主要目的是缩减计算量
     引自：https://arxiv.org/pdf/1911.11907.pdf
     """
-    def __init__(self, inp, oup, kernel_size=1, ratio=2, dw_size=3, stride=1, relu=True):
+    def __init__(self, in_chanel, ou_chanel, ratio=2, dw_size=3, ks=1, stride=1, relu=True):
         super(GhostModule, self).__init__()
-        self.oup = oup
-        init_channels = math.ceil(oup / ratio)
-        new_channels = init_channels*(ratio-1)
+        self.ou_chanel = ou_chanel
+        init_channels = math.ceil(ou_chanel / ratio)  # math.ceil大于或等于 x 的的最小整数
+        new_channels = init_channels * (ratio - 1)
 
         self.primary_conv = nn.Sequential(
-                                nn.Conv2d(inp, init_channels, kernel_size, stride, kernel_size // 2, bias=False),
+                                nn.Conv2d(in_chanel, init_channels, kernel_size=ks,
+                                            stride=stride, padding=ks // 2, bias=False),
                                 nn.BatchNorm2d(init_channels),
                                 nn.ReLU(inplace=True) if relu else nn.Sequential(),)
-        # cheap操作，注意利用了分组卷积进行通道分离
+        # cheap卷积操作，注意利用了分组卷积进行通道分离
         self.cheap_operation = nn.Sequential(
-                                nn.Conv2d(init_channels, new_channels, dw_size, 1, dw_size//2, groups=init_channels, bias=False),
+                                nn.Conv2d(init_channels, new_channels, kernel_size=dw_size,
+                                            stride=1, padding=dw_size//2, groups=init_channels, bias=False),
                                 nn.BatchNorm2d(new_channels),
                                 nn.ReLU(inplace=True) if relu else nn.Sequential(),)
 
     def forward(self, x):
-        x1 = self.primary_conv(x)       # 主要的卷积操作
-        x2 = self.cheap_operation(x1)   # cheap变换操作
-        out = torch.cat([x1,x2], dim=1) # 二者cat到一起
+        x1 = self.primary_conv(x)          # 主要的卷积操作
+        x2 = self.cheap_operation(x1)      # cheap变换操作
+        out = torch.cat([x1,x2], dim=1)    # 二者cat到一起
 
-        return out[:,:self.oup,:,:]
+        chanel1 = out[:,:self.ou_chanel, :, :]
+
+        return chanel1

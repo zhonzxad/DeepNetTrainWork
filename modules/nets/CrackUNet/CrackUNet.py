@@ -24,11 +24,12 @@ from modules.nets.CrackUNet.unet_parts_conv import DoubleConvDS, DownDS, InConv
 from modules.nets.CrackUNet.unet_parts_conv import OutConv, UNetUp_Tradition, UpDS
 
 
-class At_UNet(nn.Module):
-    """增加转置卷积等"""
+class Crack_UNet(nn.Module):
+    """CrackUNet语义分割检测网络
+    """
 
     def __init__(self, n_channels, n_classes, kernels_per_layer=2, bilinear=True, reduction_ratio=16):
-        super(At_UNet, self).__init__()
+        super(Crack_UNet, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.kernels_per_layer = kernels_per_layer
@@ -47,7 +48,6 @@ class At_UNet(nn.Module):
         self.att_mode_3 = CoorAtt_User(256)
         self.att_mode_4 = CoorAtt_User(512)
         self.att_mode_5 = CoorAtt_User(1024 // factor)
-
 
         # self.att_mode_1 = CBAM(64, reduction_ratio=self.reduction_ratio)
         # self.att_mode_2 = CBAM(128, reduction_ratio=self.reduction_ratio)

@@ -17,7 +17,7 @@ from modules.nets.FCN.fcn import FCN
 from modules.nets.ResNet.ResNet import GetResNet
 from modules.nets.ResNet.resnet18 import RestNet18
 from modules.nets.SegNet.SegNet import SegNet
-from modules.nets.CrackUNet.CrackUNet import At_UNet
+from modules.nets.CrackUNet.CrackUNet import Crack_UNet
 from modules.nets.UNet.UNet import UNet
 from modules.nets.UNet.UNet_2Plus import UNet_2Plus
 from modules.nets.UNet.UNet_3Plus import UNet_3Plus
@@ -56,7 +56,7 @@ class GetModel:
         # model = RestNet18(in_channels=IMGSIZE[2], n_classes=CLASSNUM)
         # model   = SegNet(input_channels=IMGSIZE[2], num_class=CLASSNUM)
         # model   = FCN(input_channels=IMGSIZE[2], num_class=CLASSNUM)
-        model = At_UNet(n_channels=self.IMGSIZE[2], n_classes=self.NCLASS)
+        model = Crack_UNet(n_channels=self.IMGSIZE[2], n_classes=self.NCLASS)
 
         # Pytorch官方例程中的相关网络
         # model = models.alexnet()

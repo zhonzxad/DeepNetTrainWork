@@ -54,13 +54,14 @@ class DownDS(nn.Module):
         super().__init__()
         self.maxpool_conv = nn.Sequential(
             nn.MaxPool2d(2),
-            DoubleConvDS(in_channels, out_channels, kernels_per_layer=kernels_per_layer),
+            # DoubleConvDS(in_channels, out_channels, kernels_per_layer=kernels_per_layer),
             # 使用Ghost
-            # GhostModule(in_channels, out_channels),
+            GhostModule(in_channels, out_channels),
         )
 
     def forward(self, x):
-        return self.maxpool_conv(x)
+        out = self.maxpool_conv(x)
+        return out
 
 class UpDS(nn.Module):
     """Upscaling then double conv
@@ -76,12 +77,13 @@ class UpDS(nn.Module):
             # 或者直接使用nn.UpsamplingBilinear2d
             self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
             # self.conv = DoubleConvDS(in_channels, out_channels, in_channels // 2, kernels_per_layer=kernels_per_layer)
-
+            # 使用Ghost模块缩减计算量
+            self.conv = GhostModule(in_channels, out_channels)
         else:
             self.up = nn.ConvTranspose2d(in_channels, in_channels // 2, kernel_size=2, stride=2)
             # self.conv = DoubleConvDS(in_channels, out_channels, kernels_per_layer=kernels_per_layer)
-        # 使用Ghost模块缩减计算量
-        self.conv = GhostModule(in_channels, out_channels)
+            # 使用Ghost模块缩减计算量
+            self.conv = GhostModule(in_channels, out_channels)
 
     def forward(self, x1, x2):
         # 先进行上采样
@@ -102,7 +104,9 @@ class UpDS(nn.Module):
         # https://github.com/xiaopeng-liao/Pytorch-UNet/commit/8ebac70e633bac59fc22bb5195e513d5832fb3bd
         # 这是因为原论文鼓励无填充的下采样与无零填充的上采样一样，可以避免对语义信息的破坏。这也是提出重叠瓦片策略的原因之一
         x = torch.cat([x2, x1], dim=1)
-        return self.conv(x)
+
+        out = self.conv(x)
+        return out
 
 class InConv(nn.Module):
     """普通卷积
