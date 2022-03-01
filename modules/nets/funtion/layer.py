@@ -7,14 +7,17 @@ import math
 import torch.nn.functional as F
 from torch import nn
 
+from modules.nets.CrackUNet.Attention_Layer import DepthwiseSeparableConv
+
 """Notion
 深度可分离卷积和分组卷积的理解
 https://blog.csdn.net/weixin_30793735/article/details/88915612 
 """
 
 class GroupNorm(nn.Module):
-    """
-    Group Normbalization（GN）是一种新的深度学习归一化方式，可以替代BN，GN优化了BN在比较小的mini-batch情况下表现不太好的劣势
+    """Group Normbalization（GN）
+    GN是一种新的深度学习归一化方式，可以替代BN，
+    GN优化了BN在比较小的mini-batch情况下表现不太好的劣势
     BN沿着batch维度进行归一化，其受限于BatchSize大小，当其很小时（值小于32），BN会得到不准确的统计估计，会导致模型误差明显增加
         将 Channels 划分为多个 groups，再计算每个 group 内的均值和方法，以进行归一化。
         GB的计算与Batch Size无关，因此对于高精度图片小BatchSize的情况也是非常稳定的
@@ -84,24 +87,32 @@ class DilConv(nn.Module):
     def forward(self, x):
         return self.op(x)
 
+def Ghost_Depthwise_Conv(inp, oup, kernel_size=3, stride=1, relu=False):
+    Depthwise_Conv = nn.Sequential(
+        nn.Conv2d(inp, oup, kernel_size, stride, kernel_size//2, groups=inp, bias=False),
+        nn.BatchNorm2d(oup),
+        nn.ReLU(inplace=True) if relu else nn.Sequential(),
+    )
+    return Depthwise_Conv
+
 class GhostModule(nn.Module):
     """Ghost module
     提出一个仅通过少量计算（论文称为cheap operations）就能生成大量特征图的结构Ghost Module
     其主要目的是缩减计算量
     引自：https://arxiv.org/pdf/1911.11907.pdf
     """
-    def __init__(self, in_chanel, ou_chanel, ratio=2, dw_size=3, ks=1, stride=1, relu=True):
+    def __init__(self, in_chanel, ou_chanel, kernel_size=1, stride=1, ratio=2, dw_size=3, relu=True):
         super(GhostModule, self).__init__()
         self.ou_chanel = ou_chanel
         init_channels = math.ceil(ou_chanel / ratio)  # math.ceil大于或等于 x 的的最小整数
         new_channels = init_channels * (ratio - 1)
 
         self.primary_conv = nn.Sequential(
-                                nn.Conv2d(in_chanel, init_channels, kernel_size=ks,
-                                            stride=stride, padding=ks // 2, bias=False),
+                                nn.Conv2d(in_chanel, init_channels, kernel_size=kernel_size,
+                                            stride=stride, padding=kernel_size // 2, bias=False),
                                 nn.BatchNorm2d(init_channels),
                                 nn.ReLU(inplace=True) if relu else nn.Sequential(),)
-        # cheap卷积操作，注意利用了分组卷积进行通道分离
+        # cheap卷积操作，注意利用了分组卷积进行通道分离(也就是论文说的线性变换)
         self.cheap_operation = nn.Sequential(
                                 nn.Conv2d(init_channels, new_channels, kernel_size=dw_size,
                                             stride=1, padding=dw_size//2, groups=init_channels, bias=False),
@@ -116,3 +127,33 @@ class GhostModule(nn.Module):
         chanel1 = out[:,:self.ou_chanel, :, :]
 
         return chanel1
+
+class GhostBottleneck(nn.Module):
+    def __init__(self, in_chanel, out_chanel, kernel_size=3, stride=2):
+        super(GhostBottleneck, self).__init__()
+        assert stride in [1, 2]
+        hidden_dim = in_chanel // 2
+
+        self.conv = nn.Sequential(
+            # pw
+            GhostModule(in_chanel, hidden_dim, kernel_size=1, relu=True),
+            # dw
+            Ghost_Depthwise_Conv(hidden_dim, hidden_dim, kernel_size, stride, relu=False) if stride==2 else nn.Sequential(),
+            # pw-linear
+            GhostModule(hidden_dim, out_chanel, kernel_size=1, relu=False),
+        )
+
+        if stride == 1 and in_chanel == out_chanel:
+            self.shortcut = nn.Sequential()
+        else:
+            self.shortcut = nn.Sequential(
+                Ghost_Depthwise_Conv(in_chanel, in_chanel, 3, stride, relu=True),
+                nn.Conv2d(in_chanel, out_chanel, kernel_size=1, stride=1, padding=0, bias=False),
+                nn.BatchNorm2d(out_chanel),
+            )
+
+    def forward(self, x):
+        ret_1 = self.conv(x)
+        ret_2 = self.shortcut(x)
+        out = ret_1 + ret_2
+        return out

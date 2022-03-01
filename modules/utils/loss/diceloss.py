@@ -233,4 +233,5 @@ class DiceLoss(nn.Module):
  
     def forward(self, pred, label):
 
-        return AchieveDice_1(pred, label)
+        out = AchieveDice_1(pred, label)
+        return out

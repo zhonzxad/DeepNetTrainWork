@@ -103,7 +103,8 @@ class CELoss2d(nn.Module):
 
     def forward(self, pred, target):
 
-        return AchieveCE_3(pred, target)
+        out = AchieveCE_2(pred, target)
+        return out
 
         
 

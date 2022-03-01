@@ -55,9 +55,9 @@ class DepthwiseSeparableConv(nn.Module):
         self.pointwise = nn.Conv2d(in_channels * kernels_per_layer, output_channels, kernel_size=1)
 
     def forward(self, x):
-        x = self.depthwise(x)
-        x = self.pointwise(x)
-        return x
+        x1  = self.depthwise(x)
+        out = self.pointwise(x1)
+        return out
 
 
 class DoubleDense(nn.Module):

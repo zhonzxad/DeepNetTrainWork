@@ -12,7 +12,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from modules.nets.funtion.layer import GroupNorm, GropConv, DilConv, GhostModule
+from modules.nets.funtion.layer import GroupNorm, GropConv, DilConv, GhostModule, GhostBottleneck
 from modules.nets.CrackUNet.Attention_Layer import DepthwiseSeparableConv
 
 class DoubleConvDS(nn.Module):
@@ -28,19 +28,22 @@ class DoubleConvDS(nn.Module):
         self.double_conv = nn.Sequential(
             DepthwiseSeparableConv(in_channels, mid_channels, kernel_size=3, kernels_per_layer=kernels_per_layer, padding=1),
             # DilConv(in_channels, mid_channels, kernel_size=3, stride=1, padding=1, dilation=2),
+
             # nn.BatchNorm2d(mid_channels),
             GroupNorm(mid_channels),
             nn.ReLU(inplace=True),
 
             DepthwiseSeparableConv(mid_channels, out_channels, kernel_size=3, kernels_per_layer=kernels_per_layer, padding=1),
             # DilConv(mid_channels, out_channels, kernel_size=3, stride=1, padding=1, dilation=2),
+
             # nn.BatchNorm2d(out_channels),
             GroupNorm(out_channels),
             nn.ReLU(inplace=True)
         )
 
     def forward(self, x):
-        return self.double_conv(x)
+        out = self.double_conv(x)
+        return out
 
 
 class DownDS(nn.Module):
@@ -50,13 +53,15 @@ class DownDS(nn.Module):
     maxpool：引自，https://blog.csdn.net/L1778586311/article/details/112159479
     """
 
-    def __init__(self, in_channels, out_channels, kernels_per_layer=1):
+    def __init__(self, in_channels, out_channels, kernels_per_layer=3):
         super().__init__()
         self.maxpool_conv = nn.Sequential(
             nn.MaxPool2d(2),
-            # DoubleConvDS(in_channels, out_channels, kernels_per_layer=kernels_per_layer),
+            DoubleConvDS(in_channels, out_channels, kernels_per_layer=kernels_per_layer),
             # 使用Ghost
-            GhostModule(in_channels, out_channels),
+            # GhostModule(in_channels, out_channels),
+            # Double_GhostModule(in_channels, out_channels),
+            # GhostBottleneck(in_channels, out_channels, stride=1),
         )
 
     def forward(self, x):
@@ -76,14 +81,18 @@ class UpDS(nn.Module):
             # 根据scale_factor指定的上采样倍数及mode采样方式
             # 或者直接使用nn.UpsamplingBilinear2d
             self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
-            # self.conv = DoubleConvDS(in_channels, out_channels, in_channels // 2, kernels_per_layer=kernels_per_layer)
+            self.conv = DoubleConvDS(in_channels, out_channels, in_channels // 2, kernels_per_layer=kernels_per_layer)
             # 使用Ghost模块缩减计算量
-            self.conv = GhostModule(in_channels, out_channels)
+            # self.conv = GhostModule(in_channels, out_channels)
+            # self.conv = Double_GhostModule(in_channels, out_channels)
+            # self.conv = GhostBottleneck(in_channels, out_channels, stride=1)
         else:
             self.up = nn.ConvTranspose2d(in_channels, in_channels // 2, kernel_size=2, stride=2)
-            # self.conv = DoubleConvDS(in_channels, out_channels, kernels_per_layer=kernels_per_layer)
+            self.conv = DoubleConvDS(in_channels, out_channels, kernels_per_layer=kernels_per_layer)
             # 使用Ghost模块缩减计算量
-            self.conv = GhostModule(in_channels, out_channels)
+            # self.conv = GhostModule(in_channels, out_channels)
+            # self.conv = Double_GhostModule(in_channels, out_channels)
+            # self.conv = GhostBottleneck(in_channels, out_channels, stride=1)
 
     def forward(self, x1, x2):
         # 先进行上采样
@@ -163,8 +172,8 @@ class UNetConv2_Tradition(nn.Module):
         return x
 
 class UNetUp_Tradition(nn.Module):
-    """使用传统方式进行卷积上采样"""
-
+    """使用传统方式进行卷积上采样
+    """
     def __init__(self, in_size, out_size, is_deconv=True, n_concat=2):
         super(UNetUp_Tradition, self).__init__()
         # self.conv = unetConv2(in_size + (n_concat - 2) * out_size, out_size, False)

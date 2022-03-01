@@ -135,14 +135,14 @@ def main():
     args.systemtype    = True if platform.system().lower() == 'windows' else False
     args.is_use_sysmac = True if platform.mac_ver()[0] != "" else False
     # 当前是否使用cuda来进行加速
-    args.UseGPU = True
+    args.UseGPU = False
     this_device = torch.device("cuda:0" if torch.cuda.is_available() and args.UseGPU else "cpu")
 
     # 根据平台的不同，设置不同batch的大小
     if args.systemtype:
         args.batch_size = 1
         args.load_tread = 1
-        args.UseTfBoard = True
+        args.UseTfBoard = False
         # args.amp        = False
     else:
         args.batch_size = 6

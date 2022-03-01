@@ -24,12 +24,12 @@ from modules.nets.CrackUNet.unet_parts_conv import DoubleConvDS, DownDS, InConv
 from modules.nets.CrackUNet.unet_parts_conv import OutConv, UNetUp_Tradition, UpDS
 
 
-class Crack_UNet(nn.Module):
+class defect_UNet(nn.Module):
     """CrackUNet语义分割检测网络
     """
 
     def __init__(self, n_channels, n_classes, kernels_per_layer=2, bilinear=True, reduction_ratio=16):
-        super(Crack_UNet, self).__init__()
+        super(defect_UNet, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.kernels_per_layer = kernels_per_layer
