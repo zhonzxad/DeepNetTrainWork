@@ -20,7 +20,7 @@ from torch import nn
 
 from modules.nets.funtion.attention_layer import CBAM, GAM, CoorAtt_User
 # from SmaAtUNer.unet_parts import OutConv
-from modules.nets.CrackUNet.unet_parts_conv import DoubleConvDS, DownDS, InConv
+from modules.nets.CrackUNet.unet_parts_conv import DoubleDSC_G_R, DownDS, InConv
 from modules.nets.CrackUNet.unet_parts_conv import OutConv, UNetUp_Tradition, UpDS
 
 
@@ -39,7 +39,7 @@ class defect_UNet(nn.Module):
         # 1*1的卷积升/降特征的维度, 这里的维度指的是通道数(厚度),而不改变图片的宽和高
         # self.Conv2D_1_In = InConv(self.n_channels, 64, k_size=1)
         # self.Conv2D_3_In = InConv(self.n_channels, 64, k_size=3)
-        self.DCS_In      = DoubleConvDS(self.n_channels, 64, kernels_per_layer=self.kernels_per_layer)
+        self.DCS_In      = DoubleDSC_G_R(self.n_channels, 64, kernels_per_layer=self.kernels_per_layer)
 
         factor = 2 if self.bilinear else 1
 
@@ -78,25 +78,34 @@ class defect_UNet(nn.Module):
         self.out = OutConv(64, self.n_classes)
         # self.out = OutConv(64 // 2, self.n_classes)
 
-    def forward(self, inputs):
-        x = inputs
+    def forward(self, x):
         x1 = self.DCS_In(x)
 
+        # x1_att = self.att_mode_1(x1)
+        # x2 = self.down1(x1)
+        # x2_att = self.att_mode_2(x2)
+        # x3 = self.down2(x2)
+        # x3_att = self.att_mode_3(x3)
+        # x4 = self.down3(x3)
+        # x4_att = self.att_mode_4(x4)
+        # x5 = self.down4(x4)
+        # x5_att = self.att_mode_5(x5)
+
         x1_att = self.att_mode_1(x1)
-        x2 = self.down1(x1)
+        x2 = self.down1(x1_att)
         x2_att = self.att_mode_2(x2)
-        x3 = self.down2(x2)
+        x3 = self.down2(x2_att)
         x3_att = self.att_mode_3(x3)
-        x4 = self.down3(x3)
+        x4 = self.down3(x3_att)
         x4_att = self.att_mode_4(x4)
-        x5 = self.down4(x4)
+        x5 = self.down4(x4_att)
         x5_att = self.att_mode_5(x5)
 
-        x = self.up1(x5_att, x4_att)
-        x = self.up2(x, x3_att)
-        x = self.up3(x, x2_att)
-        x = self.up4(x, x1_att)
+        out = self.up1(x5_att, x4_att)
+        out = self.up2(out, x3_att)
+        out = self.up3(out, x2_att)
+        out = self.up4(out, x1_att)
 
-        logits = self.out(x)
+        ret = self.out(out)
 
-        return logits
+        return ret

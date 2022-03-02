@@ -28,7 +28,8 @@ import torch
 # 设置学习率
 def UserOptim1(model, lr):
     # optimizer = torch.optim.RMSprop(model.parameters(), lr=lr, alpha=0.9, eps=1e-07)
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr, eps=1e-8)
+    # weight_decay指定权重衰减系数，L2正则化
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, eps=1e-8, weight_decay=0.01)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode="min", \
                                                             verbose = True, \
                                                             factor=0.75, patience=1, cooldown=1, \

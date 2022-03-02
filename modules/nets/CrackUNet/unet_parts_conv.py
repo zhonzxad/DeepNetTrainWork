@@ -15,7 +15,7 @@ import torch.nn.functional as F
 from modules.nets.funtion.layer import GroupNorm, GropConv, DilConv, GhostModule, GhostBottleneck
 from modules.nets.CrackUNet.Attention_Layer import DepthwiseSeparableConv
 
-class DoubleConvDS(nn.Module):
+class DoubleDSC_G_R(nn.Module):
     """(convolution(深度可分离卷积) => [批处理归一化] => ReLU) * 2
     深度可分离卷积，降低了参数量，也注意到了不同通道之间信息的融合
     """
@@ -57,7 +57,7 @@ class DownDS(nn.Module):
         super().__init__()
         self.maxpool_conv = nn.Sequential(
             nn.MaxPool2d(2),
-            DoubleConvDS(in_channels, out_channels, kernels_per_layer=kernels_per_layer),
+            DoubleDSC_G_R(in_channels, out_channels, kernels_per_layer=kernels_per_layer),
             # 使用Ghost
             # GhostModule(in_channels, out_channels),
             # Double_GhostModule(in_channels, out_channels),
@@ -81,14 +81,14 @@ class UpDS(nn.Module):
             # 根据scale_factor指定的上采样倍数及mode采样方式
             # 或者直接使用nn.UpsamplingBilinear2d
             self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
-            self.conv = DoubleConvDS(in_channels, out_channels, in_channels // 2, kernels_per_layer=kernels_per_layer)
+            self.conv = DoubleDSC_G_R(in_channels, out_channels, in_channels // 2, kernels_per_layer=kernels_per_layer)
             # 使用Ghost模块缩减计算量
             # self.conv = GhostModule(in_channels, out_channels)
             # self.conv = Double_GhostModule(in_channels, out_channels)
             # self.conv = GhostBottleneck(in_channels, out_channels, stride=1)
         else:
             self.up = nn.ConvTranspose2d(in_channels, in_channels // 2, kernel_size=2, stride=2)
-            self.conv = DoubleConvDS(in_channels, out_channels, kernels_per_layer=kernels_per_layer)
+            self.conv = DoubleDSC_G_R(in_channels, out_channels, kernels_per_layer=kernels_per_layer)
             # 使用Ghost模块缩减计算量
             # self.conv = GhostModule(in_channels, out_channels)
             # self.conv = Double_GhostModule(in_channels, out_channels)
