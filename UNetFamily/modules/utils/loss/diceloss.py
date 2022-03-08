@@ -70,8 +70,8 @@ def AchieveDice_1(input, target, beta=1, smooth=1, num_classes=2):
         
     # input = torch.sigmoid(input)
     input = input.transpose(1, 2).transpose(2, 3).contiguous().view(b, -1, c)
-    temp_inputs = torch.softmax(input, -1)
-    temp_target = target.view(bt, -1, ct)
+    temp_inputs = torch.softmax(input, -1)   # # [n, h*w, c]
+    temp_target = target.view(bt, -1, ct)    # [n, h*w, c]
 
     #--------------------------------------------#
     #   计算dice loss

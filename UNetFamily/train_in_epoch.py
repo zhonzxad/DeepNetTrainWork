@@ -216,7 +216,7 @@ def test_in_epoch(net, gen_vals, **kargs):
 
         with torch.no_grad():
             img     = torch.from_numpy(img).type(torch.FloatTensor)
-            png     = torch.from_numpy(png).type(torch.FloatTensor)
+            png     = torch.from_numpy(png).long()
             label   = torch.from_numpy(label).type(torch.FloatTensor)
             weights = torch.from_numpy(cls_weights)
             # img = torch.autograd.Variable(img).type(torch.FloatTensor)

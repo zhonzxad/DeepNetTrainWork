@@ -24,6 +24,11 @@ transforms_train = transforms.Compose([
                     transforms.ToTensor(),                                  # 将数据转换成Tensor型
                     transforms.Normalize((0.5,0.5,0.5),(0.5,0.5,0.5))])     # 标准化
 
+def preprocess_input(image):
+    """归一化大小到255"""
+    image /= 255.0
+    return image
+
 class maketestonehot():
     def __init__(self):
         self.colormap = [[0, 0, 0], [128, 0, 0], [0, 128, 0], [128, 128, 0],
@@ -123,7 +128,7 @@ class UserDataLoader(Dataset):
         if self.labelpath_list.count(shotname + ".png") == 0:
             raise RuntimeError("未找到原图对应的标签文件")
 
-        jpg = Image.open(imgfilepath).convert("L")    # 统一转为三通道格式读取
+        jpg = Image.open(imgfilepath)                   # 统一转为三通道格式读取
         png = Image.open(labelfilepath).convert('L')    # 统一转为单通道格式读取
 
         # 20220224 不需要做出resize，这里的resize是从配置文件中设置的
@@ -135,7 +140,7 @@ class UserDataLoader(Dataset):
         # 处理jpg格式变换,变换成为 768*768*3/1，再调换成3/1*768*768
         jpg = np.array(jpg)
         jpg = jpg.reshape( (self.image_size[0], self.image_size[1], self.image_size[2]) )
-        jpg = np.transpose(jpg, [2, 0, 1])
+        jpg = preprocess_input(np.transpose(jpg, [2, 0, 1]))
         # jpg = np.array(jpg)
         # jpg = torch.from_numpy(jpg)
 
@@ -154,6 +159,8 @@ class UserDataLoader(Dataset):
         # seg_labels = np.eye(self.num_classes)[np.array(seg_labels).reshape([-1])]
         # seg_labels = seg_labels.reshape(int(self.image_size[0]), int(self.image_size[1]), self.num_classes)
         # seg_labels = torch.from_numpy(seg_labels).permute(2, 0, 1)
+        seg_labels  = np.eye(self.num_classes)[seg_labels.reshape([-1])]
+        seg_labels  = seg_labels.reshape((int(self.image_size[0]), int(self.image_size[1]), self.num_classes))
         
         # seg_labels 在创建的时候被赋值为int64
         # seg_labels = seg_labels.astype(np.int64)
@@ -162,8 +169,8 @@ class UserDataLoader(Dataset):
         # seg_labels = seg_labels.numpy()
         # seg_labels = seg_labels.permute(2, 0, 1)
 
-        seg_labels = seg_labels.reshape(png.shape[0], png.shape[1], 1)
-        seg_labels = self.png_to_onehot(seg_labels)
+        # seg_labels = seg_labels.reshape(png.shape[0], png.shape[1], 1)
+        # seg_labels = self.png_to_onehot(seg_labels)
 
         # seg_labels = np.transpose(np.array(jpg), [2,0,1])
         # seg_labels = np.transpose(seg_labels.numpy(), [2,0,1])

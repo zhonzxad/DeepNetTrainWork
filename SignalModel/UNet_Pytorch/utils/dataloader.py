@@ -5,8 +5,7 @@ import numpy as np
 from PIL import Image
 from torch.utils.data.dataset import Dataset
 
-from UNet_Pytorch.utils.utils import cvtColor, preprocess_input
-
+from SignalModel.UNet_Pytorch.utils.utils import cvtColor, preprocess_input
 
 class UnetDataset(Dataset):
     def __init__(self, annotation_lines, input_shape, num_classes, train, dataset_path):
@@ -72,8 +71,8 @@ class UnetDataset(Dataset):
             return new_image, new_label
 
         # resize image
-        rand_jit1 = self.rand(1-jitter,1+jitter)
-        rand_jit2 = self.rand(1-jitter,1+jitter)
+        rand_jit1 = self.rand(1 - jitter, 1 + jitter)
+        rand_jit2 = self.rand(1 - jitter, 1 + jitter)
         new_ar = w/h * rand_jit1/rand_jit2
 
         scale = self.rand(0.25, 2)

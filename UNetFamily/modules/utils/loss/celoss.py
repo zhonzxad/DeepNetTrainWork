@@ -48,15 +48,16 @@ def AchieveCE_2(inputs, target):
     return celoss
 
 def AchieveCE_3(pred, target, num_classes=2):
+
     n, c, h, w = pred.size()
     nt, ht, wt = target.size()
 
     # inputs = torch.softmax(inputs, dim=1)
-    pred = torch.sigmoid(pred)
+    # pred = torch.sigmoid(pred)
 
-    pred = pred.transpose(1, 2).transpose(2, 3).contiguous().view(-1, c)
+    pred = pred.transpose(1, 2).transpose(2, 3).contiguous().view(-1, c)  # [n*h*w, c]
 
-    target = target.contiguous().view(-1).long()   # 全部转换为[n*h*w]形式
+    target = target.contiguous().view(-1)  # [n*h*w]
 
     CE_loss = nn.CrossEntropyLoss()(pred, target)
 
@@ -103,7 +104,7 @@ class CELoss2d(nn.Module):
 
     def forward(self, pred, target):
 
-        out = AchieveCE_2(pred, target)
+        out = AchieveCE_3(pred, target)
         return out
 
         
