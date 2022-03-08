@@ -30,12 +30,12 @@ def loss_func(output, png, label, cls_weights, this_device):
     
     dice_loss = diceloss(output, label)
     # bce_loss = bceloss(output, label)
-    # ce_loss = celoss(output, png)
+    ce_loss = celoss(output, png)
     # focal_loss = floss(output, png)
     # loss = FocalLoss()(output, label)
 
-    loss = 0 + dice_loss
+    loss = ce_loss + dice_loss
     
     # 返回值按照 0/总loss, 1/celoss, 2/bceloss, 3/diceloss, 4/floss排布
     # 如果某一值不需要，将其设置未0
-    return loss, torch.zeros_like(loss), torch.zeros_like(loss), dice_loss, torch.zeros_like(loss)
+    return loss, ce_loss, torch.zeros_like(loss), dice_loss, torch.zeros_like(loss)
