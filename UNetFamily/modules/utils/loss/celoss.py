@@ -48,6 +48,7 @@ def AchieveCE_2(inputs, target):
     return celoss
 
 def AchieveCE_3(pred, target, cls_weights, num_classes=2):
+    target = target.long()
 
     n, c, h, w = pred.size()
     nt, ht, wt = target.size()
@@ -59,7 +60,7 @@ def AchieveCE_3(pred, target, cls_weights, num_classes=2):
 
     target = target.contiguous().view(-1)  # [n*h*w]
 
-    CE_loss = nn.CrossEntropyLoss(weight=cls_weights)(pred, target)
+    CE_loss = nn.CrossEntropyLoss(weight=cls_weights, ignore_index=2)(pred, target)
 
     return CE_loss
 
@@ -106,6 +107,7 @@ class CELoss2d(nn.Module):
     def forward(self, pred, target):
 
         out = AchieveCE_3(pred, target, self.cls_weights)
+
         return out
 
         

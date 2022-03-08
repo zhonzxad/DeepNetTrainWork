@@ -25,7 +25,7 @@ def loss_func(output, png, label, cls_weights, this_device):
     
     if this_device.type == 'cuda':
         diceloss = diceloss.to(this_device)
-        # celoss   = celoss.to(this_device)
+        celoss   = celoss.to(this_device)
         # loss = lossF.to(this_device)
     
     dice_loss = diceloss(output, label)

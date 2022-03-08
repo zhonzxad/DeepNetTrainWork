@@ -29,6 +29,17 @@ def preprocess_input(image):
     image /= 255.0
     return image
 
+
+def cvtColor(image):
+    """ 将图像转换成RGB图像，防止灰度图在预测时报错。
+        代码仅仅支持RGB图像的预测，所有其它类型的图像都会转化成RGB
+    """
+    if len(np.shape(image)) == 3 and np.shape(image)[-2] == 3:
+        return image
+    else:
+        image = image.convert('RGB')
+        return image
+
 class maketestonehot():
     def __init__(self):
         self.colormap = [[0, 0, 0], [128, 0, 0], [0, 128, 0], [128, 128, 0],
@@ -128,7 +139,7 @@ class UserDataLoader(Dataset):
         if self.labelpath_list.count(shotname + ".png") == 0:
             raise RuntimeError("未找到原图对应的标签文件")
 
-        jpg = Image.open(imgfilepath)                   # 统一转为三通道格式读取
+        jpg = Image.open(imgfilepath).convert('L')                   # 统一转为三通道格式读取
         png = Image.open(labelfilepath).convert('L')    # 统一转为单通道格式读取
 
         # 20220224 不需要做出resize，这里的resize是从配置文件中设置的
@@ -139,15 +150,15 @@ class UserDataLoader(Dataset):
 
         # 处理jpg格式变换,变换成为 768*768*3/1，再调换成3/1*768*768
         jpg = np.array(jpg)
-        jpg = jpg.reshape( (self.image_size[0], self.image_size[1], self.image_size[2]) )
-        jpg = preprocess_input(np.transpose(jpg, [2, 0, 1]))
+        jpg = jpg.reshape( (self.image_size[0], self.image_size[1], 1) )
+        jpg = np.transpose(jpg, [2, 0, 1])
         # jpg = np.array(jpg)
         # jpg = torch.from_numpy(jpg)
 
         # 处理png格式变化
         # 产生数组
         png = np.array(png)
-        # png[png >= self.num_classes] = self.num_classes
+        png[png > self.num_classes] = self.num_classes
         seg_labels = png.copy()
         # png = np.transpose(np.array(png), [2,0,1])
         # png = png.unsqueeze(dim=-1)
@@ -159,8 +170,8 @@ class UserDataLoader(Dataset):
         # seg_labels = np.eye(self.num_classes)[np.array(seg_labels).reshape([-1])]
         # seg_labels = seg_labels.reshape(int(self.image_size[0]), int(self.image_size[1]), self.num_classes)
         # seg_labels = torch.from_numpy(seg_labels).permute(2, 0, 1)
-        seg_labels  = np.eye(self.num_classes)[seg_labels.reshape([-1])]
-        seg_labels  = seg_labels.reshape((int(self.image_size[0]), int(self.image_size[1]), self.num_classes))
+        seg_labels  = np.eye(self.num_classes + 1)[seg_labels.reshape([-1])]
+        seg_labels  = seg_labels.reshape((int(self.image_size[0]), int(self.image_size[1]), self.num_classes + 1))
         
         # seg_labels 在创建的时候被赋值为int64
         # seg_labels = seg_labels.astype(np.int64)

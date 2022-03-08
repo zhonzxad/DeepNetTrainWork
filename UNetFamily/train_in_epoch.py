@@ -101,9 +101,9 @@ def train_in_epoch(net, gens, **kargs):
 
         with torch.no_grad():
             img     = Variable(torch.from_numpy(img).type(torch.FloatTensor), requires_grad=True)
-            png     = Variable(torch.from_numpy(png).type(torch.FloatTensor), requires_grad=True)
+            png     = torch.from_numpy(png).long()
             label   = Variable(torch.from_numpy(label).type(torch.FloatTensor), requires_grad=True)
-            weights = Variable(torch.from_numpy(cls_weights), requires_grad=True)
+            weights = torch.from_numpy(cls_weights)
             # logger.write("\n img shape is {} || png shape is {} || seg_labels shape is {}".format(img.shape, png.shape, seg_labels.shape))
 
             if this_device.type == "cuda":
