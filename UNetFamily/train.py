@@ -321,10 +321,11 @@ def main():
             beat_file_path = saveparafilepath + file_name.replace(".pth", "_best.pth")
             torch.save(checkpoint, beat_file_path)
             logger.info("保存检查点完成, 当前批次{}, 保存最优参数权重文件{}".format(epoch, beat_file_path))
-        # 如果不是最优的，直接保存默认的
-        total_file_path = saveparafilepath + file_name
-        torch.save(checkpoint, total_file_path)
-        logger.success("完成当前批次{}训练, 损失值较上一轮没有减小，正常保存模型文件".format(epoch, total_file_path))
+        else:
+            # 如果不是最优的，直接保存默认的
+            total_file_path = saveparafilepath + file_name
+            torch.save(checkpoint, total_file_path)
+            logger.success("完成当前批次{}训练, 损失值较上一轮没有减小，正常保存模型文件".format(epoch, total_file_path))
 
         # 若满足 early stopping 要求 且 当前批次>=10
         if early_stopping.get_early_stop_state:
