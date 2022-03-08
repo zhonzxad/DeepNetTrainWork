@@ -11,3 +11,4 @@ log/
 predict.py
 .idea/
 .vscode/
+VOCdevkit
