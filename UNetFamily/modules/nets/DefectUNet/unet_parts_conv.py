@@ -13,7 +13,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from UNetFamily.modules.nets.funtion.layer import GroupNorm
-from UNetFamily.modules.nets.CrackUNet.Attention_Layer import DepthwiseSeparableConv
+from UNetFamily.modules.nets.DefectUNet.Attention_Layer import DepthwiseSeparableConv
 
 class DoubleDNR(nn.Module):
     """(convolution(深度可分离卷积) => [批处理归一化] => ReLU) * 2

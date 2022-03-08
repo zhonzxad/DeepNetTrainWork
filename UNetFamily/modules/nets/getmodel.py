@@ -11,7 +11,7 @@ LastEditors: zhonzxad
 import argparse
 from loguru import logger
 
-from UNetFamily.modules.nets.CrackUNet.DefectUNet import defect_UNet
+from UNetFamily.modules.nets.DefectUNet.DefectUNet import DefectUNet
 
 from UNetFamily.modules.nets.funtion.init_weight import initweight
 
@@ -44,7 +44,7 @@ class GetModel:
         # model = RestNet18(in_channels=IMGSIZE[2], n_classes=CLASSNUM)
         # model   = SegNet(input_channels=IMGSIZE[2], num_class=CLASSNUM)
         # model   = FCN(input_channels=IMGSIZE[2], num_class=CLASSNUM)
-        model = defect_UNet(n_channels=self.IMGSIZE[2], n_classes=self.NCLASS, bilinear=False)
+        model = DefectUNet(n_channels=self.IMGSIZE[2], n_classes=self.NCLASS, bilinear=False)
 
         # Pytorch官方例程中的相关网络
         # model = models.alexnet()
