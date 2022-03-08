@@ -19,15 +19,15 @@ from torchsummary import summary
 from tqdm import tqdm
 from loguru import logger
 import pynvml
-from modules.nets.funtion.user_summary import count_param
+from UNetFamily.modules.nets.funtion.user_summary import count_param
 
 from train_in_epoch import train_in_epoch, test_in_epoch
 
-from modules.nets.getmodel import GetModel
-from modules.utils.getearlystop import GetEarlyStopping
-from modules.utils.getloader import GetLoader
-from modules.utils.getlog import GetWriteLog
-from modules.utils.getoptim import GetOptim
+from UNetFamily.modules.nets.getmodel import GetModel
+from UNetFamily.modules.utils.getearlystop import GetEarlyStopping
+from UNetFamily.modules.utils.getloader import GetLoader
+from UNetFamily.modules.utils.getlog import GetWriteLog
+from UNetFamily.modules.utils.getoptim import GetOptim
 
 def set_lr(optimizer, value:float):
     """optimizer.param_groups:是长度为2的list,0表示params/lr/eps等参数，1表示优化器状态"""
