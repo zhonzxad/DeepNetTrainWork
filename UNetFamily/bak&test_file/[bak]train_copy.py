@@ -10,17 +10,17 @@ from tensorboardX import SummaryWriter
 from tqdm import tqdm
 from progressbar import ProgressBar, Percentage, Bar, Timer, ETA
 
-from modules.utils.getearlystop import GetEarlyStopping
-from modules.utils.getloader import GetLoader
-from modules.utils.getloss import loss_func
+from UNetFamily.modules.utils.getearlystop import GetEarlyStopping
+from UNetFamily.modules.utils.getloader import GetLoader
+from UNetFamily.modules.utils.getloss import loss_func
 from getmodel import GetModel
-from modules.utils.getoptim import GetOptim
-from modules.utils.getlog import GetWriteLog
+from UNetFamily.modules.utils.getoptim import GetOptim
+from UNetFamily.modules.utils.getlog import GetWriteLog
 
 # 在Windows下使用vscode运行时 添加上这句话就会使用正确的相对路径设置
 # 需要import os和sys两个库
 os.chdir(sys.path[0])
-sys.path.append("..")
+sys.path.append("../..")
 
 # 创建全局对象
 global logger

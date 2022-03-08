@@ -6,8 +6,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import models
 
-from .unet_init_weights import init_weight
-from .UNet_layers import UNetConv2, UNetUp, unetUp_origin
+from UNetFamily.modules.nets.UNet.unet_init_weights import init_weight
+from UNetFamily.modules.nets.UNet.UNet_layers import UNetConv2, UNetUp, unetUp_origin
 
 
 class UNet_2Plus(nn.Module):
@@ -26,15 +26,15 @@ class UNet_2Plus(nn.Module):
         # filters = [int(x / self.feature_scale) for x in filters]
 
         # downsampling
-        self.conv00 = unetConv2(self.in_channels, filters[0], self.is_batchnorm)
+        self.conv00 = UNetConv2(self.in_channels, filters[0], self.is_batchnorm)
         self.maxpool0 = nn.MaxPool2d(kernel_size=2)
-        self.conv10 = unetConv2(filters[0], filters[1], self.is_batchnorm)
+        self.conv10 = UNetConv2(filters[0], filters[1], self.is_batchnorm)
         self.maxpool1 = nn.MaxPool2d(kernel_size=2)
-        self.conv20 = unetConv2(filters[1], filters[2], self.is_batchnorm)
+        self.conv20 = UNetConv2(filters[1], filters[2], self.is_batchnorm)
         self.maxpool2 = nn.MaxPool2d(kernel_size=2)
-        self.conv30 = unetConv2(filters[2], filters[3], self.is_batchnorm)
+        self.conv30 = UNetConv2(filters[2], filters[3], self.is_batchnorm)
         self.maxpool3 = nn.MaxPool2d(kernel_size=2)
-        self.conv40 = unetConv2(filters[3], filters[4], self.is_batchnorm)
+        self.conv40 = UNetConv2(filters[3], filters[4], self.is_batchnorm)
 
 
         # upsampling

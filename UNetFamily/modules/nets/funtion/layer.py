@@ -4,10 +4,7 @@
 # @File     : layer.py
 import torch
 import math
-import torch.nn.functional as F
 from torch import nn
-
-from modules.nets.CrackUNet.Attention_Layer import DepthwiseSeparableConv
 
 """Notion
 深度可分离卷积和分组卷积的理解

@@ -9,21 +9,11 @@ LastEditors: zhonzxad
 # BASE_DIR = os._path.dirname(os._path.dirname(os._path.abspath(__file__)))
 # sys._path.append(BASE_DIR)
 import argparse
-import torch
-import torch.nn as nn
 from loguru import logger
 
-from modules.nets.FCN.fcn import FCN
-from modules.nets.ResNet.ResNet import GetResNet
-from modules.nets.ResNet.resnet18 import RestNet18
-from modules.nets.SegNet.SegNet import SegNet
-from modules.nets.CrackUNet.DefectUNet import defect_UNet
-from modules.nets.UNet.UNet import UNet
-from modules.nets.UNet.UNet_2Plus import UNet_2Plus
-from modules.nets.UNet.UNet_3Plus import UNet_3Plus
-from modules.nets.UNet.UNetBili import UNetVGG16
+from UNetFamily.modules.nets.CrackUNet.DefectUNet import defect_UNet
 
-from modules.nets.funtion.init_weight import initweight
+from UNetFamily.modules.nets.funtion.init_weight import initweight
 
 # from .FCN.fcn import FCN
 # from .ResNet.ResNet import GetResNet
@@ -34,8 +24,6 @@ from modules.nets.funtion.init_weight import initweight
 # from .UNet.UNet_2Plus import UNet_2Plus
 # from .UNet.UNet_3Plus import UNet_3Plus
 # from .UNet.UNetBili import UNetVGG16
-
-import torchvision.models as models
 
 class GetModel:
 
@@ -56,7 +44,7 @@ class GetModel:
         # model = RestNet18(in_channels=IMGSIZE[2], n_classes=CLASSNUM)
         # model   = SegNet(input_channels=IMGSIZE[2], num_class=CLASSNUM)
         # model   = FCN(input_channels=IMGSIZE[2], num_class=CLASSNUM)
-        model = defect_UNet(n_channels=self.IMGSIZE[2], n_classes=self.NCLASS)
+        model = defect_UNet(n_channels=self.IMGSIZE[2], n_classes=self.NCLASS, bilinear=False)
 
         # Pytorch官方例程中的相关网络
         # model = models.alexnet()

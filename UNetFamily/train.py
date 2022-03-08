@@ -229,7 +229,7 @@ def main():
 
     # 是否使用预训练参数权重继续训练
     if args.resume:
-        path = "./savepoint/model_data/SmarUNEt_DiceCELoss_KMInit____.pth"
+        path = "savepoint/model_data/SmarUNEt_DiceCELoss_KMInit____.pth"
         if os.path.isfile(path):
             checkpoint = torch.load(path)
             start_epoch = checkpoint['epoch'] if checkpoint['epoch'] != -1 else 0
@@ -307,7 +307,7 @@ def main():
             'optimizer': optimizer,
             'loss' : ret_val,
         }
-        saveparafilepath = makedir("./savepoint/model_data/")
+        saveparafilepath = makedir("savepoint/model_data/")
         file_name = "SmarUNet_20220223.pth"
         # 判断当前损失是否变小，变小才进行保存参数
         # 注意ret[0]是tensor格式，ret[1]才是平均损失（损失累加除以轮次）
@@ -341,7 +341,7 @@ def main():
         'model': model,
         'optimizer': optimizer,
     }
-    path = makedir("./savepoint/model_data/")
+    path = makedir("savepoint/model_data/")
     saveparafilepath = path + "checkpoint.pth"
     torch.save(checkpoint, saveparafilepath)
     logger.success("保存检查点完成，当前批次{}, 当然权重文件保存地址{}".format(para_kargs["this_epoch"], saveparafilepath))

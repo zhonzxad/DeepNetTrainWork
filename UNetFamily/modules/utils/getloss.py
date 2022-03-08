@@ -6,11 +6,8 @@ LastEditors: zhonzxad
 '''
 import torch
 # 在文件被引用的初始使用绝对路径
-from modules.utils.loss.bceloss import BCELoss2d
-from modules.utils.loss.celoss import CELoss2d
-from modules.utils.loss.diceloss import DiceLoss
-from modules.utils.loss.fscore import FocalLoss
-from modules.utils.loss.transferloss import TransferLoss
+from UNetFamily.modules.utils.loss.celoss import CELoss2d
+from UNetFamily.modules.utils.loss.diceloss import DiceLoss
 
 # from loss import *
 

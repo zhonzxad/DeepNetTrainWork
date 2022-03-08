@@ -5,17 +5,14 @@ LastEditTime: 2021-12-02 21:33:35
 LastEditors: zhonzxad
 '''
 import os
-import sys
 
 import numpy as np
 import torch
 # 在文件被引用的初始使用绝对路径
-from modules.utils.database.unetdataloader import UnetDataset
-from modules.utils.database.userdataset import UserDataLoader
-from modules.utils.database.userdataset_transfer import UserDataLoaderTrans
+from UNetFamily.modules.utils.database.unetdataloader import UnetDataset
+from UNetFamily.modules.utils.database.userdataset import UserDataLoader
+from UNetFamily.modules.utils.database.userdataset_transfer import UserDataLoaderTrans
 from torch.utils.data import DataLoader
-
-from torch.utils.data.distributed import DistributedSampler
 
 # from database import *
 
@@ -80,7 +77,7 @@ class GetLoader():
         self.tag_img = r"G:/DataBase/userdata/BXG/CutFromData-4/train/img-resize-3/"
 
         self.VOCFileName    = "Signal-VOC"
-        self.VOCdevkit_path = r"G:/Py_Debug/UNet-Version-master/Data/BXG/"
+        self.VOCdevkit_path = r"//Data/BXG/"
 
     def makedataUser(self):
 

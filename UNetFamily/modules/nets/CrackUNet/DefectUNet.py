@@ -18,10 +18,10 @@ https://github.com/HansBambel/SmaAt-UNet/blob/master/models/SmaAt_UNet.py
 """
 from torch import nn
 
-from modules.nets.funtion.attention_layer import CBAM, GAM, CoorAtt_User
+from UNetFamily.modules.nets.funtion.attention_layer import CoorAtt_User
 # from SmaAtUNer.unet_parts import OutConv
-from modules.nets.CrackUNet.unet_parts_conv import DoubleDSC_G_R, DownDS, InConv
-from modules.nets.CrackUNet.unet_parts_conv import OutConv, UNetUp_Tradition, UpDS
+from UNetFamily.modules.nets.CrackUNet.unet_parts_conv import DoubleDNR, DownDS
+from UNetFamily.modules.nets.CrackUNet.unet_parts_conv import OutConv, UpDS
 
 
 class defect_UNet(nn.Module):
@@ -39,7 +39,7 @@ class defect_UNet(nn.Module):
         # 1*1的卷积升/降特征的维度, 这里的维度指的是通道数(厚度),而不改变图片的宽和高
         # self.Conv2D_1_In = InConv(self.n_channels, 64, k_size=1)
         # self.Conv2D_3_In = InConv(self.n_channels, 64, k_size=3)
-        self.DCS_In      = DoubleDSC_G_R(self.n_channels, 64, kernels_per_layer=self.kernels_per_layer)
+        self.DCS_In      = DoubleDNR(self.n_channels, 64, kernels_per_layer=self.kernels_per_layer)
 
         factor = 2 if self.bilinear else 1
 

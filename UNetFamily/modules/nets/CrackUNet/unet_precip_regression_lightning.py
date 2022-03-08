@@ -1,7 +1,7 @@
 import argparse
 from unet_parts_tradition import *
-from unet_parts_conv import DoubleDSC_G_R, UpDS, DownDS
-from modules.nets.funtion.layer import CBAM
+from unet_parts_conv import DoubleDNR, UpDS, DownDS
+from UNetFamily.modules.nets.funtion.layer import CBAM
 import pytorch_lightning as pl
 from regression_lightning import Precip_regression_base
 
@@ -93,7 +93,7 @@ class UNetDS(Precip_regression_base):
         self.bilinear = hparams.bilinear
         kernels_per_layer = hparams.kernels_per_layer
 
-        self.inc = DoubleDSC_G_R(self.n_channels, 64, kernels_per_layer=kernels_per_layer)
+        self.inc = DoubleDNR(self.n_channels, 64, kernels_per_layer=kernels_per_layer)
         self.down1 = DownDS(64, 128, kernels_per_layer=kernels_per_layer)
         self.down2 = DownDS(128, 256, kernels_per_layer=kernels_per_layer)
         self.down3 = DownDS(256, 512, kernels_per_layer=kernels_per_layer)
@@ -129,7 +129,7 @@ class UNetDS_Attention(Precip_regression_base):
         reduction_ratio = hparams.reduction_ratio
         kernels_per_layer = hparams.kernels_per_layer
 
-        self.inc = DoubleDSC_G_R(self.n_channels, 64, kernels_per_layer=kernels_per_layer)
+        self.inc = DoubleDNR(self.n_channels, 64, kernels_per_layer=kernels_per_layer)
         self.cbam1 = CBAM(64, reduction_ratio=reduction_ratio)
         self.down1 = DownDS(64, 128, kernels_per_layer=kernels_per_layer)
         self.cbam2 = CBAM(128, reduction_ratio=reduction_ratio)
@@ -175,7 +175,7 @@ class UNetDS_Attention_4CBAMs(Precip_regression_base):
         reduction_ratio = hparams.reduction_ratio
         kernels_per_layer = hparams.kernels_per_layer
 
-        self.inc = DoubleDSC_G_R(self.n_channels, 64, kernels_per_layer=kernels_per_layer)
+        self.inc = DoubleDNR(self.n_channels, 64, kernels_per_layer=kernels_per_layer)
         self.cbam1 = CBAM(64, reduction_ratio=reduction_ratio)
         self.down1 = DownDS(64, 128, kernels_per_layer=kernels_per_layer)
         self.cbam2 = CBAM(128, reduction_ratio=reduction_ratio)
