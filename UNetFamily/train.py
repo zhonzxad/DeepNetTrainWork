@@ -98,7 +98,7 @@ def get_args():
     parser.add_argument('--nepoch', type=int,
                         help='Total epoch num', default=50)
     parser.add_argument('--IMGSIZE', type=list, 
-                        help='IMGSIZE', default=[768, 768, 1])
+                        help='IMGSIZE', default=[768, 768, 3])
     parser.add_argument('--lr', type=list, 
                         help='Learning rate', default=[0.001, 0.01])
     parser.add_argument('--early_stop', type=int,
