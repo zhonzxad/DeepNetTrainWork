@@ -5,7 +5,7 @@ import numpy as np
 from PIL import Image
 from torch.utils.data.dataset import Dataset
 
-from utils.utils import cvtColor, preprocess_input
+from UNet_Pytorch.utils.utils import cvtColor, preprocess_input
 
 
 class UnetDataset(Dataset):
@@ -29,7 +29,7 @@ class UnetDataset(Dataset):
         #   从文件中读取图像
         #-------------------------------#
         jpg         = Image.open(os.path.join(os.path.join(self.dataset_path, "VOC2007/JPEGImages"), name + ".jpg"))
-        png         = Image.open(os.path.join(os.path.join(self.dataset_path, "VOC2007/SegmentationClass"), name + ".png"))
+        png         = Image.open(os.path.join(os.path.join(self.dataset_path, "VOC2007/SegmentationClass"), name + ".png")).convert('L')
         #-------------------------------#
         #   数据增强
         #-------------------------------#
