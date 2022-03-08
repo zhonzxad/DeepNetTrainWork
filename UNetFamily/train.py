@@ -134,21 +134,25 @@ def main():
     # 使用window平台还是Linux平台, 为True表示为Windows平台
     args.systemtype    = True if platform.system().lower() == 'windows' else False
     args.is_use_sysmac = True if platform.mac_ver()[0] != "" else False
-    # 当前是否使用cuda来进行加速
-    args.UseGPU = False
-    this_device = torch.device("cuda:0" if torch.cuda.is_available() and args.UseGPU else "cpu")
 
     # 根据平台的不同，设置不同batch的大小
+    # True表示Windows平台
     if args.systemtype:
         args.batch_size = 1
         args.load_tread = 1
         args.UseTfBoard = False
         # args.amp        = False
+        # 当前是否使用cuda来进行加速
+        args.UseGPU = False
     else:
         args.batch_size = 6
         args.load_tread = 16
         args.UseTfBoard = True
         # args.amp        = False
+        # 当前是否使用cuda来进行加速
+        args.UseGPU = True
+
+    this_device = torch.device("cuda:0" if torch.cuda.is_available() and args.UseGPU else "cpu")
 
     # 不期望使用amp混合精度的列表
     hope_gpu_not_use_amp = ["960", "2080", "T4", ]
