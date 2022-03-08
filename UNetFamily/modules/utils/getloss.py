@@ -17,8 +17,8 @@ from UNetFamily.modules.utils.loss.diceloss import DiceLoss
 """
 
 def loss_func(output, png, label, cls_weights, this_device):
-    diceloss = DiceLoss()
-    celoss   = CELoss2d()
+    diceloss = DiceLoss(weight=cls_weights)
+    celoss   = CELoss2d(weight=cls_weights)
     # bceloss  = BCELoss2d()
     # floss    = FocalLoss(cls_weights)
     loss = None

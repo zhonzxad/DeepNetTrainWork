@@ -47,7 +47,7 @@ def AchieveCE_2(inputs, target):
 
     return celoss
 
-def AchieveCE_3(pred, target, num_classes=2):
+def AchieveCE_3(pred, target, cls_weights, num_classes=2):
 
     n, c, h, w = pred.size()
     nt, ht, wt = target.size()
@@ -59,7 +59,7 @@ def AchieveCE_3(pred, target, num_classes=2):
 
     target = target.contiguous().view(-1)  # [n*h*w]
 
-    CE_loss = nn.CrossEntropyLoss()(pred, target)
+    CE_loss = nn.CrossEntropyLoss(weight=cls_weights)(pred, target)
 
     return CE_loss
 
@@ -94,8 +94,9 @@ def Imgndim(img):
         return -1
 
 class CELoss2d(nn.Module):
-    def __init__(self):
+    def __init__(self, weight):
         super(CELoss2d, self).__init__()
+        self.cls_weights = weight
         pass
 
     # 针对celoss或者bceloss的情况，在使用amp计算时容易出现nan的情况，需要强制将
@@ -104,7 +105,7 @@ class CELoss2d(nn.Module):
 
     def forward(self, pred, target):
 
-        out = AchieveCE_3(pred, target)
+        out = AchieveCE_3(pred, target, self.cls_weights)
         return out
 
         

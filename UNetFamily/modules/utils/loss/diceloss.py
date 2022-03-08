@@ -227,11 +227,12 @@ class DiceLoss(nn.Module):
     '''
     def __init__(self, weight=None, num_class=2):
         super(DiceLoss, self).__init__()
+        self.cls_weights = weight
         pass
 
     # 对于二分类问题，sigmoid等价于softmax
  
     def forward(self, pred, label):
 
-        out = AchieveDice_1(pred, label)
+        out = AchieveDice_1(pred, label, self.weight)
         return out
