@@ -12,3 +12,5 @@ predict.py
 .idea/
 .vscode/
 VOCdevkit
+*.tar
+*.tar.gz
