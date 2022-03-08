@@ -60,7 +60,7 @@ def AchieveCE_3(pred, target, cls_weights, num_classes=2):
 
     target = target.contiguous().view(-1)  # [n*h*w]
 
-    CE_loss = nn.CrossEntropyLoss(weight=cls_weights, ignore_index=2)(pred, target)
+    CE_loss = nn.CrossEntropyLoss(weight=cls_weights)(pred, target)
 
     return CE_loss
 

@@ -14,16 +14,17 @@ from PIL import Image
 from torch.utils.data.dataset import Dataset
 
 
-# 将图像转换成RGB图像，防止灰度图在预测时报错。
+
 def cvtColorRGB(image):
+    # 将图像转换成RGB图像，防止灰度图在预测时报错。
     if len(np.shape(image)) == 3 and np.shape(image)[-2] == 3:
         return image 
     else:
         image = image.convert('RGB')
         return image 
 
-# 对输入图像进行resize
 def resize_image(image, size):
+    # 对输入图像进行resize
     iw, ih  = image.size
     w, h    = size
 
@@ -97,7 +98,7 @@ class UnetDataset(Dataset):
     def get_random_data(self, image, label, input_shape, jitter=.3, hue=.1, sat=1.5, val=1.5, random=True):
         image = cvtColorRGB(image)
         label = Image.fromarray(np.array(label))
-        h, w, c = input_shape
+        h, w = input_shape
 
         if not random:
             iw, ih  = image.size
@@ -106,7 +107,7 @@ class UnetDataset(Dataset):
             nh      = int(ih*scale)
 
             image       = image.resize((nw,nh), Image.BICUBIC)
-            new_image   = Image.new('RGB', [w, h], (128, 128, 128))
+            new_image   = Image.new('RGB', [w, h], (128,128,128))
             new_image.paste(image, ((w-nw)//2, (h-nh)//2))
 
             label       = label.resize((nw,nh), Image.NEAREST)
@@ -115,8 +116,8 @@ class UnetDataset(Dataset):
             return new_image, new_label
 
         # resize image
-        rand_jit1 = self.rand(1-jitter,1+jitter)
-        rand_jit2 = self.rand(1-jitter,1+jitter)
+        rand_jit1 = self.rand(1 - jitter, 1 + jitter)
+        rand_jit2 = self.rand(1 - jitter, 1 + jitter)
         new_ar = w/h * rand_jit1/rand_jit2
 
         scale = self.rand(0.25, 2)
@@ -129,12 +130,12 @@ class UnetDataset(Dataset):
 
         image = image.resize((nw,nh), Image.BICUBIC)
         label = label.resize((nw,nh), Image.NEAREST)
-        
+
         flip = self.rand()<.5
-        if flip: 
+        if flip:
             image = image.transpose(Image.FLIP_LEFT_RIGHT)
             label = label.transpose(Image.FLIP_LEFT_RIGHT)
-        
+
         # place image
         dx = int(self.rand(0, w-nw))
         dy = int(self.rand(0, h-nh))
@@ -158,6 +159,6 @@ class UnetDataset(Dataset):
         x[x[:,:, 0]>360, 0] = 360
         x[:, :, 1:][x[:, :, 1:]>1] = 1
         x[x<0] = 0
-        image_data = cv2.cvtColor(x, cv2.COLOR_HSV2RGB)*255
-        
-        return image_data,label
+        image_data = cv2.cvtColor(x, cv2.COLOR_HSV2RGB) * 255
+
+        return image_data, label

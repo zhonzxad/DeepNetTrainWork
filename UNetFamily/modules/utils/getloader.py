@@ -76,8 +76,9 @@ class GetLoader():
 
         self.tag_img = r"G:/DataBase/userdata/BXG/CutFromData-4/train/img-resize-3/"
 
-        self.VOCFileName    = "Signal-VOC"
-        self.VOCdevkit_path = r"//Data/BXG/"
+        self.VOCdevkit_path = r"G:/Py_Debug/GraduationProject/SignalModel/UNet_Pytorch/VOCdevkit/"
+        self.VOCFileName    = "VOC2007"
+
 
     def makedataUser(self):
 
@@ -111,9 +112,9 @@ class GetLoader():
         with open(os.path.join(self.VOCdevkit_path, self.VOCFileName + "/ImageSets/Segmentation/val.txt"), "r") as f:
             val_lines = f.readlines()
 
-        train_dataset = UnetDataset(train_lines, self.imgsize, self.nclass,
+        train_dataset = UnetDataset(train_lines, (self.imgsize[0], self.imgsize[1]), self.nclass,
                                       True, self.VOCdevkit_path, self.VOCFileName)
-        val_dataset   = UnetDataset(val_lines,   self.imgsize, self.nclass,
+        val_dataset   = UnetDataset(val_lines, (self.imgsize[0], self.imgsize[1]), self.nclass,
                                       False, self.VOCdevkit_path, self.VOCFileName)
 
         gen           = DataLoader(train_dataset, shuffle = True, batch_size=self.batchsize, 
@@ -140,7 +141,7 @@ class GetLoader():
         """
         源域数据集/source
         """
-        return self.makedataUser()
+        return self.makedataVoc()
 
     def makedataTarget(self):
         """
