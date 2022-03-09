@@ -1,0 +1,8 @@
+numpy~=1.21.2
+torchvision~=0.9.1
+loguru~=0.5.3
+pillow~=8.4.0
+pynvml~=11.4.1
+tensorboardx~=2.4.1
+torchsummary~=1.5.1
+tqdm~=4.62.3
