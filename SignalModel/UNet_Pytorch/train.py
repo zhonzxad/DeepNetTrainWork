@@ -6,7 +6,8 @@ import torch.backends.cudnn as cudnn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from torchsummary import summary
-from torch.utils.tensorboard import SummaryWriter
+# from torch.utils.tensorboard import SummaryWriter
+from tensorboardX import SummaryWriter
 
 from nets.unet import Unet
 from nets.unet_training import weights_init
@@ -66,7 +67,7 @@ if __name__ == "__main__":
     #   是否使用Cuda
     #   没有GPU可以设置成False
     #-------------------------------#
-    Cuda = False
+    Cuda = True
     #-------------------------------#
     #   训练自己的数据集必须要修改的
     #   自己需要的分类个数+1，如2 + 1
@@ -103,7 +104,7 @@ if __name__ == "__main__":
     #   网络一般不从0开始训练，至少会使用主干部分的权值，有些论文提到可以不用预训练，主要原因是他们 数据集较大 且 调参能力优秀。
     #   如果一定要训练网络的主干部分，可以了解imagenet数据集，首先训练分类模型，分类模型的 主干部分 和该模型通用，基于此进行训练。
     #----------------------------------------------------------------------------------------------------------------------------#
-    model_path  = "" #"model_data/unet_vgg_voc.pth"
+    model_path  = "model_data/unet_resnet_voc.pth"
     #------------------------------#
     #   输入图片的大小
     #------------------------------#
@@ -119,16 +120,16 @@ if __name__ == "__main__":
     #   占用的显存较小，仅对网络进行微调
     #----------------------------------------------------#
     Init_Epoch          = 0
-    Freeze_Epoch        = 50
-    Freeze_batch_size   = 2
+    Freeze_Epoch        = 15
+    Freeze_batch_size   = 1
     Freeze_lr           = 1e-4
     #----------------------------------------------------#
     #   解冻阶段训练参数
     #   此时模型的主干不被冻结了，特征提取网络会发生改变
     #   占用的显存较大，网络所有的参数都会发生改变
     #----------------------------------------------------#
-    UnFreeze_Epoch      = 100
-    Unfreeze_batch_size = 2
+    UnFreeze_Epoch      = 30
+    Unfreeze_batch_size = 1
     Unfreeze_lr         = 1e-5
     #------------------------------#
     #   数据集路径
@@ -156,7 +157,7 @@ if __name__ == "__main__":
     #------------------------------------------------------#
     #   是否进行冻结训练，默认先冻结主干训练后解冻训练。
     #------------------------------------------------------#
-    Freeze_Train    = False
+    Freeze_Train    = True
     #------------------------------------------------------#
     #   用于设置是否使用多线程读取数据
     #   开启后会加快数据读取速度，但是会占用更多内存
@@ -166,7 +167,7 @@ if __name__ == "__main__":
     #------------------------------------------------------#
     #   创建记录数据tensorboard
     #------------------------------------------------------#
-    tfwriter = SummaryWriter(log_dir=makedir("logs/tfboard/"), comment="unet")
+    tfwriter = SummaryWriter(logdir=makedir("logs/tfboard/"), comment="unet")
 
     model = Unet(num_classes=num_classes, pretrained=pretrained, backbone=backbone).train()
     if not pretrained:
@@ -189,9 +190,8 @@ if __name__ == "__main__":
         cudnn.benchmark = True
         model_train = model_train.cuda()
 
-    paramcount_1 = count_param(model=model_train)
-    summary(model_train, input_size=(3, input_shape[0], input_shape[1]), device='cpu')
-
+    # paramcount_1 = count_param(model=model_train)
+    # summary(model_train, input_size=(3, input_shape[0], input_shape[1]), device='cpu')
 
     loss_history = LossHistory("logs/")
     
@@ -242,7 +242,8 @@ if __name__ == "__main__":
 
         for epoch in range(start_epoch, end_epoch):
             fit_one_epoch(model_train, model, loss_history, optimizer, epoch, 
-                    epoch_step, epoch_step_val, gen, gen_val, end_epoch, Cuda, dice_loss, focal_loss, cls_weights, num_classes)
+                    epoch_step, epoch_step_val, gen, gen_val, end_epoch, Cuda,
+                          dice_loss, focal_loss, cls_weights, num_classes, tfwriter)
             lr_scheduler.step()
 
     if True:

@@ -14,8 +14,8 @@ sys.path.append(BASE_DIR)
 import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
-# from tensorboardX import SummaryWriter
-from torch.utils.tensorboard import SummaryWriter
+from tensorboardX import SummaryWriter
+# from torch.utils.tensorboard import SummaryWriter
 from torchsummary import summary
 from tqdm import tqdm
 from loguru import logger
@@ -186,7 +186,7 @@ def main():
                enqueue=True, encoding='utf-8', rotation="50 MB")
 
     # 加载tensorboard记录日志对象
-    tfwriter = SummaryWriter(log_dir=makedir("logs/tfboard/"), comment="unet") \
+    tfwriter = SummaryWriter(logdir=makedir("logs/tfboard/"), comment="unet") \
         if args.systemtype == False or (args.systemtype == True and args.UseTfBoard) else None
 
     # 打印列表参数

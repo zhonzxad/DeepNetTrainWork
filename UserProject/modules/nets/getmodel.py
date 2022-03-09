@@ -37,13 +37,13 @@ class GetModel:
 
     def Createmodel(self, is_train=True):
         # 加载模型
-        model = UNet(input_channels=self.IMGSIZE[2], num_class=self.NCLASS)
+        # model = UNet(input_channels=self.IMGSIZE[2], num_class=self.NCLASS)
         # model = UNetVGG16(num_classes=CLASSNUM, in_channels=IMGSIZE[2])
         # model = UNet_2Plus(in_channels=IMGSIZE[2], n_classes=CLASSNUM)
         # model = RestNet18(in_channels=IMGSIZE[2], n_classes=CLASSNUM)
         # model   = SegNet(input_channels=IMGSIZE[2], num_class=CLASSNUM)
         # model   = FCN(input_channels=IMGSIZE[2], num_class=CLASSNUM)
-        # model = DefectUNet(n_channels=self.IMGSIZE[2], n_classes=self.NCLASS, bilinear=False)
+        model = DefectUNet(n_channels=self.IMGSIZE[2], n_classes=self.NCLASS, bilinear=False)
 
         # Pytorch官方例程中的相关网络
         # model = models.alexnet()

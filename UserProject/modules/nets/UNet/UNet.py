@@ -29,55 +29,55 @@ class UNet(nn.Module):
 
         # 下采样
         self.conv1 = UNetConv2(self.in_channels, filters[0], self.is_batchnorm)
-        # self.maxpool1 = nn.MaxPool2d(kernel_size=2)
+        self.maxpool1 = nn.MaxPool2d(kernel_size=2)
         # self.maxpool1 = nn.Sequential(GroupNorm(self.in_channels))
-        self.maxpool1 = nn.Sequential(CoorAtt_User(64),
-                                      GroupNorm(self.in_channels),
-                                      # nn.MaxPool2d(kernel_size=2),
-                                      )
+        # self.maxpool1 = nn.Sequential(CoorAtt_User(64),
+        #                               GroupNorm(self.in_channels),
+        #                               # nn.MaxPool2d(kernel_size=2),
+        #                               )
 
-        # self.conv2 = UNetConv2(filters[0], filters[1], self.is_batchnorm)
-        self.conv2 = DownDS(filters[0], filters[1], 2)
-        # self.maxpool2 = nn.MaxPool2d(kernel_size=2)
+        self.conv2 = UNetConv2(filters[0], filters[1], self.is_batchnorm)
+        # self.conv2 = DownDS(filters[0], filters[1], 2)
+        self.maxpool2 = nn.MaxPool2d(kernel_size=2)
         # self.maxpool2 = nn.Sequential(GroupNorm(filters[0]))
-        self.maxpool2 = nn.Sequential(CoorAtt_User(128),
-                                      GroupNorm(filters[0]),
-                                      # nn.MaxPool2d(kernel_size=2)
-                                      )
+        # self.maxpool2 = nn.Sequential(CoorAtt_User(128),
+        #                               GroupNorm(filters[0]),
+        #                               # nn.MaxPool2d(kernel_size=2)
+        #                               )
 
-        # self.conv3 = UNetConv2(filters[1], filters[2], self.is_batchnorm)
-        self.conv3 = DownDS(filters[1], filters[2], 2)
-        # self.maxpool3 = nn.MaxPool2d(kernel_size=2)
+        self.conv3 = UNetConv2(filters[1], filters[2], self.is_batchnorm)
+        # self.conv3 = DownDS(filters[1], filters[2], 2)
+        self.maxpool3 = nn.MaxPool2d(kernel_size=2)
         # self.maxpool3 = nn.Sequential(GroupNorm(filters[1]))
-        self.maxpool3 = nn.Sequential(CoorAtt_User(256),
-                                      GroupNorm(filters[1]),
-                                      # nn.MaxPool2d(kernel_size=2)
-                                      )
+        # self.maxpool3 = nn.Sequential(CoorAtt_User(256),
+        #                               GroupNorm(filters[1]),
+        #                               # nn.MaxPool2d(kernel_size=2)
+        #                               )
 
-        # self.conv4 = UNetConv2(filters[2], filters[3], self.is_batchnorm)
-        self.conv4 = DownDS(filters[2], filters[3], 2)
-        # self.maxpool4 = nn.MaxPool2d(kernel_size=2)
+        self.conv4 = UNetConv2(filters[2], filters[3], self.is_batchnorm)
+        # self.conv4 = DownDS(filters[2], filters[3], 2)
+        self.maxpool4 = nn.MaxPool2d(kernel_size=2)
         # self.maxpool4 = nn.Sequential(GroupNorm(filters[2]))
-        self.maxpool4 = nn.Sequential(CoorAtt_User(512),
-                                      GroupNorm(filters[2]),
-                                      # nn.MaxPool2d(kernel_size=2)
-                                      )
+        # self.maxpool4 = nn.Sequential(CoorAtt_User(512),
+        #                               GroupNorm(filters[2]),
+        #                               # nn.MaxPool2d(kernel_size=2)
+        #                               )
 
-        # self.center = UNetConv2(filters[3], filters[4], self.is_batchnorm)
-        self.center = DownDS(filters[3], filters[4], 2)
+        self.center = UNetConv2(filters[3], filters[4], self.is_batchnorm)
+        # self.center = DownDS(filters[3], filters[4], 2)
 
         # 
         self.up_up   = nn.ConvTranspose2d(filters[4], filters[4] // 2, kernel_size=4, stride=2, padding=1)
 
         # 上采样恢复
-        # self.up_concat4 = UNetUp(filters[4], filters[3], self.is_deconv)
-        self.up_concat4 = UpDS(filters[4], filters[3], 2)
-        # self.up_concat3 = UNetUp(filters[3], filters[2], self.is_deconv)
-        self.up_concat4 = UpDS(filters[3], filters[2], 2)
-        # self.up_concat2 = UNetUp(filters[2], filters[1], self.is_deconv)
-        self.up_concat4 = UpDS(filters[2], filters[1], 2)
-        # self.up_concat1 = UNetUp(filters[1], filters[0], self.is_deconv)
-        self.up_concat4 = UpDS(filters[1], filters[0], 2)
+        self.up_concat4 = UNetUp(filters[4], filters[3], self.is_deconv)
+        # self.up_concat4 = UpDS(filters[4], filters[3], 2)
+        self.up_concat3 = UNetUp(filters[3], filters[2], self.is_deconv)
+        # self.up_concat4 = UpDS(filters[3], filters[2], 2)
+        self.up_concat2 = UNetUp(filters[2], filters[1], self.is_deconv)
+        # self.up_concat4 = UpDS(filters[2], filters[1], 2)
+        self.up_concat1 = UNetUp(filters[1], filters[0], self.is_deconv)
+        # self.up_concat4 = UpDS(filters[1], filters[0], 2)
 
         #
         self.outconv1 = nn.Conv2d(filters[0], self.nclass, kernel_size=1)
