@@ -5,12 +5,24 @@ import torch
 import torch.backends.cudnn as cudnn
 import torch.optim as optim
 from torch.utils.data import DataLoader
+from torchsummary import summary
 
 from nets.unet import Unet
 from nets.unet_training import weights_init
 from utils.callbacks import LossHistory
 from utils.dataloader import UnetDataset, unet_dataset_collate
 from utils.utils_fit import fit_one_epoch
+
+def count_param(model) -> float:
+    """测试神经网络参数里
+    传入 模型
+    传出 参数量（像素个数，类似于分辨率的单位）
+    最后结果除以10^6，最后结果的单位是M
+    """
+    param_count = 0
+    for param in model.parameters():
+        param_count += param.view(-1).size()[0]
+    return param_count
 
 '''
 训练自己的语义分割模型一定需要注意以下几点：
@@ -159,6 +171,10 @@ if __name__ == "__main__":
         model_train = torch.nn.DataParallel(model)
         cudnn.benchmark = True
         model_train = model_train.cuda()
+
+    paramcount_1 = count_param(model=model_train)
+    summary(model_train, input_size=(3, input_shape[0], input_shape[1]), device='cpu')
+
 
     loss_history = LossHistory("logs/")
     
