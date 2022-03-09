@@ -75,6 +75,7 @@ def train_in_epoch(net, gens, **kargs):
     optimizer   = kargs["optimizer"]
     tfwriter    = kargs["tf_writer"]
     cls_weights = kargs["cls_weight"]
+    this_epoch  = kargs["this_epoch"]
 
     # 定义网络为训练模式
     model_train = net.train()
@@ -153,12 +154,12 @@ def train_in_epoch(net, gens, **kargs):
         # 写tensorboard
         tags = ["train_loss", "CEloss", "BCEloss", "Diceloss", "f_score", "lr", "accuracy"]
         if tfwriter is not None:
-            tfwriter.add_scalar(tags[0], total_loss.get_avg())#, epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[1], total_ce_loss.get_avg())#, epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[2], total_bce_loss.get_avg())#, epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[3], total_dice_loss.get_avg())#, epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[4], total_f_score.get_avg())#, epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[5], get_lr(optimizer))#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[0], total_loss.get_avg(), this_epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[1], total_ce_loss.get_avg(), this_epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[2], total_bce_loss.get_avg(), this_epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[3], total_dice_loss.get_avg(), this_epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[4], total_f_score.get_avg(), this_epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[5], get_lr(optimizer), this_epoch*(batch_idx + 1))
 
         # 设置进度条右边显示的信息
         # tq_str = set_tqdm_post((total_loss, total_ce_loss, total_bce_loss, total_dice_loss, total_f_score),
@@ -187,6 +188,7 @@ def test_in_epoch(net, gen_vals, **kargs):
     optimizer   = kargs["optimizer"]
     tfwriter    = kargs["tf_writer"]
     cls_weights = kargs["cls_weight"]
+    this_epoch  = kargs["this_epoch"]
 
     # 设置网络为验证集模式
     model_eval = net.eval()
@@ -260,12 +262,12 @@ def test_in_epoch(net, gen_vals, **kargs):
         # 写tensorboard
         tags = ["train_loss_val", "CEloss_val", "BCEloss_val", "Diceloss_val", "f_score_val", "lr_val", "accuracy"]
         if tfwriter is not None:
-            tfwriter.add_scalar(tags[0], total_loss.get_avg())#, epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[1], total_ce_loss.get_avg())#, epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[2], total_bce_loss.get_avg())#, epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[3], total_dice_loss.get_avg())#, epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[4], total_f_score.get_avg())#, epoch*(batch_idx + 1))
-            tfwriter.add_scalar(tags[5], get_lr(optimizer))#, epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[0], total_loss.get_avg(), this_epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[1], total_ce_loss.get_avg(), this_epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[2], total_bce_loss.get_avg(), this_epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[3], total_dice_loss.get_avg(), this_epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[4], total_f_score.get_avg(), this_epoch*(batch_idx + 1))
+            tfwriter.add_scalar(tags[5], get_lr(optimizer), this_epoch*(batch_idx + 1))
 
         #设置进度条右边显示的信息
         # tq_str = set_tqdm_post((total_loss, total_ce_loss, total_bce_loss, total_dice_loss, total_f_score),
