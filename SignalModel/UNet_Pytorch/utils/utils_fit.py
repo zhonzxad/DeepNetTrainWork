@@ -9,7 +9,7 @@ from SignalModel.UNet_Pytorch.utils.utils_metrics import f_score
 def fit_one_epoch(model_train, model, loss_history,
                   optimizer, epoch, epoch_step, epoch_step_val,
                   gen, gen_val, Epoch, cuda, dice_loss, focal_loss,
-                  cls_weights, num_classes, tfwriter):
+                  cls_weights, num_classes, tfwriter, best_val_loss):
     total_loss          = 0
     dice_loss_item      = 0
     ce_loss_item        = 0
@@ -135,7 +135,9 @@ def fit_one_epoch(model_train, model, loss_history,
     print('Finish Validation')
     print('Epoch:'+ str(epoch+1) + '/' + str(Epoch))
     print('Total Loss: %.3f || Val Loss: %.3f ' % (total_loss / (epoch_step + 1), val_loss / (epoch_step_val + 1)))
-    torch.save(model.state_dict(), 'logs/pth/ep%03d-loss%.3f-val_loss%.3f.pth'%((epoch + 1), total_loss / (epoch_step + 1), val_loss / (epoch_step_val + 1)))
+
+    return (epoch + 1), total_loss / (epoch_step + 1), val_loss / (epoch_step_val + 1)
+
 
 def fit_one_epoch_no_val(model_train, model, loss_history, optimizer, epoch, epoch_step, gen, Epoch, cuda, dice_loss, focal_loss, cls_weights, num_classes):
     total_loss      = 0
