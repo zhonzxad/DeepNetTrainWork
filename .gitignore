@@ -15,3 +15,4 @@ predict.py
 VOCdevkit
 *.tar
 *.tar.gz
+.run/
