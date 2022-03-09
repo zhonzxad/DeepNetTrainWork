@@ -11,6 +11,8 @@ def fit_one_epoch(model_train, model, loss_history,
                   gen, gen_val, Epoch, cuda, dice_loss, focal_loss,
                   cls_weights, num_classes, tfwriter):
     total_loss      = 0
+    dice_loss_item  = 0
+    ce_loss_item    = 0
     total_f_score   = 0
 
     val_loss        = 0
@@ -43,9 +45,14 @@ def fit_one_epoch(model_train, model, loss_history,
             else:
                 loss = CE_Loss(outputs, pngs, weights, num_classes = num_classes)
 
+            # 将celoss结果保存下来
+            ce_loss_item    += loss.item()
+
             if dice_loss:
                 main_dice = Dice_loss(outputs, labels)
                 loss      = loss + main_dice
+                # 将diceloss结果保存下来
+                dice_loss_item  += main_dice.item()
 
             with torch.no_grad():
                 #-------------------------------#
@@ -58,11 +65,17 @@ def fit_one_epoch(model_train, model, loss_history,
 
             total_loss      += loss.item()
             total_f_score   += _f_score.item()
-            
-            pbar.set_postfix(**{'total_loss': total_loss / (iteration + 1), 
+
+            pbar.set_postfix(**{'total_loss': total_loss / (iteration + 1),
                                 'f_score'   : total_f_score / (iteration + 1),
                                 'lr'        : get_lr(optimizer)})
             pbar.update(1)
+
+            with torch.no_grad():
+                tfwriter.add_scalar('DiceLoss', (epoch + 1) * (iteration + 1), ce_loss_item / (iteration + 1))
+                tfwriter.add_scalar('CELoss', (epoch + 1) * (iteration + 1), dice_loss_item/ (iteration + 1))
+                tfwriter.add_scalar('TotalLoss', (epoch + 1) * (iteration + 1), total_loss / (iteration + 1))
+                tfwriter.add_scalar('f_score', (epoch + 1) * (iteration + 1), total_f_score / (iteration + 1))
 
     print('Finish Train')
 
