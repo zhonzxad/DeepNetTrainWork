@@ -180,13 +180,13 @@ def main():
     cls_weights = np.ones([args.n_class], np.float32)
 
     # 加载日志对象
-    #logger = GetWriteLog(writerpath=MakeDir("log/log/"))  # 需注释掉最前方引用的logger库
-    logger.add(makedir("log/log/") + "logfile_{time:MM-DD_HH:mm}.txt",
+    #logger = GetWriteLog(writerpath=MakeDir("logs/log/"))  # 需注释掉最前方引用的logger库
+    logger.add(makedir("logs/log/") + "logfile_{time:MM-DD_HH:mm}.txt",
                format="{time:DD Day HH:mm:ss} | {level} | {message}", filter="",
                enqueue=True, encoding='utf-8', rotation="50 MB")
 
     # 加载tensorboard记录日志对象
-    tfwriter = SummaryWriter(logdir=makedir("log/tfboard/"), comment="unet") \
+    tfwriter = SummaryWriter(log_dir=makedir("logs/tfboard/"), comment="unet") \
         if args.systemtype == False or (args.systemtype == True and args.UseTfBoard) else None
 
     # 打印列表参数

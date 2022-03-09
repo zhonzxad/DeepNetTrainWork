@@ -6,6 +6,7 @@ import torch.backends.cudnn as cudnn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from torchsummary import summary
+from torch.utils.tensorboard import SummaryWriter
 
 from nets.unet import Unet
 from nets.unet_training import weights_init
@@ -23,6 +24,18 @@ def count_param(model) -> float:
     for param in model.parameters():
         param_count += param.view(-1).size()[0]
     return param_count
+
+def makedir(_path:str="") -> str:
+    """创建文件夹"""
+    # python里的str是不可变对象，因此不存在修改一个字符串这个说法，任何对字符串的运算都会产生一个新字符串作为结果
+    workpath = os.getcwd()
+    if not os.path.isabs(_path):
+        _path = os.path.join(workpath, _path)
+
+    if not os.path.exists(_path):
+        os.makedirs(_path)
+
+    return _path
 
 '''
 训练自己的语义分割模型一定需要注意以下几点：
@@ -150,6 +163,10 @@ if __name__ == "__main__":
     #   内存较小的电脑可以设置为2或者0  
     #------------------------------------------------------#
     num_workers     = 4
+    #------------------------------------------------------#
+    #   创建记录数据tensorboard
+    #------------------------------------------------------#
+    tfwriter = SummaryWriter(log_dir=makedir("logs/tfboard/"), comment="unet")
 
     model = Unet(num_classes=num_classes, pretrained=pretrained, backbone=backbone).train()
     if not pretrained:
@@ -255,5 +272,6 @@ if __name__ == "__main__":
 
         for epoch in range(start_epoch,end_epoch):
             fit_one_epoch(model_train, model, loss_history, optimizer, epoch, 
-                    epoch_step, epoch_step_val, gen, gen_val, end_epoch, Cuda, dice_loss, focal_loss, cls_weights, num_classes)
+                    epoch_step, epoch_step_val, gen, gen_val, end_epoch, Cuda,
+                          dice_loss, focal_loss, cls_weights, num_classes, tfwriter)
             lr_scheduler.step()
