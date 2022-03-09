@@ -244,10 +244,18 @@ if __name__ == "__main__":
             model.freeze_backbone()
 
         for epoch in range(start_epoch, end_epoch):
-            fit_one_epoch(model_train, model, loss_history, optimizer, epoch, 
+            ret_val = fit_one_epoch(model_train, model, loss_history, optimizer, epoch,
                     epoch_step, epoch_step_val, gen, gen_val, end_epoch, Cuda,
                           dice_loss, focal_loss, cls_weights, num_classes, tfwriter, best_val_loss)
             lr_scheduler.step()
+
+            # 如果验证集损失下降则保存模型
+            if ret_val[2] <= best_val_loss:
+                best_val_loss = ret_val[2]
+                torch.save(model.state_dict(), 'logs/pth/Freeze_ep%03d-loss%.3f-val_loss%.3f.pth' % (
+                    ret_val[0], ret_val[1], ret_val[2]))
+            else:
+                print('验证集损失没有降低，不保存参数，进入下一轮次{}'.format(epoch + 1))
 
     if True:
         batch_size  = Unfreeze_batch_size
@@ -284,7 +292,7 @@ if __name__ == "__main__":
             # 如果验证集损失下降则保存模型
             if ret_val[2] <= best_val_loss:
                 best_val_loss = ret_val[2]
-                torch.save(model.state_dict(), 'logs/pth/ep%03d-loss%.3f-val_loss%.3f.pth' % (
+                torch.save(model.state_dict(), 'logs/pth/NoFreeze_ep%03d-loss%.3f-val_loss%.3f.pth' % (
                 ret_val[0], ret_val[1], ret_val[2]))
             else:
                 print('验证集损失没有降低，不保存参数，进入下一轮次{}'.format(epoch + 1))
