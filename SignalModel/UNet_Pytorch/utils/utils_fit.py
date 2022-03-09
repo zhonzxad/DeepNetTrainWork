@@ -126,10 +126,10 @@ def fit_one_epoch(model_train, model, loss_history,
                                 'lr'        : get_lr(optimizer)})
             pbar.update(1)
 
-            tfwriter.add_scalar('val/DiceLoss', (epoch + 1) * (iteration + 1),val_dice_loss_item / (iteration + 1))
-            tfwriter.add_scalar('val/CELoss',   (epoch + 1) * (iteration + 1),val_ce_loss_item / (iteration + 1))
-            tfwriter.add_scalar('val/TotalLoss',(epoch + 1) * (iteration + 1), val_loss / (iteration + 1))
-            tfwriter.add_scalar('val/f_score',  (epoch + 1) * (iteration + 1), val_f_score / (iteration + 1))
+            tfwriter.add_scalar('val/DiceLoss',  val_dice_loss_item / (iteration + 1), (epoch + 1) * (iteration + 1),)
+            tfwriter.add_scalar('val/CELoss',    val_ce_loss_item / (iteration + 1)  , (epoch + 1) * (iteration + 1),)
+            tfwriter.add_scalar('val/TotalLoss', val_loss / (iteration + 1)         , (epoch + 1) * (iteration + 1),)
+            tfwriter.add_scalar('val/f_score',   val_f_score / (iteration + 1)      , (epoch + 1) * (iteration + 1),)
             
     loss_history.append_loss(total_loss/(epoch_step+1), val_loss/(epoch_step_val+1))
     print('Finish Validation')
