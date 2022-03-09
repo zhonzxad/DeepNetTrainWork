@@ -203,7 +203,10 @@ if __name__ == "__main__":
 
     with open(os.path.join(VOCdevkit_path, "VOC2007/ImageSets/Segmentation/val.txt"),"r") as f:
         val_lines = f.readlines()
-        
+
+    # 创建最优验证集损失
+    best_val_loss = float("inf")
+
     #------------------------------------------------------#
     #   主干特征提取网络特征通用，冻结训练可以加快训练速度
     #   也可以在训练初期防止权值被破坏。
@@ -243,7 +246,7 @@ if __name__ == "__main__":
         for epoch in range(start_epoch, end_epoch):
             fit_one_epoch(model_train, model, loss_history, optimizer, epoch, 
                     epoch_step, epoch_step_val, gen, gen_val, end_epoch, Cuda,
-                          dice_loss, focal_loss, cls_weights, num_classes, tfwriter)
+                          dice_loss, focal_loss, cls_weights, num_classes, tfwriter, best_val_loss)
             lr_scheduler.step()
 
     if True:
@@ -270,8 +273,6 @@ if __name__ == "__main__":
             
         if Freeze_Train:
             model.unfreeze_backbone()
-
-        best_val_loss = float("inf")
 
         for epoch in range(start_epoch,end_epoch):
             # 定义返回值为训练轮次，测试集平均损失，验证集平均损失
