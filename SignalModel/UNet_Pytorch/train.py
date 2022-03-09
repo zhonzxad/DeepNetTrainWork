@@ -31,6 +31,7 @@ def makedir(_path:str="") -> str:
     # python里的str是不可变对象，因此不存在修改一个字符串这个说法，任何对字符串的运算都会产生一个新字符串作为结果
     workpath = os.getcwd()
     if not os.path.isabs(_path):
+        # workpath = workpath + '/'
         _path = os.path.join(workpath, _path)
 
     if not os.path.exists(_path):
@@ -167,7 +168,7 @@ if __name__ == "__main__":
     #------------------------------------------------------#
     #   创建记录数据tensorboard
     #------------------------------------------------------#
-    tfwriter = SummaryWriter(logdir=makedir("logs/tfboard/"), comment="unet")
+    tfwriter = SummaryWriter(logdir=makedir("./logs/tfboard/"), comment="unet")
 
     model = Unet(num_classes=num_classes, pretrained=pretrained, backbone=backbone).train()
     if not pretrained:
@@ -193,7 +194,7 @@ if __name__ == "__main__":
     # paramcount_1 = count_param(model=model_train)
     # summary(model_train, input_size=(3, input_shape[0], input_shape[1]), device='cpu')
 
-    loss_history = LossHistory("logs/")
+    loss_history = LossHistory("./logs/")
     
     #---------------------------#
     #   读取数据集对应的txt
@@ -252,7 +253,7 @@ if __name__ == "__main__":
             # 如果验证集损失下降则保存模型
             if ret_val[2] <= best_val_loss:
                 best_val_loss = ret_val[2]
-                torch.save(model.state_dict(), 'logs/pth/Freeze_ep%03d-loss%.3f-val_loss%.3f.pth' % (
+                torch.save(model.state_dict(), './logs/pth/Freeze_ep%03d-loss%.3f-val_loss%.3f.pth' % (
                     ret_val[0], ret_val[1], ret_val[2]))
             else:
                 print('验证集损失没有降低，不保存参数，进入下一轮次{}'.format(epoch + 1))
@@ -292,7 +293,7 @@ if __name__ == "__main__":
             # 如果验证集损失下降则保存模型
             if ret_val[2] <= best_val_loss:
                 best_val_loss = ret_val[2]
-                torch.save(model.state_dict(), 'logs/pth/NoFreeze_ep%03d-loss%.3f-val_loss%.3f.pth' % (
+                torch.save(model.state_dict(), './logs/pth/NoFreeze_ep%03d-loss%.3f-val_loss%.3f.pth' % (
                 ret_val[0], ret_val[1], ret_val[2]))
             else:
                 print('验证集损失没有降低，不保存参数，进入下一轮次{}'.format(epoch + 1))
