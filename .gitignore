@@ -16,3 +16,4 @@ VOCdevkit
 *.tar
 *.tar.gz
 .run/
+!/UserProject/Data/
