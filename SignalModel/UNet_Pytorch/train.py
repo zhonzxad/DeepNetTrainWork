@@ -4,16 +4,17 @@ import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
 import torch.optim as optim
-from torch.utils.data import DataLoader
-from torchsummary import summary
 # from torch.utils.tensorboard import SummaryWriter
 from tensorboardX import SummaryWriter
+from torch.utils.data import DataLoader
+from torchsummary import summary
 
 from nets.unet import Unet
 from nets.unet_training import weights_init
 from utils.callbacks import LossHistory
 from utils.dataloader import UnetDataset, unet_dataset_collate
 from utils.utils_fit import fit_one_epoch
+
 
 def count_param(model) -> float:
     """测试神经网络参数里
@@ -122,7 +123,7 @@ if __name__ == "__main__":
     #----------------------------------------------------#
     Init_Epoch          = 0
     Freeze_Epoch        = 15
-    Freeze_batch_size   = 4
+    Freeze_batch_size   = 1
     Freeze_lr           = 1e-4
     #----------------------------------------------------#
     #   解冻阶段训练参数
@@ -130,7 +131,7 @@ if __name__ == "__main__":
     #   占用的显存较大，网络所有的参数都会发生改变
     #----------------------------------------------------#
     UnFreeze_Epoch      = 30
-    Unfreeze_batch_size = 4
+    Unfreeze_batch_size = 1
     Unfreeze_lr         = 1e-5
     #------------------------------#
     #   数据集路径
@@ -164,7 +165,7 @@ if __name__ == "__main__":
     #   开启后会加快数据读取速度，但是会占用更多内存
     #   内存较小的电脑可以设置为2或者0  
     #------------------------------------------------------#
-    num_workers     = 4
+    num_workers     = 8
     #------------------------------------------------------#
     #   创建记录数据tensorboard
     #------------------------------------------------------#
@@ -216,6 +217,8 @@ if __name__ == "__main__":
     #   Epoch总训练世代
     #   提示OOM或者显存不足请调小Batch_size
     #------------------------------------------------------#
+
+    # 开始进行冻结权重训练
     if True:
         batch_size  = Freeze_batch_size
         lr          = Freeze_lr

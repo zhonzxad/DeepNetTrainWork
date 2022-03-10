@@ -5,7 +5,7 @@ import numpy as np
 from PIL import Image
 from torch.utils.data.dataset import Dataset
 
-from SignalModel.UNet_Pytorch.utils.utils import cvtColor, preprocess_input
+from utils.utils import cvtColor, preprocess_input
 
 class UnetDataset(Dataset):
     def __init__(self, annotation_lines, input_shape, num_classes, train, dataset_path):

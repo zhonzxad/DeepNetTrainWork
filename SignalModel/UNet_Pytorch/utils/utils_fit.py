@@ -1,9 +1,9 @@
 import torch
-from SignalModel.UNet_Pytorch.nets.unet_training import CE_Loss, Dice_loss, Focal_Loss
 from tqdm import tqdm
 
-from SignalModel.UNet_Pytorch.utils.utils import get_lr
-from SignalModel.UNet_Pytorch.utils.utils_metrics import f_score
+from nets.unet_training import CE_Loss, Dice_loss, Focal_Loss
+from utils.utils import get_lr
+from utils.utils_metrics import f_score
 
 
 def fit_one_epoch(model_train, model, loss_history,
