@@ -18,3 +18,4 @@ VOCdevkit
 .run/
 !/UserProject/Data/
 DeepNetTrainWork-main.zip
+/UserProject/Data/*
