@@ -258,7 +258,7 @@ if __name__ == "__main__":
                 torch.save(model.state_dict(), './logs/pth/Freeze_ep%03d-loss%.3f-val_loss%.3f.pth' % (
                     ret_val[0], ret_val[1], ret_val[2]))
             else:
-                print('验证集损失没有降低，不保存参数，进入下一轮次{}'.format(epoch + 1))
+                print('验证集损失没有降低，不保存参数，进入下一轮次{}'.format(epoch + 2))
 
     # 进入非冻结训练过程
     if True:
@@ -300,6 +300,6 @@ if __name__ == "__main__":
                 torch.save(model.state_dict(), './logs/pth/NoFreeze_ep%03d-loss%.3f-val_loss%.3f.pth' % (
                 ret_val[0], ret_val[1], ret_val[2]))
             else:
-                print('验证集损失没有降低，不保存参数，进入下一轮次{}'.format(epoch + 1))
+                print('验证集损失没有降低，不保存参数，进入下一轮次{}'.format(epoch + 2))
 
 
