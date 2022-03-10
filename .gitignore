@@ -17,3 +17,4 @@ VOCdevkit
 *.tar.gz
 .run/
 !/UserProject/Data/
+DeepNetTrainWork-main.zip
