@@ -258,6 +258,7 @@ if __name__ == "__main__":
             else:
                 print('验证集损失没有降低，不保存参数，进入下一轮次{}'.format(epoch + 1))
 
+    # 进入非冻结训练过程
     if True:
         batch_size  = Unfreeze_batch_size
         lr          = Unfreeze_lr
@@ -279,7 +280,8 @@ if __name__ == "__main__":
                                     drop_last = True, collate_fn = unet_dataset_collate)
         gen_val         = DataLoader(val_dataset  , shuffle = True, batch_size = batch_size, num_workers = num_workers, pin_memory=True, 
                                     drop_last = True, collate_fn = unet_dataset_collate)
-            
+
+        # 解冻网络参数，参与权重训练
         if Freeze_Train:
             model.unfreeze_backbone()
 
