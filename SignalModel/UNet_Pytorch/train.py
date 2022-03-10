@@ -241,13 +241,12 @@ if __name__ == "__main__":
         gen_val         = DataLoader(val_dataset  , shuffle = True, batch_size = batch_size, num_workers = num_workers, pin_memory=True, 
                                     drop_last = True, collate_fn = unet_dataset_collate)
 
-        #------------------------------------#
-        #   冻结一定部分训练
-        #------------------------------------#
+        # 冻结一定部分训练
         if Freeze_Train:
             model.freeze_backbone()
 
         for epoch in range(start_epoch, end_epoch):
+            # 定义返回值为训练轮次，测试集平均损失，验证集平均损失
             ret_val = fit_one_epoch(model_train, model, loss_history, optimizer, epoch,
                     epoch_step, epoch_step_val, gen, gen_val, end_epoch, Cuda,
                           dice_loss, focal_loss, cls_weights, num_classes, tfwriter, best_val_loss)
