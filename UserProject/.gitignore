@@ -1,0 +1,9 @@
+*.pth
+.vscode
+.idea
+__pycache__
+Data/*
+Data/
+profile&store/UNet-Version-master.tar
+profile&store/UNet-Version-master.tar.gz
+profile&store/源代码.zip
