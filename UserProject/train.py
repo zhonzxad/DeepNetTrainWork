@@ -275,7 +275,7 @@ def main():
     # 初始化 early_stopping 对象
     patience = args.early_stop # 当验证集损失在连续20次训练周期中都没有得到降低时，停止模型训练，以防止模型过拟合
     path = makedir("logs/savepoint/early_stopp/")
-    early_stopping = GetEarlyStopping(patience, path=path + "checkpoint.pth",
+    early_stopping = GetEarlyStopping(patience, path=os.path.join(path, "checkpoint.pth"),
                                       verbose=True, savemode=args.save_mode)
     logger.success("优化器及早停模块加载完毕")
 
