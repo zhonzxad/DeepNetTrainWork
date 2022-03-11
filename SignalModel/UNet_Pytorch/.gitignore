@@ -5,6 +5,7 @@ VOCdevkit/
 datasets/
 datasets/Medical_Datasets/
 img/
+model_data/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
