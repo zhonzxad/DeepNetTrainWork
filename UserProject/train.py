@@ -53,31 +53,17 @@ def format_time(timecount:float) -> str:
 
     return time_str
 
-def makedir(path:str="") -> str:
+def makedir(_path:str="") -> str:
     """创建文件夹"""
     # python里的str是不可变对象，因此不存在修改一个字符串这个说法，任何对字符串的运算都会产生一个新字符串作为结果
-    # 特例判断
-    if path == "": return ""
-    hope_path = path
-
-    # 获取绝对路径
     workpath = os.getcwd()
-    # 或者设用下面两句话获取绝对路径
-    # abs_workfile_path = os.path.abspath(__file__)
-    # workpath, filename = os.path.split(abs_workfile_path)
+    if not os.path.isabs(_path):
+        _path = os.path.join(workpath, _path)
 
-    if not os.path.isabs(hope_path):
-        hope_path = os.path.join(workpath, hope_path)
-        # 拼合完整路径之后，如果存在文件名名称，则要去掉文件名
-        # 如果传入是文件名，split会切分
-        # 如果传入是路径，split不报错，返回filename为空
-        hope_path, filename = os.path.split(hope_path)
+    if not os.path.exists(_path):
+        os.makedirs(_path)
 
-    # 判断文件路径是否存在，不存在创建
-    if not os.path.exists(hope_path):
-        os.makedirs(hope_path)
-
-    return hope_path
+    return _path
 
 def get_gpu_info() -> Tuple[List[str], List[int]]:
     """处理显卡相关参数的信息"""
