@@ -170,9 +170,10 @@ def train_in_epoch(net, gens, **kargs):
         # tqdm_bar.update(1)
 
     # tqdm_bar.close()
-    # 返回值按照 0/总loss, 1/count, 2/celoss, 3/bceloss, 4/diceloss, 5/floss, 6/lr
     # assert (batch_idx - 1 == total_loss.get_count()), "循环次数与计算损失次数不相等"
-    return [loss[0], total_loss.get_count(), loss[1], loss[2], loss[3], loss[4], get_lr(optimizer)]
+    # 返回值按照 0/总loss(float), 1/count(int), 2/[loss], 3/lr
+    # loss = tensor格式 0/总loss, 1/celoss, 2/bceloss, 3/diceloss, 4/floss
+    return [total_loss.avg_val(), total_loss.get_count(), loss, get_lr(optimizer)]
 
 def test_in_epoch(net, gen_vals, **kargs):
     """测试方法"""
@@ -280,4 +281,7 @@ def test_in_epoch(net, gen_vals, **kargs):
     # tqdm_bar_val.close()
     # 返回值按照 0/总loss, 1/count, 2/celoss, 3/bceloss, 4/diceloss, 5/floss
     # assert (batch_idx_val - 1 == total_loss.get_count()), "循环次数与计算损失次数不相等"
-    return [loss[0], total_loss.get_count(), loss[1], loss[2], loss[3], loss[4]]
+
+    # 返回值按照 0/总loss(float), 1/count(int), 2/[loss]
+    # loss = tensor格式 0/总loss, 1/celoss, 2/bceloss, 3/diceloss, 4/floss
+    return [total_loss.avg_val(), total_loss.get_count(), loss]

@@ -195,7 +195,8 @@ def main():
 
     # 加载日志对象
     #logger = GetWriteLog(writerpath=MakeDir("logs/log/"))  # 需注释掉最前方引用的logger库
-    logger.add(makedir("logs/log/") + "logfile_{time:MM-DD_HH:mm}.txt",
+    log_file_path = makedir("logs/log/")
+    logger.add(log_file_path + "/logfile_{time:MM-DD_HH:mm}.txt",
                format="{time:DD Day HH:mm:ss} | {level} | {message}", filter="",
                enqueue=True, encoding='utf-8', rotation="50 MB")
 
@@ -221,7 +222,7 @@ def main():
     args.resume = False
     if args.resume:
         path = "savepoint/model_data/SmarUNEt_DiceCELoss_KMInit____.pth"
-        if os.path.isfile(path):
+        if os.path.exists(path) and os.path.isfile(path):
             checkpoint = torch.load(path)
             start_epoch = checkpoint['epoch'] if checkpoint['epoch'] != -1 else 0
             if args.save_mode:
@@ -235,12 +236,13 @@ def main():
             logger.info("没有找到检查点，从(epoch 1)开始")
     else:
         model_pretrain_path = r'G:\Py_Debug\GraduationProject\SignalModel\UNet_Pytorch\model_data\unet_resnet_voc.pth'
-        logger.info('Load weights {}.'.format(model_pretrain_path))
-        model_dict      = model.state_dict()
-        pre_trained_dict = torch.load(model_pretrain_path, map_location = this_device)
-        pre_trained_dict = {k: v for k, v in pre_trained_dict.items() if np.shape(model_dict[k]) == np.shape(v)}
-        model_dict.update(pre_trained_dict)
-        model.load_state_dict(model_dict)
+        if os.path.exists(model_pretrain_path):
+            logger.info('Load weights {}.'.format(model_pretrain_path))
+            model_dict      = model.state_dict()
+            pre_trained_dict = torch.load(model_pretrain_path, map_location = this_device)
+            pre_trained_dict = {k: v for k, v in pre_trained_dict.items() if np.shape(model_dict[k]) == np.shape(v)}
+            model_dict.update(pre_trained_dict)
+            model.load_state_dict(model_dict)
     logger.success("模型创建及初始化完毕")
 
     if this_device.type == "cuda":
@@ -305,30 +307,39 @@ def main():
         #loss, loss_cls, loss_lmmd = train_epoch(epoch, model, [tra_source_dataloader,tra_target_dataloader] , optimizer, scheduler)
         #t_correct = test(model, test_dataloader)
         para_kargs["this_epoch"] = epoch
+
         # 训练
-        # 返回值按照 0/总loss, 1/count, 2/celoss, 3/bceloss, 4/diceloss, 5/floss, 6/lr
+        logger.info("开始进行训练")
+        # 返回值按照 0/总loss(float), 1/count(int), 2/[loss], 3/lr
+        # loss = tensor格式 0/总loss, 1/celoss, 2/bceloss, 3/diceloss, 4/floss
         time_start = time.time()
         ret_train = \
             train_in_epoch(model, (gen, gen_target), **para_kargs)
         time_end = time.time()
 
         # 每轮训练输出一些日志信息
-        logger.info("第{}轮训练完成,本轮训练轮次{},耗时{},最终损失为{}".format(epoch, ret_train[1],
-                                                            format_time((time_end - time_start)),
-                                                            ret_train[0].item()))
+        train_time = format_time((time_end - time_start))
+        logger.info("第{}轮训练完成,本轮训练轮次{},耗时{}\n".format(epoch, ret_train[1], train_time))
 
         # 进行测试
+        logger.info("开始进行验证")
+        # 返回值按照 0/总loss(float), 1/count(int), 2/[loss，tensor]
+        # loss = tensor格式 0/总loss, 1/celoss, 2/bceloss, 3/diceloss, 4/floss
+        time_start = time.time()
         ret_val = \
             test_in_epoch(model, (gen_val, gen_target), **para_kargs)
+        time_end = time.time()
+
+        val_time = format_time((time_end - time_start))
+        logger.info("本轮训练总耗时{}, 最终测试集损失为{},验证集损失{}".format(train_time + val_time, ret_train[0], ret_val[0]))
 
         # 判断是否满足早停
         early_stopping(ret_val[0], model.eval)
 
         # 只有当前学习率较之前不够优异时，才去优化学习率，进行更细粒度的调节
-        # 依据测试数据级中dice损失来进行优化
-        if ret_val[5] >= best_opt_loss:
-            best_opt_loss = ret_val[5]
-            scheduler.step(ret_val[5])
+        # if ret_val[0] >= best_opt_loss:
+        #     best_opt_loss = ret_val[0]
+        scheduler.step(ret_train[2][0])
 
         # 一些保存的参数
         checkpoint = {
@@ -342,21 +353,21 @@ def main():
         # 判断当前损失是否变小，变小才进行保存参数
         # 注意ret[0]是tensor格式，ret[1]才是平均损失（损失累加除以轮次）
         # 使用的是验证集上的损失，如果验证集损失一直在下降也是，说明模型还在训练
-        if ret_val[1] < best_loss:
-            best_loss = ret_val[1]
-            beat_file_path = saveparafilepath + file_name.replace(".pth", "_best.pth")
+        if ret_val[0] < best_loss:
+            best_loss = ret_val[0]
+            beat_file_path = saveparafilepath + "/" + file_name.replace(".pth", "_best.pth")
             torch.save(checkpoint, beat_file_path)
             logger.info("保存检查点完成, 当前批次{}, 保存最优参数权重文件{}".format(epoch, beat_file_path))
         else:
             # 如果不是最优的，直接保存默认的
-            total_file_path = saveparafilepath + file_name
+            total_file_path = saveparafilepath + "/" + file_name
             torch.save(checkpoint, total_file_path)
             logger.success("完成当前批次{}训练, 损失值较上一轮没有减小，正常保存模型文件".format(epoch, total_file_path))
 
         # 若满足 early stopping 要求 且 当前批次>=10
         if early_stopping.get_early_stop_state:
             logger.info("命中早停模式，当前批次{}".format(epoch))
-            if epoch >= 5:
+            if epoch >= 15:
                 logger.info("停止训练，当前批次{}".format(epoch))
                 # os.system('/root/shutdown.sh')
                 break
@@ -373,7 +384,7 @@ def main():
         'optimizer': optimizer,
     }
     path = makedir("savepoint/model_data/")
-    saveparafilepath = path + "checkpoint.pth"
+    saveparafilepath = path + "/checkpoint.pth"
     torch.save(checkpoint, saveparafilepath)
     logger.success("保存检查点完成，当前批次{}, 当然权重文件保存地址{}".format(para_kargs["this_epoch"], saveparafilepath))
 
