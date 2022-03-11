@@ -27,18 +27,31 @@ def count_param(model) -> float:
         param_count += param.view(-1).size()[0]
     return param_count
 
-def makedir(_path:str="") -> str:
+def makedir(path:str="") -> str:
     """创建文件夹"""
     # python里的str是不可变对象，因此不存在修改一个字符串这个说法，任何对字符串的运算都会产生一个新字符串作为结果
+    # 特例判断
+    if path == "": return ""
+    hope_path = path
+
+    # 获取绝对路径
     workpath = os.getcwd()
-    if not os.path.isabs(_path):
-        # workpath = workpath + '/'
-        _path = os.path.join(workpath, _path)
+    # 或者设用下面两句话获取绝对路径
+    # abs_workfile_path = os.path.abspath(__file__)
+    # workpath, filename = os.path.split(abs_workfile_path)
 
-    if not os.path.exists(_path):
-        os.makedirs(_path)
+    if not os.path.isabs(hope_path):
+        hope_path = os.path.join(workpath, hope_path)
+        # 拼合完整路径之后，如果存在文件名名称，则要去掉文件名
+        # 如果传入是文件名，split会切分
+        # 如果传入是路径，split不报错，返回filename为空
+        hope_path, filename = os.path.split(hope_path)
 
-    return _path
+    # 判断文件路径是否存在，不存在创建
+    if not os.path.exists(hope_path):
+        os.makedirs(hope_path)
+
+    return hope_path
 
 '''
 训练自己的语义分割模型一定需要注意以下几点：
@@ -86,7 +99,7 @@ if __name__ == "__main__":
     #   如果不设置model_path，pretrained = True，此时仅加载主干开始训练。
     #   如果不设置model_path，pretrained = False，Freeze_Train = Fasle，此时从0开始训练，且没有冻结主干的过程。
     #--------------------------------------------------------------------------------------------------------------------------
-    pretrained  = False
+    pretrained  = True
     #----------------------------------------------------------------------------------------------------------------------------#
     #   权值文件的下载请看README，可以通过网盘下载。模型的 预训练权重 对不同数据集是通用的，因为特征是通用的。
     #   模型的 预训练权重 比较重要的部分是 主干特征提取网络的权值部分，用于进行特征提取。
@@ -169,7 +182,7 @@ if __name__ == "__main__":
     #------------------------------------------------------#
     #   创建记录数据tensorboard
     #------------------------------------------------------#
-    tfwriter = SummaryWriter(logdir=makedir("./logs/tfboard/"), comment="unet")
+    tfwriter = SummaryWriter(logdir=makedir("logs/tfboard/"), comment="unet")
 
     model = Unet(num_classes=num_classes, pretrained=pretrained, backbone=backbone).train()
     if not pretrained:
@@ -195,7 +208,7 @@ if __name__ == "__main__":
     # paramcount_1 = count_param(model=model_train)
     # summary(model_train, input_size=(3, input_shape[0], input_shape[1]), device='cpu')
 
-    loss_history = LossHistory("./logs/")
+    loss_history = LossHistory(makedir("logs/"))
     
     #---------------------------#
     #   读取数据集对应的txt
@@ -255,10 +268,11 @@ if __name__ == "__main__":
             # 如果验证集损失下降则保存模型
             if ret_val[2] <= best_val_loss:
                 best_val_loss = ret_val[2]
-                torch.save(model.state_dict(), './logs/pth/Freeze_ep%03d-loss%.3f-val_loss%.3f.pth' % (
-                    ret_val[0], ret_val[1], ret_val[2]))
+                save_filename = "logs/pth/Freeze_ep{:03d}-loss{:.3f}-val_loss{:.3f}.pth".format(
+                    ret_val[0], ret_val[1], ret_val[2])
+                torch.save(model.state_dict(), makedir(save_filename))
             else:
-                print('验证集损失没有降低，不保存参数，进入下一轮次{}'.format(epoch + 2))
+                print('冻结训练过程中,验证集损失没有降低，不保存参数，进入下一轮次{}'.format(epoch + 2))
 
     # 进入非冻结训练过程
     if True:
@@ -297,9 +311,10 @@ if __name__ == "__main__":
             # 如果验证集损失下降则保存模型
             if ret_val[2] <= best_val_loss:
                 best_val_loss = ret_val[2]
-                torch.save(model.state_dict(), './logs/pth/NoFreeze_ep%03d-loss%.3f-val_loss%.3f.pth' % (
-                ret_val[0], ret_val[1], ret_val[2]))
+                save_filename = "logs/pth/NoFreeze_ep{:03d}-loss{:.3f}-val_loss{:.3f}.pth".format(
+                    ret_val[0], ret_val[1], ret_val[2])
+                torch.save(model.state_dict(), makedir(save_filename))
             else:
-                print('验证集损失没有降低，不保存参数，进入下一轮次{}'.format(epoch + 2))
+                print('非冻结训练过程中,验证集损失没有降低，不保存参数，进入下一轮次{}'.format(epoch + 2))
 
 
