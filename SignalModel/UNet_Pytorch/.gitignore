@@ -4,6 +4,7 @@ miou_out/
 VOCdevkit/
 datasets/
 datasets/Medical_Datasets/
+img/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
