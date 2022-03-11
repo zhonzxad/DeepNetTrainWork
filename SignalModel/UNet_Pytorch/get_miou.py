@@ -3,7 +3,7 @@ import os
 from PIL import Image
 from tqdm import tqdm
 
-from unet import Unet
+from predict_unet import Unet
 from utils.utils_metrics import compute_mIoU, show_results
 
 '''

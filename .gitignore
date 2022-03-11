@@ -15,12 +15,17 @@ predict.py
 VOCdevkit
 *.tar
 *.tar.gz
+
+# UserProject项目
 .run/
 !/UserProject/Data/
 DeepNetTrainWork-main.zip
 /UserProject/Data/*
 Data/*
 
+# Signal项目
+/SignalModel/UNet_Pytorch/datasets/*
+/SignalModel/UNet_Pytorch/predict/*
 
 # PyBuilder
 target/
