@@ -77,6 +77,10 @@ def makedir(path:str="") -> str:
     if not os.path.exists(hope_path):
         os.makedirs(hope_path)
 
+    # 如果当前路径不代表文件，则自动加上下一级目录
+    if not os.path.isfile(hope_path):
+        hope_path = hope_path + "/"
+
     return hope_path
 
 def get_gpu_info() -> Tuple[List[str], List[int]]:
@@ -270,7 +274,7 @@ def main():
 
     # 初始化 early_stopping 对象
     patience = args.early_stop # 当验证集损失在连续20次训练周期中都没有得到降低时，停止模型训练，以防止模型过拟合
-    path = makedir("savepoint/early_stopp/")
+    path = makedir("logs/savepoint/early_stopp/")
     early_stopping = GetEarlyStopping(patience, path=path + "checkpoint.pth",
                                       verbose=True, savemode=args.save_mode)
     logger.success("优化器及早停模块加载完毕")
@@ -318,7 +322,7 @@ def main():
         time_end = time.time()
 
         # 每轮训练输出一些日志信息
-        train_time = format_time((time_end - time_start))
+        train_time = (time_end - time_start)
         logger.info("第{}轮训练完成,本轮训练轮次{},耗时{}\n".format(epoch, ret_train[1], train_time))
 
         # 进行测试
@@ -330,8 +334,8 @@ def main():
             test_in_epoch(model, (gen_val, gen_target), **para_kargs)
         time_end = time.time()
 
-        val_time = format_time((time_end - time_start))
-        logger.info("本轮训练总耗时{}, 最终测试集损失为{},验证集损失{}".format(train_time + val_time, ret_train[0], ret_val[0]))
+        val_time = (time_end - time_start)
+        logger.info("本轮训练总耗时{}, 最终测试集损失为{},验证集损失{}".format(format_time(train_time + val_time), ret_train[0], ret_val[0]))
 
         # 判断是否满足早停
         early_stopping(ret_val[0], model.eval)
@@ -348,19 +352,19 @@ def main():
             'optimizer': optimizer,
             'loss' : ret_val,
         }
-        saveparafilepath = makedir("savepoint/model_data/")
+        saveparafilepath = makedir("logs/savepoint/model_data/")
         file_name = "SmarUNet_20220223.pth"
         # 判断当前损失是否变小，变小才进行保存参数
         # 注意ret[0]是tensor格式，ret[1]才是平均损失（损失累加除以轮次）
         # 使用的是验证集上的损失，如果验证集损失一直在下降也是，说明模型还在训练
         if ret_val[0] < best_loss:
             best_loss = ret_val[0]
-            beat_file_path = saveparafilepath + "/" + file_name.replace(".pth", "_best.pth")
+            beat_file_path = os.path.join(saveparafilepath, file_name.replace(".pth", "_best.pth"))
             torch.save(checkpoint, beat_file_path)
             logger.info("保存检查点完成, 当前批次{}, 保存最优参数权重文件{}".format(epoch, beat_file_path))
         else:
             # 如果不是最优的，直接保存默认的
-            total_file_path = saveparafilepath + "/" + file_name
+            total_file_path = os.path.join(saveparafilepath, file_name)
             torch.save(checkpoint, total_file_path)
             logger.success("完成当前批次{}训练, 损失值较上一轮没有减小，正常保存模型文件".format(epoch, total_file_path))
 
@@ -383,8 +387,8 @@ def main():
         'model': model,
         'optimizer': optimizer,
     }
-    path = makedir("savepoint/model_data/")
-    saveparafilepath = path + "/checkpoint.pth"
+    path = makedir("logs/savepoint/model_data/")
+    saveparafilepath = os.path.join(path, "checkpoint.pth")
     torch.save(checkpoint, saveparafilepath)
     logger.success("保存检查点完成，当前批次{}, 当然权重文件保存地址{}".format(para_kargs["this_epoch"], saveparafilepath))
 
