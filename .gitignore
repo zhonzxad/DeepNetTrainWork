@@ -27,6 +27,7 @@ Data/*
 /SignalModel/UNet_Pytorch/datasets/*
 /SignalModel/UNet_Pytorch/predict.py
 /SignalModel/UNet_Pytorch/predict_unet.py
+SignalModel/UNet_Pytorch/predict.py
 
 !/SignalModel/UNet_Pytorch/datasets/*
 !/SignalModel/UNet_Pytorch/predict.py
@@ -44,3 +45,4 @@ ipython_config.py
 
 # pyenv
 .python-version
+
