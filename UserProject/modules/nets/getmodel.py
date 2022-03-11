@@ -23,6 +23,7 @@ from UserProject.modules.nets.UNet.UNet import UNet
 from UserProject.modules.nets.UNet.UNet_2Plus import UNet_2Plus
 from UserProject.modules.nets.UNet.UNet_3Plus import UNet_3Plus
 from UserProject.modules.nets.UNet.UNetBili import UNetVGG16
+from UserProject.modules.nets.ResUNet.resunet import ResUNet50
 
 class GetModel:
 
@@ -43,7 +44,8 @@ class GetModel:
         # model = RestNet18(in_channels=IMGSIZE[2], n_classes=CLASSNUM)
         # model   = SegNet(input_channels=IMGSIZE[2], num_class=CLASSNUM)
         # model   = FCN(input_channels=IMGSIZE[2], num_class=CLASSNUM)
-        model = DefectUNet(n_channels=self.IMGSIZE[2], n_classes=self.NCLASS, bilinear=False)
+        # model = DefectUNet(n_channels=self.IMGSIZE[2], n_classes=self.NCLASS, bilinear=False)
+        model = ResUNet50(num_classes=self.NCLASS)
 
         # Pytorch官方例程中的相关网络
         # model = models.alexnet()

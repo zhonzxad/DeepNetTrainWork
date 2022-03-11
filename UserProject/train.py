@@ -1,8 +1,8 @@
 # -*- coding: UTF-8 -*- 
 import argparse
 import os
-import sys
 import platform
+import sys
 import time
 from typing import List, Tuple
 
@@ -12,23 +12,23 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
 
 import numpy as np
+import pynvml
 import torch
 import torch.backends.cudnn as cudnn
+from loguru import logger
 from tensorboardX import SummaryWriter
 # from torch.utils.tensorboard import SummaryWriter
 from torchsummary import summary
 from tqdm import tqdm
-from loguru import logger
-import pynvml
+
+from train_in_epoch import test_in_epoch, train_in_epoch
 from UserProject.modules.nets.funtion.user_summary import count_param
-
-from train_in_epoch import train_in_epoch, test_in_epoch
-
 from UserProject.modules.nets.getmodel import GetModel
 from UserProject.modules.utils.getearlystop import GetEarlyStopping
 from UserProject.modules.utils.getloader import GetLoader
 from UserProject.modules.utils.getlog import GetWriteLog
 from UserProject.modules.utils.getoptim import GetOptim
+
 
 def set_lr(optimizer, value:float):
     """optimizer.param_groups:是长度为2的list,0表示params/lr/eps等参数，1表示优化器状态"""
@@ -123,7 +123,7 @@ def get_args():
     parser.add_argument('--save_mode', type=bool,
                         help='true save mode false save dic', default=True)
     parser.add_argument('--resume', type=bool,
-                        help='user resume weight', default=True)
+                        help='user resume weight', default=False)
     parser.add_argument('--UseGPU', type=bool,
                         help='is use cuda as env', default=True)
     parser.add_argument('--UseMultiGPU', type=bool,
@@ -212,9 +212,35 @@ def main():
     gen_target   = [1,] # loader.makedataTarget()
     logger.success("数据集加载完毕")
 
+    # 创建自定义模型参数
     modeler = GetModel(args)
     model = modeler.Createmodel(is_train=True)
+    # 初始化权重
     modeler.init_weights(model, "kaiming")
+    # 是否使用预训练参数权重继续训练
+    args.resume = False
+    if args.resume:
+        path = "savepoint/model_data/SmarUNEt_DiceCELoss_KMInit____.pth"
+        if os.path.isfile(path):
+            checkpoint = torch.load(path)
+            start_epoch = checkpoint['epoch'] if checkpoint['epoch'] != -1 else 0
+            if args.save_mode:
+                model = checkpoint['model']
+            else:
+                model.load_state_dict(checkpoint['model'])
+            optimizer = checkpoint['optimizer']
+            set_lr(optimizer, 0.001)
+            logger.info("加载数据检查点，从(epoch {})开始".format(checkpoint['epoch']))
+        else:
+            logger.info("没有找到检查点，从(epoch 1)开始")
+    else:
+        model_pretrain_path = r'G:\Py_Debug\GraduationProject\SignalModel\UNet_Pytorch\model_data\unet_resnet_voc.pth'
+        logger.info('Load weights {}.'.format(model_pretrain_path))
+        model_dict      = model.state_dict()
+        pre_trained_dict = torch.load(model_pretrain_path, map_location = this_device)
+        pre_trained_dict = {k: v for k, v in pre_trained_dict.items() if np.shape(model_dict[k]) == np.shape(v)}
+        model_dict.update(pre_trained_dict)
+        model.load_state_dict(model_dict)
     logger.success("模型创建及初始化完毕")
 
     if this_device.type == "cuda":
@@ -235,7 +261,7 @@ def main():
 
     # 测试网络结构
     # summary(model, input_size=(args.IMGSIZE[2], args.IMGSIZE[0], args.IMGSIZE[1]), device=this_device.type)
-    count = count_param(model=model)
+    # count = count_param(model=model)
 
     # 创建优化器
     optimizer, scheduler = GetOptim(model, lr=args.lr[0])
@@ -246,22 +272,6 @@ def main():
     early_stopping = GetEarlyStopping(patience, path=path + "checkpoint.pth",
                                       verbose=True, savemode=args.save_mode)
     logger.success("优化器及早停模块加载完毕")
-
-    # 是否使用预训练参数权重继续训练
-    if args.resume:
-        path = "savepoint/model_data/SmarUNEt_DiceCELoss_KMInit____.pth"
-        if os.path.isfile(path):
-            checkpoint = torch.load(path)
-            start_epoch = checkpoint['epoch'] if checkpoint['epoch'] != -1 else 0
-            if args.save_mode:
-                model = checkpoint['model']
-            else:
-                model.load_state_dict(checkpoint['model'])
-            optimizer = checkpoint['optimizer']
-            set_lr(optimizer, 0.001)
-            logger.info("加载数据检查点，从(epoch {})开始".format(checkpoint['epoch']))
-        else:
-            logger.info("没有找到检查点，从(epoch 1)开始")
 
     logger.info("注意: 没有使用tfboard记录数据") if tfwriter is None else logger.success("注意: 使用tfboard记录数据")
     logger.success("注意: 使用了amp混合精度训练") if args.amp else logger.info("注意: 没有使用amp混合精度训练")
