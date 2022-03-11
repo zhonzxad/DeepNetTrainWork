@@ -35,10 +35,10 @@ def makedir(path:str="") -> str:
     hope_path = path
 
     # 获取绝对路径
-    workpath = os.getcwd()
+    # workpath = os.getcwd()
     # 或者设用下面两句话获取绝对路径
-    # abs_workfile_path = os.path.abspath(__file__)
-    # workpath, filename = os.path.split(abs_workfile_path)
+    abs_workfile_path = os.path.abspath(__file__)
+    workpath, filename = os.path.split(abs_workfile_path)
 
     if not os.path.isabs(hope_path):
         hope_path = os.path.join(workpath, hope_path)
