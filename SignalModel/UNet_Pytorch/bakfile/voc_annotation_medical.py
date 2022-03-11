@@ -10,7 +10,7 @@ train_percent       = 1
 #   指向医药数据集所在的文件夹
 #   默认指向根目录下的Medical_Datasets
 #-------------------------------------------------------#
-VOCdevkit_path  = '../Medical_Datasets'
+VOCdevkit_path  = '../datasets/Medical_Datasets'
 
 if __name__ == "__main__":
     random.seed(0)
