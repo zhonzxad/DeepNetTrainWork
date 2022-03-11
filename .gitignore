@@ -22,6 +22,7 @@ VOCdevkit
 DeepNetTrainWork-main.zip
 /UserProject/Data/*
 Data/*
+UserProject/bak&testfile/*
 
 # Signal项目
 /SignalModel/UNet_Pytorch/datasets/*
