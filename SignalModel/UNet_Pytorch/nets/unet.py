@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 
-from nets.resnet import resnet50
-from nets.vgg import VGG16
+from resnet import resnet50
+from vgg import VGG16
 
 
 class unetUp(nn.Module):

@@ -9,9 +9,8 @@ import torch.nn.functional as F
 from PIL import Image
 from torch import nn
 
-from nets.unet import Unet as unet
-from utils.utils import cvtColor, preprocess_input, resize_image
-
+from SignalModel.UNet_Pytorch.nets.unet import Unet as unet
+from SignalModel.UNet_Pytorch.utils.utils import cvtColor, preprocess_input, resize_image
 
 #--------------------------------------------#
 #   使用自己训练好的模型预测需要修改2个参数
