@@ -9,8 +9,8 @@ import torch.nn.functional as F
 from PIL import Image
 from torch import nn
 
-from SignalModel.UNet_Pytorch.nets.unet import Unet as unet
-from SignalModel.UNet_Pytorch.utils.utils import cvtColor, preprocess_input, resize_image
+from nets.unet import Unet as unet
+from utils.utils import cvtColor, preprocess_input, resize_image
 
 
 #--------------------------------------------#
@@ -26,19 +26,19 @@ class Unet(object):
         #   训练好后logs文件夹下存在多个权值文件，选择验证集损失较低的即可。
         #   验证集损失较低不代表miou较高，仅代表该权值在验证集上泛化性能较好。
         #-------------------------------------------------------------------#
-        "model_path"    : 'model_data/Freeze_ep007-loss0.050-val_loss0.026.pth',
+        "model_path"    : 'model_data/unet_vgg_voc.pth',
         #--------------------------------#
         #   所需要区分的类的个数+1
         #--------------------------------#
-        "num_classes"   : 3,
+        "num_classes"   : 21,
         #--------------------------------#
         #   所使用的的主干网络：vgg、resnet50   
         #--------------------------------#
-        "backbone"      : "resnet50",
+        "backbone"      : "vgg",
         #--------------------------------#
         #   输入图片的大小
         #--------------------------------#
-        "input_shape"   : [768, 768],
+        "input_shape"   : [512, 512],
         #-------------------------------------------------#
         #   mix_type参数用于控制检测结果的可视化方式
         #

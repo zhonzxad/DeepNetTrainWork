@@ -3,7 +3,7 @@ import os
 from PIL import Image
 from tqdm import tqdm
 
-from SignalModel.UNet_Pytorch.predict.predict_Unet import Unet
+from unet import Unet
 from utils.utils_metrics import compute_mIoU, show_results
 
 '''
