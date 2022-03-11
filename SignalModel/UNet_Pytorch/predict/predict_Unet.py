@@ -9,8 +9,8 @@ import torch.nn.functional as F
 from PIL import Image
 from torch import nn
 
-from UNet_Pytorch.nets.unet import Unet as unet
-from utils.utils import cvtColor, preprocess_input, resize_image
+from SignalModel.UNet_Pytorch.nets.unet import Unet as unet
+from SignalModel.UNet_Pytorch.utils.utils import cvtColor, preprocess_input, resize_image
 
 
 #--------------------------------------------#
