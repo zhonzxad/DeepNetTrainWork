@@ -140,6 +140,5 @@ dmypy.json
 bakfile/unet-pytorch-main.zip
 unet-pytorch-main.zip
 SignalModel/UNet_Pytorch/bakfile/unet-pytorch-main.zip
-
-
-
+predict/
+!/predict/
