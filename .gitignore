@@ -25,7 +25,8 @@ Data/*
 
 # Signal项目
 /SignalModel/UNet_Pytorch/datasets/*
-/SignalModel/UNet_Pytorch/predict/*
+/SignalModel/UNet_Pytorch/predict.py
+/SignalModel/UNet_Pytorch/predict_unet.py
 
 # PyBuilder
 target/
