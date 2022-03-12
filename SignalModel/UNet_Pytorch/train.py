@@ -15,6 +15,7 @@ from nets.unet_training import weights_init
 from utils.callbacks import LossHistory
 from utils.dataloader import UnetDataset, unet_dataset_collate
 from utils.utils_fit import fit_one_epoch
+from utils.utils_fit_transform import fit_one_epoch_transform
 
 # 在Windows下使用vscode运行时 添加上这句话就会使用正确的相对路径设置
 # 需要import os和sys两个库
@@ -162,6 +163,7 @@ if __name__ == "__main__":
     VOCdevkit_path      = 'VOCdevkit'
     VOCfile_name_source = 'Source'
     VOCfile_name_target = 'Target'
+    IsUseTransformLayer = True
     #---------------------------------------------------------------------# 
     #   建议选项：
     #   种类少（几类）时，设置为True
@@ -206,10 +208,13 @@ if __name__ == "__main__":
         print('Load weights {}.'.format(model_path))
         device          = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model_dict      = model.state_dict()
-        pretrained_dict = torch.load(model_path, map_location = device)
-        pretrained_dict = {k: v for k, v in pretrained_dict.items() if np.shape(model_dict[k]) == np.shape(v)}
-        model_dict.update(pretrained_dict)
-        model.load_state_dict(model_dict)
+        if os.path.exists(model_path):
+            pretrained_dict = torch.load(model_path, map_location = device)
+            pretrained_dict = {k: v for k, v in pretrained_dict.items() if np.shape(model_dict[k]) == np.shape(v)}
+            model_dict.update(pretrained_dict)
+            model.load_state_dict(model_dict)
+        else:
+            raise RuntimeError("{}不存在配置文件".format(model_path))
 
     model_train = model.train()
     if Cuda:
@@ -229,10 +234,11 @@ if __name__ == "__main__":
     with open(os.path.join(VOCdevkit_path, VOCfile_name_source, "ImageSets/Segmentation/val.txt"),"r") as f:
         source_val_lines = f.readlines()
     # 读取目标域数据集
-    with open(os.path.join(VOCdevkit_path, VOCfile_name_target, "ImageSets/Segmentation/train.txt"),"r") as f:
-        target_train_lines = f.readlines()
-    with open(os.path.join(VOCdevkit_path, VOCfile_name_target, "ImageSets/Segmentation/val.txt"),"r") as f:
-        target_val_lines = f.readlines()
+    if IsUseTransformLayer: # 如果配置使用迁移网络层
+        with open(os.path.join(VOCdevkit_path, VOCfile_name_target, "ImageSets/Segmentation/train.txt"),"r") as f:
+            target_train_lines = f.readlines()
+        with open(os.path.join(VOCdevkit_path, VOCfile_name_target, "ImageSets/Segmentation/val.txt"),"r") as f:
+            target_val_lines = f.readlines()
 
     # 创建最优验证集损失
     best_val_loss = float("inf")
@@ -268,13 +274,19 @@ if __name__ == "__main__":
                                           drop_last = True, collate_fn = unet_dataset_collate)
         source_gen_val       = DataLoader(source_val_dataset, shuffle = True, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
                                           drop_last = True, collate_fn = unet_dataset_collate)
+        # 拼接数据集tuple
+        dataloads = [source_gen, source_gen_val]
 
-        target_train_dataset = UnetDataset(target_train_lines, input_shape, num_classes, True, VOCdevkit_path, VOCfile_name_target)
-        target_val_dataset   = UnetDataset(target_val_lines, input_shape, num_classes, False, VOCdevkit_path, VOCfile_name_target)
-        target_gen           = DataLoader(target_train_dataset, shuffle = True, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
-                                          drop_last = True, collate_fn = unet_dataset_collate)
-        target_gen_val       = DataLoader(target_val_dataset, shuffle = True, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
-                                          drop_last = True, collate_fn = unet_dataset_collate)
+        if IsUseTransformLayer: # 如果配置使用迁移网络层
+            target_train_dataset = UnetDataset(target_train_lines, input_shape, num_classes, True, VOCdevkit_path, VOCfile_name_target)
+            target_val_dataset   = UnetDataset(target_val_lines, input_shape, num_classes, False, VOCdevkit_path, VOCfile_name_target)
+            target_gen           = DataLoader(target_train_dataset, shuffle = True, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
+                                              drop_last = True, collate_fn = unet_dataset_collate)
+            target_gen_val       = DataLoader(target_val_dataset, shuffle = True, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
+                                              drop_last = True, collate_fn = unet_dataset_collate)
+            # 拼接目标域数据集tuple
+            dataloads.extend([target_gen, target_gen_val])
+
 
         # 冻结一定部分训练
         if Freeze_Train:
@@ -282,9 +294,14 @@ if __name__ == "__main__":
 
         for epoch in range(start_epoch, end_epoch):
             # 定义返回值为训练轮次，测试集平均损失，验证集平均损失
-            ret_val = fit_one_epoch(model_train, model, loss_history, optimizer, epoch,
-                                    epoch_step, epoch_step_val, source_gen, source_gen_val, end_epoch, Cuda,
+            if IsUseTransformLayer: # 如果配置使用迁移网络层
+                ret_val = fit_one_epoch_transform(model_train, model, loss_history, optimizer, epoch,
+                                    epoch_step, epoch_step_val, dataloads, end_epoch, Cuda,
                                     dice_loss, focal_loss, cls_weights, num_classes, tfwriter, best_val_loss)
+            else:
+                ret_val = fit_one_epoch(model_train, model, loss_history, optimizer, epoch,
+                                      epoch_step, epoch_step_val, dataloads, end_epoch, Cuda,
+                                      dice_loss, focal_loss, cls_weights, num_classes, tfwriter, best_val_loss)
             lr_scheduler.step()
 
             # 如果验证集损失下降则保存模型
@@ -318,6 +335,18 @@ if __name__ == "__main__":
                                             drop_last = True, collate_fn = unet_dataset_collate)
         source_gen_val         = DataLoader(source_val_dataset, shuffle = True, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
                                             drop_last = True, collate_fn = unet_dataset_collate)
+        # 拼接数据集tuple
+        dataloads = [source_gen, source_gen_val]
+
+        if IsUseTransformLayer: # 如果配置使用迁移网络层
+            target_train_dataset = UnetDataset(target_train_lines, input_shape, num_classes, True, VOCdevkit_path, VOCfile_name_target)
+            target_val_dataset   = UnetDataset(target_val_lines, input_shape, num_classes, False, VOCdevkit_path, VOCfile_name_target)
+            target_gen           = DataLoader(target_train_dataset, shuffle = True, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
+                                              drop_last = True, collate_fn = unet_dataset_collate)
+            target_gen_val       = DataLoader(target_val_dataset, shuffle = True, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
+                                              drop_last = True, collate_fn = unet_dataset_collate)
+            # 拼接目标域数据集tuple
+            dataloads.extend([target_gen, target_gen_val])
 
         # 解冻网络参数，参与权重训练
         if Freeze_Train:
@@ -325,9 +354,14 @@ if __name__ == "__main__":
 
         for epoch in range(start_epoch,end_epoch):
             # 定义返回值为训练轮次，测试集平均损失，验证集平均损失
-            ret_val = fit_one_epoch(model_train, model, loss_history, optimizer, epoch,
-                                    epoch_step, epoch_step_val, source_gen, source_gen_val, end_epoch, Cuda,
-                                    dice_loss, focal_loss, cls_weights, num_classes, tfwriter, best_val_loss)
+            if IsUseTransformLayer: # 如果配置使用迁移网络层
+                ret_val = fit_one_epoch_transform(model_train, model, loss_history, optimizer, epoch,
+                                                  epoch_step, epoch_step_val, dataloads, end_epoch, Cuda,
+                                                  dice_loss, focal_loss, cls_weights, num_classes, tfwriter, best_val_loss)
+            else:
+                ret_val = fit_one_epoch(model_train, model, loss_history, optimizer, epoch,
+                                        epoch_step, epoch_step_val, dataloads, end_epoch, Cuda,
+                                        dice_loss, focal_loss, cls_weights, num_classes, tfwriter, best_val_loss)
             lr_scheduler.step()
 
             # 如果验证集损失下降则保存模型

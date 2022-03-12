@@ -52,6 +52,28 @@ def Dice_loss(inputs, target, beta=1, smooth = 1e-5):
     dice_loss = 1 - torch.mean(score)
     return dice_loss
 
+def CORAL(source, target, **kwargs):
+    """迁移损失
+    """
+    n,   c,  h, w = source.size()
+    nt, ct, ht, wt = target.size()
+
+    d = source.data.shape[1]
+    ns, nt = source.data.shape[0], target.data.shape[0]
+    # source covariance
+    xm = torch.mean(source, 0, keepdim=True) - source
+    xc = xm.t() @ xm / (ns - 1)
+
+    # target covariance
+    xmt = torch.mean(target, 0, keepdim=True) - target
+    xct = xmt.t() @ xmt / (nt - 1)
+
+    # frobenius norm between source and target
+    loss = torch.mul((xc - xct), (xc - xct))
+    loss = torch.sum(loss) / (4*d*d)
+
+    return loss
+
 def weights_init(net, init_type='normal', init_gain=0.02):
     def init_func(m):
         classname = m.__class__.__name__

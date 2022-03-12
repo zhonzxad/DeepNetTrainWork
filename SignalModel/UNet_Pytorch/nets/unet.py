@@ -83,7 +83,7 @@ class Unet(nn.Module):
 
         final = self.final(up1)
         
-        return final
+        return final, up1
 
     def freeze_backbone(self):
         if self.backbone == "vgg":
