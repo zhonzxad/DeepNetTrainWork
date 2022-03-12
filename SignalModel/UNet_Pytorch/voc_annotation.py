@@ -13,13 +13,15 @@ train_percent       = 0.9
 #   指向VOC数据集所在的文件夹
 #   默认指向根目录下的VOC数据集
 #-------------------------------------------------------#
-VOCdevkit_path  = 'VOCdevkit'
+VOCdevkit_path  = r'G:\Py_Debug\GraduationProject\SignalModel\UNet_Pytorch\VOCdevkit'
+
+VOC_name = 'Target'
 
 if __name__ == "__main__":
     random.seed(0)
     print("Generate txt in ImageSets.")
-    segfilepath     = os.path.join(VOCdevkit_path, 'VOC2007/SegmentationClass')
-    saveBasePath    = os.path.join(VOCdevkit_path, 'VOC2007/ImageSets/Segmentation')
+    segfilepath     = os.path.join(VOCdevkit_path, VOC_name , 'SegmentationClass')
+    saveBasePath    = os.path.join(VOCdevkit_path, VOC_name , 'ImageSets/Segmentation')
     
     temp_seg = os.listdir(segfilepath)
     total_seg = []

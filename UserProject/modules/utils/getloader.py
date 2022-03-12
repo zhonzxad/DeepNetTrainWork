@@ -18,7 +18,7 @@ from torch.utils.data import DataLoader
 
 """
 train_dataser = MakeVOCDataSet.MakeVOCDataSet(args.root_path.join("train"))
-val_dataset   = MakeVOCDataSet.MakeVOCDataSet(args.root_path.join("val"))
+source_val_dataset   = MakeVOCDataSet.MakeVOCDataSet(args.root_path.join("val"))
 
 # pin_memory:如果设置为True，那么data loader将会在返回它们之前，将tensors拷贝到CUDA中的固定内存
 # collate_fn: 将一个list的sample组成一个mini-batch的函数
@@ -26,7 +26,7 @@ val_dataset   = MakeVOCDataSet.MakeVOCDataSet(args.root_path.join("val"))
 train_loader = torch.utils.data.DataLoader(train_dataser, shuffle=True, batch_size=args.batch_size, num_workers=1,
                     pin_memory=True if torch.cuda.is_available() else False,
                     drop_last=True, collate_fn=MakeVOCDataSet.dataset_collate)
-val_loader = torch.utils.data.DataLoader(val_dataset, shuffle=True, batch_size=args.batch_size, num_workers=4,
+val_loader = torch.utils.data.DataLoader(source_val_dataset, shuffle=True, batch_size=args.batch_size, num_workers=4,
                     pin_memory=True if torch.cuda.is_available() else False,
                     drop_last=True, collate_fn=MakeVOCDataSet.dataset_collate)
 """
@@ -94,12 +94,12 @@ class GetLoader():
         gen = DataLoader(train_dataset, shuffle=True, batch_size=self.batchsize,
                             num_workers=self.num_workers, pin_memory=True,
                             drop_last=False, collate_fn=dataset_collate,
-                            # sampler=DistributedSampler(val_dataset)
+                            # sampler=DistributedSampler(source_val_dataset)
                          )
         gen_val = DataLoader(val_dataset, shuffle=False, batch_size=self.batchsize,
                             num_workers=self.num_workers, pin_memory=True,
                             drop_last=True, collate_fn=dataset_collate,
-                            # sampler=DistributedSampler(val_dataset)
+                            # sampler=DistributedSampler(source_val_dataset)
                              )
 
         return gen, gen_val

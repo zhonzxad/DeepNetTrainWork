@@ -1,5 +1,7 @@
 import colorsys
 import copy
+import os
+import sys
 import time
 
 import cv2
@@ -9,8 +11,14 @@ import torch.nn.functional as F
 from PIL import Image
 from torch import nn
 
-from SignalModel.UNet_Pytorch.nets.unet import Unet as unet
-from SignalModel.UNet_Pytorch.utils.utils import cvtColor, preprocess_input, resize_image
+# 在Windows下使用vscode运行时 添加上这句话就会使用正确的相对路径设置
+# 需要import os和sys两个库
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(BASE_DIR)
+
+from nets.unet import Unet as unet
+from utils.utils import cvtColor, preprocess_input, resize_image
+
 
 #--------------------------------------------#
 #   使用自己训练好的模型预测需要修改2个参数
@@ -25,7 +33,7 @@ class Unet(object):
         #   训练好后logs文件夹下存在多个权值文件，选择验证集损失较低的即可。
         #   验证集损失较低不代表miou较高，仅代表该权值在验证集上泛化性能较好。
         #-------------------------------------------------------------------#
-        "model_path"    : 'model_data/Freeze_ep007-loss0.050-val_loss0.026.pth',
+        "model_path"    : r'G:/Py_Debug/GraduationProject/SignalModel/UNet_Pytorch/model_data/Freeze_ep007-loss0.050-val_loss0.026.pth',
         #--------------------------------#
         #   所需要区分的类的个数+1
         #--------------------------------#
@@ -45,7 +53,7 @@ class Unet(object):
         #   mix_type = 1的时候代表仅保留生成的图
         #   mix_type = 2的时候代表仅扣去背景，仅保留原图中的目标
         #-------------------------------------------------#
-        "mix_type"      : 0,
+        "mix_type"      : 1,
         #--------------------------------#
         #   是否使用Cuda
         #   没有GPU可以设置成False

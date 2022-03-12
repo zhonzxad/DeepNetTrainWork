@@ -1,8 +1,16 @@
+import os
+import sys
+
 import torch
 import torch.nn as nn
 
-from resnet import resnet50
-from vgg import VGG16
+# 在Windows下使用vscode运行时 添加上这句话就会使用正确的相对路径设置
+# 需要import os和sys两个库
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(BASE_DIR)
+
+from nets.resnet import resnet50
+from nets.vgg import VGG16
 
 
 class unetUp(nn.Module):

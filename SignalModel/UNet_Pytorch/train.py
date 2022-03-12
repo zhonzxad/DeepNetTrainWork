@@ -1,4 +1,5 @@
 import os
+import sys
 
 import numpy as np
 import torch
@@ -14,6 +15,11 @@ from nets.unet_training import weights_init
 from utils.callbacks import LossHistory
 from utils.dataloader import UnetDataset, unet_dataset_collate
 from utils.utils_fit import fit_one_epoch
+
+# 在Windows下使用vscode运行时 添加上这句话就会使用正确的相对路径设置
+# 需要import os和sys两个库
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(BASE_DIR)
 
 
 def count_param(model) -> float:
@@ -153,7 +159,9 @@ if __name__ == "__main__":
     #------------------------------#
     #   数据集路径
     #------------------------------#
-    VOCdevkit_path  = 'VOCdevkit'
+    VOCdevkit_path      = 'VOCdevkit'
+    VOCfile_name_source = 'Source'
+    VOCfile_name_target = 'Target'
     #---------------------------------------------------------------------# 
     #   建议选项：
     #   种类少（几类）时，设置为True
@@ -214,14 +222,17 @@ if __name__ == "__main__":
 
     loss_history = LossHistory(makedir("logs/"))
     
-    #---------------------------#
-    #   读取数据集对应的txt
-    #---------------------------#
-    with open(os.path.join(VOCdevkit_path, "VOC2007/ImageSets/Segmentation/train.txt"),"r") as f:
-        train_lines = f.readlines()
-
-    with open(os.path.join(VOCdevkit_path, "VOC2007/ImageSets/Segmentation/val.txt"),"r") as f:
-        val_lines = f.readlines()
+    # 读取数据集
+    # 读取源域数据集
+    with open(os.path.join(VOCdevkit_path, VOCfile_name_source, "ImageSets/Segmentation/train.txt"),"r") as f:
+        source_train_lines = f.readlines()
+    with open(os.path.join(VOCdevkit_path, VOCfile_name_source, "ImageSets/Segmentation/val.txt"),"r") as f:
+        source_val_lines = f.readlines()
+    # 读取目标域数据集
+    with open(os.path.join(VOCdevkit_path, VOCfile_name_target, "ImageSets/Segmentation/train.txt"),"r") as f:
+        target_train_lines = f.readlines()
+    with open(os.path.join(VOCdevkit_path, VOCfile_name_target, "ImageSets/Segmentation/val.txt"),"r") as f:
+        target_val_lines = f.readlines()
 
     # 创建最优验证集损失
     best_val_loss = float("inf")
@@ -237,26 +248,33 @@ if __name__ == "__main__":
 
     # 开始进行冻结权重训练
     if True:
-        batch_size  = Freeze_batch_size
-        lr          = Freeze_lr
-        start_epoch = Init_Epoch
-        end_epoch   = Freeze_Epoch
+        batch_size     = Freeze_batch_size
+        lr             = Freeze_lr
+        start_epoch    = Init_Epoch
+        end_epoch      = Freeze_Epoch
 
-        epoch_step      = len(train_lines) // batch_size
-        epoch_step_val  = len(val_lines) // batch_size
+        epoch_step     = len(source_train_lines) // batch_size
+        epoch_step_val = len(source_val_lines) // batch_size
         
         if epoch_step == 0 or epoch_step_val == 0:
             raise ValueError("数据集过小，无法进行训练，请扩充数据集。")
 
-        optimizer       = optim.Adam(model_train.parameters(), lr)
-        lr_scheduler    = optim.lr_scheduler.StepLR(optimizer, step_size = 1, gamma = 0.96)
+        optimizer      = optim.Adam(model_train.parameters(), lr)
+        lr_scheduler   = optim.lr_scheduler.StepLR(optimizer, step_size = 1, gamma = 0.96)
 
-        train_dataset   = UnetDataset(train_lines, input_shape, num_classes, True, VOCdevkit_path)
-        val_dataset     = UnetDataset(val_lines, input_shape, num_classes, False, VOCdevkit_path)
-        gen             = DataLoader(train_dataset, shuffle = True, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
-                                    drop_last = True, collate_fn = unet_dataset_collate)
-        gen_val         = DataLoader(val_dataset  , shuffle = True, batch_size = batch_size, num_workers = num_workers, pin_memory=True, 
-                                    drop_last = True, collate_fn = unet_dataset_collate)
+        source_train_dataset = UnetDataset(source_train_lines, input_shape, num_classes, True, VOCdevkit_path, VOCfile_name_source)
+        source_val_dataset   = UnetDataset(source_val_lines, input_shape, num_classes, False, VOCdevkit_path, VOCfile_name_source)
+        source_gen           = DataLoader(source_train_dataset, shuffle = True, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
+                                          drop_last = True, collate_fn = unet_dataset_collate)
+        source_gen_val       = DataLoader(source_val_dataset, shuffle = True, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
+                                          drop_last = True, collate_fn = unet_dataset_collate)
+
+        target_train_dataset = UnetDataset(target_train_lines, input_shape, num_classes, True, VOCdevkit_path, VOCfile_name_target)
+        target_val_dataset   = UnetDataset(target_val_lines, input_shape, num_classes, False, VOCdevkit_path, VOCfile_name_target)
+        target_gen           = DataLoader(target_train_dataset, shuffle = True, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
+                                          drop_last = True, collate_fn = unet_dataset_collate)
+        target_gen_val       = DataLoader(target_val_dataset, shuffle = True, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
+                                          drop_last = True, collate_fn = unet_dataset_collate)
 
         # 冻结一定部分训练
         if Freeze_Train:
@@ -265,8 +283,8 @@ if __name__ == "__main__":
         for epoch in range(start_epoch, end_epoch):
             # 定义返回值为训练轮次，测试集平均损失，验证集平均损失
             ret_val = fit_one_epoch(model_train, model, loss_history, optimizer, epoch,
-                    epoch_step, epoch_step_val, gen, gen_val, end_epoch, Cuda,
-                          dice_loss, focal_loss, cls_weights, num_classes, tfwriter, best_val_loss)
+                                    epoch_step, epoch_step_val, source_gen, source_gen_val, end_epoch, Cuda,
+                                    dice_loss, focal_loss, cls_weights, num_classes, tfwriter, best_val_loss)
             lr_scheduler.step()
 
             # 如果验证集损失下降则保存模型
@@ -285,8 +303,8 @@ if __name__ == "__main__":
         start_epoch = Freeze_Epoch
         end_epoch   = UnFreeze_Epoch
 
-        epoch_step      = len(train_lines) // batch_size
-        epoch_step_val  = len(val_lines) // batch_size
+        epoch_step      = len(source_train_lines) // batch_size
+        epoch_step_val  = len(source_val_lines) // batch_size
 
         if epoch_step == 0 or epoch_step_val == 0:
             raise ValueError("数据集过小，无法进行训练，请扩充数据集。")
@@ -294,12 +312,12 @@ if __name__ == "__main__":
         optimizer       = optim.Adam(model_train.parameters(), lr)
         lr_scheduler    = optim.lr_scheduler.StepLR(optimizer, step_size = 1, gamma = 0.96)
 
-        train_dataset   = UnetDataset(train_lines, input_shape, num_classes, True, VOCdevkit_path)
-        val_dataset     = UnetDataset(val_lines, input_shape, num_classes, False, VOCdevkit_path)
-        gen             = DataLoader(train_dataset, shuffle = True, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
-                                    drop_last = True, collate_fn = unet_dataset_collate)
-        gen_val         = DataLoader(val_dataset  , shuffle = True, batch_size = batch_size, num_workers = num_workers, pin_memory=True, 
-                                    drop_last = True, collate_fn = unet_dataset_collate)
+        source_train_dataset   = UnetDataset(source_train_lines, input_shape, num_classes, True, VOCdevkit_path)
+        source_val_dataset     = UnetDataset(source_val_lines, input_shape, num_classes, False, VOCdevkit_path)
+        source_gen             = DataLoader(source_train_dataset, shuffle = True, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
+                                            drop_last = True, collate_fn = unet_dataset_collate)
+        source_gen_val         = DataLoader(source_val_dataset, shuffle = True, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
+                                            drop_last = True, collate_fn = unet_dataset_collate)
 
         # 解冻网络参数，参与权重训练
         if Freeze_Train:
@@ -308,8 +326,8 @@ if __name__ == "__main__":
         for epoch in range(start_epoch,end_epoch):
             # 定义返回值为训练轮次，测试集平均损失，验证集平均损失
             ret_val = fit_one_epoch(model_train, model, loss_history, optimizer, epoch,
-                    epoch_step, epoch_step_val, gen, gen_val, end_epoch, Cuda,
-                          dice_loss, focal_loss, cls_weights, num_classes, tfwriter, best_val_loss)
+                                    epoch_step, epoch_step_val, source_gen, source_gen_val, end_epoch, Cuda,
+                                    dice_loss, focal_loss, cls_weights, num_classes, tfwriter, best_val_loss)
             lr_scheduler.step()
 
             # 如果验证集损失下降则保存模型

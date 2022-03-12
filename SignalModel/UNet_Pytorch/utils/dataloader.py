@@ -8,7 +8,7 @@ from torch.utils.data.dataset import Dataset
 from utils.utils import cvtColor, preprocess_input
 
 class UnetDataset(Dataset):
-    def __init__(self, annotation_lines, input_shape, num_classes, train, dataset_path):
+    def __init__(self, annotation_lines, input_shape, num_classes, train, dataset_path, VOC_filename):
         super(UnetDataset, self).__init__()
         self.annotation_lines   = annotation_lines
         self.length             = len(annotation_lines)
@@ -16,6 +16,7 @@ class UnetDataset(Dataset):
         self.num_classes        = num_classes
         self.train              = train
         self.dataset_path       = dataset_path
+        self.voc_filename       = VOC_filename
 
     def __len__(self):
         return self.length
@@ -27,23 +28,28 @@ class UnetDataset(Dataset):
         #-------------------------------#
         #   从文件中读取图像
         #-------------------------------#
-        jpg         = Image.open(os.path.join(os.path.join(self.dataset_path, "VOC2007/JPEGImages"), name + ".jpg"))
-        png         = Image.open(os.path.join(os.path.join(self.dataset_path, "VOC2007/SegmentationClass"), name + ".png")).convert('L')
-        #-------------------------------#
-        #   数据增强
-        #-------------------------------#
+        jpg         = Image.open(os.path.join(os.path.join(self.dataset_path, self.voc_filename, "JPEGImages"), name + ".jpg"))
+        if self.voc_filename == "Source": # label is not Nona
+            png     = Image.open(os.path.join(os.path.join(self.dataset_path, self.voc_filename, "SegmentationClass"), name + ".png")).convert('L')
+        else:
+            png     = None
+
+        # 数据增强
         jpg, png    = self.get_random_data(jpg, png, self.input_shape, random = self.train)
 
         jpg         = np.transpose(preprocess_input(np.array(jpg, np.float64)), [2,0,1])
-        png         = np.array(png)
-        png[png >= self.num_classes] = self.num_classes
-        #-------------------------------------------------------#
-        #   转化成one_hot的形式
-        #   在这里需要+1是因为voc数据集有些标签具有白边部分
-        #   我们需要将白边部分进行忽略，+1的目的是方便忽略。
-        #-------------------------------------------------------#
-        seg_labels  = np.eye(self.num_classes + 1)[png.reshape([-1])]
-        seg_labels  = seg_labels.reshape((int(self.input_shape[0]), int(self.input_shape[1]), self.num_classes + 1))
+        if self.voc_filename == "Source": # label is not Nona
+            png         = np.array(png)
+            png[png >= self.num_classes] = self.num_classes
+
+        # 转化成one_hot的形式
+        # 在这里需要+1是因为voc数据集有些标签具有白边部分
+        # 我们需要将白边部分进行忽略，+1的目的是方便忽略。
+        if self.voc_filename == "Source": # label is not Nona
+            seg_labels  = np.eye(self.num_classes + 1)[png.reshape([-1])]
+            seg_labels  = seg_labels.reshape((int(self.input_shape[0]), int(self.input_shape[1]), self.num_classes + 1))
+        else:
+            seg_labels = None
 
         return jpg, png, seg_labels
 
@@ -52,7 +58,7 @@ class UnetDataset(Dataset):
 
     def get_random_data(self, image, label, input_shape, jitter=.3, hue=.1, sat=1.5, val=1.5, random=True):
         image = cvtColor(image)
-        label = Image.fromarray(np.array(label))
+        # label = Image.fromarray(np.array(label))
         h, w = input_shape
 
         if not random:
@@ -65,9 +71,12 @@ class UnetDataset(Dataset):
             new_image   = Image.new('RGB', [w, h], (128,128,128))
             new_image.paste(image, ((w-nw)//2, (h-nh)//2))
 
-            label       = label.resize((nw,nh), Image.NEAREST)
-            new_label   = Image.new('L', [w, h], (0))
-            new_label.paste(label, ((w-nw)//2, (h-nh)//2))
+            if self.voc_filename == "Source": # label is not Nona
+                label       = label.resize((nw,nh), Image.NEAREST)
+                new_label   = Image.new('L', [w, h], (0))
+                new_label.paste(label, ((w-nw)//2, (h-nh)//2))
+            else:
+                new_label = None
             return new_image, new_label
 
         # resize image
@@ -84,22 +93,26 @@ class UnetDataset(Dataset):
             nh = int(nw/new_ar)
 
         image = image.resize((nw,nh), Image.BICUBIC)
-        label = label.resize((nw,nh), Image.NEAREST)
+        if self.voc_filename == "Source": # label is not Nona
+            label = label.resize((nw,nh), Image.NEAREST)
         
         flip = self.rand()<.5
         if flip: 
             image = image.transpose(Image.FLIP_LEFT_RIGHT)
-            label = label.transpose(Image.FLIP_LEFT_RIGHT)
+            if self.voc_filename == "Source": # label is not Nona
+                label = label.transpose(Image.FLIP_LEFT_RIGHT)
         
         # place image
         dx = int(self.rand(0, w-nw))
         dy = int(self.rand(0, h-nh))
         new_image = Image.new('RGB', (w,h), (128,128,128))
-        new_label = Image.new('L', (w,h), (0))
         new_image.paste(image, (dx, dy))
-        new_label.paste(label, (dx, dy))
         image = new_image
-        label = new_label
+
+        if self.voc_filename == "Source": # label is not Nona
+            new_label = Image.new('L', (w,h), (0))
+            new_label.paste(label, (dx, dy))
+            label = new_label
 
         # distort image
         hue = self.rand(-hue, hue)
@@ -115,7 +128,8 @@ class UnetDataset(Dataset):
         x[:, :, 1:][x[:, :, 1:]>1] = 1
         x[x<0] = 0
         image_data = cv2.cvtColor(x, cv2.COLOR_HSV2RGB)*255
-        return image_data,label
+
+        return image_data, label
 
 
 # DataLoader中collate_fn使用
