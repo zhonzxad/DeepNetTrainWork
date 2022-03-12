@@ -7,6 +7,9 @@ datasets/Medical_Datasets/
 img/
 model_data/
 predict.py
+DeepNetTrainWork0312.zip
+*.zip
+*.7z
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -145,3 +148,4 @@ unet-pytorch-main.zip
 SignalModel/UNet_Pytorch/bakfile/unet-pytorch-main.zip
 !/predict_unet.py
 predict_unet.py
+!/DeepNetTrainWork0312.zip

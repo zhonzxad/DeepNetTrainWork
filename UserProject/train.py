@@ -77,9 +77,13 @@ def makedir(path:str="") -> str:
     if not os.path.exists(hope_path):
         os.makedirs(hope_path)
 
+    # 如果当前路径是 路径，自动加上下一级目录
+    # 如果当前路径是 文件，拼接文件
     # 如果当前路径不代表文件，则自动加上下一级目录
-    if not os.path.isfile(hope_path):
+    if os.path.isdir(hope_path):
         hope_path = hope_path + "/"
+    else:
+        hope_path = os.path.join(hope_path, filename)
 
     return hope_path
 

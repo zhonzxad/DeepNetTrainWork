@@ -58,9 +58,13 @@ def makedir(path:str="") -> str:
     if not os.path.exists(hope_path):
         os.makedirs(hope_path)
 
+    # 如果当前路径是 路径，自动加上下一级目录
+    # 如果当前路径是 文件，拼接文件
     # 如果当前路径不代表文件，则自动加上下一级目录
-    if not os.path.isfile(hope_path):
+    if os.path.isdir(hope_path):
         hope_path = hope_path + "/"
+    else:
+        hope_path = os.path.join(hope_path, filename)
 
     return hope_path
 
@@ -307,9 +311,10 @@ if __name__ == "__main__":
             # 如果验证集损失下降则保存模型
             if ret_val[2] <= best_val_loss:
                 best_val_loss = ret_val[2]
-                save_filename = "logs/pth/Freeze_ep{:03d}-loss{:.3f}-val_loss{:.3f}.pth".format(
-                    ret_val[0], ret_val[1], ret_val[2])
-                torch.save(model.state_dict(), makedir(save_filename))
+                save_path     = makedir("logs/pth/")
+                save_filename = "Freeze_ep{:03d}-loss{:.3f}-val_loss{:.3f}.pth".format(
+                ret_val[0], ret_val[1], ret_val[2])
+                torch.save(model.state_dict(), os.path.join(save_path, save_filename))
             else:
                 print('冻结训练过程中,验证集损失没有降低，不保存参数，进入下一轮次{}'.format(epoch + 2))
 
@@ -367,9 +372,10 @@ if __name__ == "__main__":
             # 如果验证集损失下降则保存模型
             if ret_val[2] <= best_val_loss:
                 best_val_loss = ret_val[2]
-                save_filename = "logs/pth/NoFreeze_ep{:03d}-loss{:.3f}-val_loss{:.3f}.pth".format(
-                    ret_val[0], ret_val[1], ret_val[2])
-                torch.save(model.state_dict(), makedir(save_filename))
+                save_path     = makedir("logs/pth/")
+                save_filename = "UNFreeze_ep{:03d}-loss{:.3f}-val_loss{:.3f}.pth".format(
+                ret_val[0], ret_val[1], ret_val[2])
+                torch.save(model.state_dict(), os.path.join(save_path, save_filename))
             else:
                 print('非冻结训练过程中,验证集损失没有降低，不保存参数，进入下一轮次{}'.format(epoch + 2))
 
