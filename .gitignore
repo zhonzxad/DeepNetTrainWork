@@ -17,6 +17,7 @@ VOCdevkit
 *.tar.gz
 *.zip
 *.7z
+TestSomeMode/
 
 # UserProject项目
 .run/
