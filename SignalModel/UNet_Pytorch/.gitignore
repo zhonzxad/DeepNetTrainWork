@@ -7,6 +7,7 @@ datasets/Medical_Datasets/
 img/
 model_data/
 predict.py
+.DeepNetTrainWork0312.zip
 DeepNetTrainWork0312.zip
 *.zip
 *.7z
