@@ -196,7 +196,7 @@ if __name__ == "__main__":
     #   开启后会加快数据读取速度，但是会占用更多内存
     #   内存较小的电脑可以设置为2或者0  
     #------------------------------------------------------#
-    num_workers     = 8
+    num_workers     = 0
     #------------------------------------------------------#
     #   创建记录数据tensorboard
     #------------------------------------------------------#
@@ -334,8 +334,8 @@ if __name__ == "__main__":
         optimizer       = optim.Adam(model_train.parameters(), lr)
         lr_scheduler    = optim.lr_scheduler.StepLR(optimizer, step_size = 1, gamma = 0.96)
 
-        source_train_dataset   = UnetDataset(source_train_lines, input_shape, num_classes, True, VOCdevkit_path)
-        source_val_dataset     = UnetDataset(source_val_lines, input_shape, num_classes, False, VOCdevkit_path)
+        source_train_dataset   = UnetDataset(source_train_lines, input_shape, num_classes, True, VOCdevkit_path, VOCfile_name_source)
+        source_val_dataset     = UnetDataset(source_val_lines, input_shape, num_classes, False, VOCdevkit_path, VOCfile_name_source)
         source_gen             = DataLoader(source_train_dataset, shuffle = True, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
                                             drop_last = True, collate_fn = unet_dataset_collate)
         source_gen_val         = DataLoader(source_val_dataset, shuffle = True, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
