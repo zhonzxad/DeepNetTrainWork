@@ -26,12 +26,23 @@ def fit_one_epoch_transform(model_train, model, loss_history,
 
     source_gen, source_gen_val, target_gen, target_gen_val = dataloads
 
+    sorce_iter = iter(source_gen)
+
     model_train.train()
     print('Start Train')
     with tqdm(total=epoch_step,desc=f'Epoch {epoch + 1}/{Epoch}',postfix=dict,mininterval=0.3) as pbar:
-        for iteration, (source_batch, target_batch) in enumerate(zip(cycle(source_gen), target_gen)):
+        # for iteration, (source_batch, target_batch) in enumerate(zip(cycle(source_gen), target_gen)):
+        for iteration, target_batch in enumerate(target_gen):
+            # 冻结训练结束标致
             if iteration >= epoch_step:
                 break
+            # 如果较小的数据集遍历完毕，重新iter再次遍历
+            try:
+                _, source_batch = next(sorce_iter)
+            except StopIteration:
+                sorce_iter = iter(source_gen)
+                _, source_batch = next(sorce_iter)
+
             source_imgs, source_pngs, source_labels = source_batch
             target_imgs, _, _ = target_batch
 
@@ -100,14 +111,25 @@ def fit_one_epoch_transform(model_train, model, loss_history,
 
     print('Finish Train')
 
+    # 将较小的数据集iter
+    sorce_iter_val = iter(source_gen_val)
     model_train.eval()
     print('Start Validation')
     with tqdm(total=epoch_step_val, desc=f'Epoch {epoch + 1}/{Epoch}',postfix=dict,mininterval=0.3) as pbar:
-        for iteration, (source_batch, target_batch) in enumerate(zip(cycle(source_gen_val), target_gen_val)):
+        # for iteration, (source_batch, target_batch) in enumerate(zip(cycle(source_gen_val), target_gen_val)):
+        for iteration, target_batch_val in enumerate(target_gen_val):
+            # 冻结训练结束标致
             if iteration >= epoch_step_val:
                 break
-            source_imgs_val, source_pngs_val, source_labels_val = source_batch
-            target_imgs_val, _, _ = target_batch
+            # 如果较小的数据集遍历完毕，重新iter再次遍历
+            try:
+                _, source_batch_val = next(sorce_iter_val)
+            except StopIteration:
+                sorce_iter_val = iter(source_gen_val)
+                _, source_batch_val = next(sorce_iter_val)
+
+            source_imgs_val, source_pngs_val, source_labels_val = source_batch_val
+            target_imgs_val, _, _ = target_batch_val
 
             with torch.no_grad():
                 source_imgs_val    = torch.from_numpy(source_imgs_val).type(torch.FloatTensor)
