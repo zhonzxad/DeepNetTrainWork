@@ -6,6 +6,7 @@ datasets/
 datasets/Medical_Datasets/
 img/
 model_data/
+predict.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

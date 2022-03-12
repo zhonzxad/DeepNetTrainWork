@@ -81,7 +81,8 @@ def train_in_epoch(net, gens, **kargs):
     model_train = net.train()
 
     # 创建混合精度训练
-    grad_scaler = torch.cuda.amp.GradScaler(enabled=amp)
+    if amp:
+        grad_scaler = torch.cuda.amp.GradScaler(enabled=amp)
 
     # 分发数据集
     gen_source = gens[0]
@@ -199,7 +200,8 @@ def test_in_epoch(net, gen_vals, **kargs):
         torch.cuda.empty_cache()
 
     # 创建混合精度训练
-    grad_scaler_val = torch.cuda.amp.GradScaler(enabled=amp)
+    if amp:
+        grad_scaler_val = torch.cuda.amp.GradScaler(enabled=amp)
 
     # 分发数据集
     gen_val_source = gen_vals[0]
