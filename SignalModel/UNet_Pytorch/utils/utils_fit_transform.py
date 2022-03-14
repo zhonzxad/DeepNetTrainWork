@@ -114,7 +114,7 @@ def fit_one_epoch_transform(model_train, model, loss_history,
 
     # 将较小的数据集iter
     sorce_iter_val = iter(source_gen_val)
-    model_train.eval()
+    model_val = model_train.eval()
     print('Start Validation')
     with tqdm(total=epoch_step_val, desc=f'Epoch {epoch + 1}/{Epoch}',postfix=dict,mininterval=0.3) as pbar:
         # for iteration, (source_batch, target_batch) in enumerate(zip(cycle(source_gen_val), target_gen_val)):
@@ -146,8 +146,8 @@ def fit_one_epoch_transform(model_train, model, loss_history,
                     weights = weights.cuda()
 
                 # 进行预测
-                source_outputs_val, _ = model_train(source_imgs_val)
-                traget_outputs_val, _ = model_train(target_imgs_val)
+                source_outputs_val, source_UPFreturMap_val = model_val(source_imgs_val)
+                traget_outputs_val, traget_UPFreturMap_val = model_val(target_imgs_val)
 
                 # 计算CEloss
                 if focal_loss:
@@ -164,7 +164,7 @@ def fit_one_epoch_transform(model_train, model, loss_history,
                     val_dice_loss_item += main_dice.item()
 
                 # 计算CORAL loss
-                coral_loss = CORAL(source_outputs_val, traget_outputs_val)
+                coral_loss = CORAL(source_UPFreturMap_val, traget_UPFreturMap_val)
                 loss = loss + coral_loss
                 coral_loss_item += coral_loss.item()
 
