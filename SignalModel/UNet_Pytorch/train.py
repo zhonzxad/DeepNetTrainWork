@@ -165,9 +165,9 @@ if __name__ == "__main__":
     #   数据集路径
     #------------------------------#
     VOCdevkit_path      = 'VOCdevkit'
-    VOCfile_name_source = 'Source'
+    VOCfile_name_source = 'Target' #'Source'
     VOCfile_name_target = 'Target'
-    IsUseTransformLayer = True
+    IsUseTransformLayer = False
     #---------------------------------------------------------------------# 
     #   建议选项：
     #   种类少（几类）时，设置为True
@@ -202,15 +202,13 @@ if __name__ == "__main__":
     #------------------------------------------------------#
     tfwriter = SummaryWriter(logdir=makedir("logs/tfboard/"), comment="unet")
 
-    model = Unet(num_classes=num_classes, pretrained=pretrained, backbone=backbone).train()
+    model  = Unet(num_classes=num_classes, pretrained=pretrained, backbone=backbone).train()
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     if not pretrained:
         weights_init(model)
     if model_path != '':
-        #------------------------------------------------------#
-        #   权值文件请看README，百度网盘下载
-        #------------------------------------------------------#
+        #  权值文件请看README，百度网盘下载
         print('Load weights {}.'.format(model_path))
-        device          = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model_dict      = model.state_dict()
         if os.path.exists(model_path):
             pretrained_dict = torch.load(model_path, map_location = device)
@@ -224,12 +222,12 @@ if __name__ == "__main__":
     if Cuda:
         model_train = torch.nn.DataParallel(model)
         cudnn.benchmark = True
-        model_train = model_train.cuda()
+        model_train = model_train.to(device)
 
     # paramcount_1 = count_param(model=model_train)
     # summary(model_train, input_size=(3, input_shape[0], input_shape[1]), device='cpu')
 
-    loss_history = LossHistory(makedir("logs/"))
+    loss_history = LossHistory(makedir("logs/losshistory/"))
     
     # 读取数据集
     # 读取源域数据集
@@ -270,10 +268,14 @@ if __name__ == "__main__":
             raise ValueError("数据集过小，无法进行训练，请扩充数据集。")
 
         optimizer      = optim.Adam(model_train.parameters(), lr)
-        lr_scheduler   = optim.lr_scheduler.StepLR(optimizer, step_size = 1, gamma = 0.96)
+        lr_scheduler   = optim.lr_scheduler.StepLR(optimizer, step_size = 2, gamma = 0.96)
+        # lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode="min", \
+        #                                                        verbose = True, \
+        #                                                        factor=0.75, patience=1, cooldown=1, \
+        #                                                        eps=1e-8)
 
-        source_train_dataset = UnetDataset(source_train_lines, input_shape, num_classes, True, VOCdevkit_path, VOCfile_name_source)
-        source_val_dataset   = UnetDataset(source_val_lines, input_shape, num_classes, False, VOCdevkit_path, VOCfile_name_source)
+        source_train_dataset = UnetDataset(source_train_lines, input_shape, num_classes, True, VOCdevkit_path, VOCfile_name_source, IsUseTransformLayer)
+        source_val_dataset   = UnetDataset(source_val_lines, input_shape, num_classes, False, VOCdevkit_path, VOCfile_name_source, IsUseTransformLayer)
         source_gen           = DataLoader(source_train_dataset, shuffle = True, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
                                           drop_last = True, collate_fn = unet_dataset_collate)
         source_gen_val       = DataLoader(source_val_dataset, shuffle = True, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
@@ -282,8 +284,8 @@ if __name__ == "__main__":
         dataloads = [source_gen, source_gen_val]
 
         if IsUseTransformLayer: # 如果配置使用迁移网络层
-            target_train_dataset = UnetDataset(target_train_lines, input_shape, num_classes, True, VOCdevkit_path, VOCfile_name_target)
-            target_val_dataset   = UnetDataset(target_val_lines, input_shape, num_classes, False, VOCdevkit_path, VOCfile_name_target)
+            target_train_dataset = UnetDataset(target_train_lines, input_shape, num_classes, True, VOCdevkit_path, VOCfile_name_target, IsUseTransformLayer)
+            target_val_dataset   = UnetDataset(target_val_lines, input_shape, num_classes, False, VOCdevkit_path, VOCfile_name_target, IsUseTransformLayer)
             target_gen           = DataLoader(target_train_dataset, shuffle = True, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
                                               drop_last = True, collate_fn = unet_dataset_collate)
             target_gen_val       = DataLoader(target_val_dataset, shuffle = True, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
@@ -305,7 +307,7 @@ if __name__ == "__main__":
                 ret_val = fit_one_epoch(model_train, model, loss_history, optimizer, epoch,
                                       epoch_step, epoch_step_val, dataloads, end_epoch, Cuda,
                                       dice_loss, focal_loss, cls_weights, num_classes, tfwriter, best_val_loss)
-            lr_scheduler.step()
+            lr_scheduler.step(ret_val[1])
 
             # 如果验证集损失下降则保存模型
             if ret_val[2] <= best_val_loss:
@@ -318,6 +320,7 @@ if __name__ == "__main__":
                 print('冻结训练过程中,验证集损失没有降低，不保存参数，进入下一轮次{}'.format(epoch + 2))
 
     # 进入非冻结训练过程
+    print('进入非解冻训练阶段')
     if True:
         batch_size  = Unfreeze_batch_size
         lr          = Unfreeze_lr
@@ -331,7 +334,7 @@ if __name__ == "__main__":
             raise ValueError("数据集过小，无法进行训练，请扩充数据集。")
 
         optimizer       = optim.Adam(model_train.parameters(), lr)
-        lr_scheduler    = optim.lr_scheduler.StepLR(optimizer, step_size = 1, gamma = 0.96)
+        lr_scheduler    = optim.lr_scheduler.StepLR(optimizer, step_size = 2, gamma = 0.96)
 
         source_train_dataset   = UnetDataset(source_train_lines, input_shape, num_classes, True, VOCdevkit_path, VOCfile_name_source)
         source_val_dataset     = UnetDataset(source_val_lines, input_shape, num_classes, False, VOCdevkit_path, VOCfile_name_source)
@@ -366,7 +369,7 @@ if __name__ == "__main__":
                 ret_val = fit_one_epoch(model_train, model, loss_history, optimizer, epoch,
                                         epoch_step, epoch_step_val, dataloads, end_epoch, Cuda,
                                         dice_loss, focal_loss, cls_weights, num_classes, tfwriter, best_val_loss)
-            lr_scheduler.step()
+            lr_scheduler.step(ret_val[1])
 
             # 如果验证集损失下降则保存模型
             if ret_val[2] <= best_val_loss:

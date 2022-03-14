@@ -43,7 +43,7 @@ def fit_one_epoch(model_train, model, loss_history,
 
             optimizer.zero_grad()
 
-            outputs = model_train(imgs)
+            outputs, _ = model_train(imgs)
             if focal_loss:
                 loss = Focal_Loss(outputs, pngs, weights, num_classes = num_classes)
             else:
@@ -72,6 +72,7 @@ def fit_one_epoch(model_train, model, loss_history,
 
             pbar.set_postfix(**{'total_loss': total_loss / (iteration + 1),
                                 'f_score'   : total_f_score / (iteration + 1),
+                                'dice'      : dice_loss_item / (iteration + 1),
                                 'lr'        : get_lr(optimizer)})
             pbar.update(1)
 
@@ -83,13 +84,14 @@ def fit_one_epoch(model_train, model, loss_history,
 
     print('Finish Train')
 
-    model_train.eval()
+    model_val = model_train.eval()
     print('Start Validation')
     with tqdm(total=epoch_step_val, desc=f'Epoch {epoch + 1}/{Epoch}',postfix=dict,mininterval=0.3) as pbar:
         for iteration, batch in enumerate(source_gen_val):
             if iteration >= epoch_step_val:
                 break
             imgs, pngs, labels = batch
+
             with torch.no_grad():
                 imgs    = torch.from_numpy(imgs).type(torch.FloatTensor)
                 pngs    = torch.from_numpy(pngs).long()
@@ -101,7 +103,7 @@ def fit_one_epoch(model_train, model, loss_history,
                     labels  = labels.cuda()
                     weights = weights.cuda()
 
-                outputs     = model_train(imgs)
+                outputs, _  = model_val(imgs)
                 if focal_loss:
                     loss = Focal_Loss(outputs, pngs, weights, num_classes = num_classes)
                 else:
@@ -125,6 +127,7 @@ def fit_one_epoch(model_train, model, loss_history,
             
             pbar.set_postfix(**{'total_loss': val_loss / (iteration + 1),
                                 'f_score'   : val_f_score / (iteration + 1),
+                                'dice'      : val_dice_loss_item / (iteration + 1),
                                 'lr'        : get_lr(optimizer)})
             pbar.update(1)
 
