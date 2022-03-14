@@ -82,8 +82,8 @@ class Unet(nn.Module):
             up1 = self.up_conv(up1)
 
         final = self.final(up1)
-        
-        return final, up1
+
+        return final, [up4, up3, up2, up1]
 
     def freeze_backbone(self):
         if self.backbone == "vgg":

@@ -291,7 +291,6 @@ if __name__ == "__main__":
             # 拼接目标域数据集tuple
             dataloads.extend([target_gen, target_gen_val])
 
-
         # 冻结一定部分训练
         if Freeze_Train:
             model.freeze_backbone()

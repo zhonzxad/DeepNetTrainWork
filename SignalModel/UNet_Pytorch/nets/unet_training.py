@@ -52,27 +52,38 @@ def Dice_loss(inputs, target, beta=1, smooth = 1e-5):
     dice_loss = 1 - torch.mean(score)
     return dice_loss
 
-def CORAL(source, target, **kwargs):
+def CORAL(source_UPFreturMap, target_UPFreturMap, **kwargs):
     """迁移损失
     """
-    in_future, nclass = source.size()
-    in_future, nclass = target.size()
+    count = len(source_UPFreturMap)
+    retloss = []  # up4,up3,up2,up1
+    for index in range(count):
+        source = source_UPFreturMap[index]
+        target = target_UPFreturMap[index]
+        # n*c*h*w
+        n,  c,   h, w  = source.size()
+        nt, ht, wt, ct = target.size()
+        # n*h*w,c
+        source = source.transpose(1, 2).transpose(2, 3).contiguous().view(-1, c)
+        target = target.transpose(1, 2).transpose(2, 3).contiguous().view(-1, c)
+        # 计算损失
+        d = source.data.shape[1]
+        ns, nt = source.data.shape[0], target.data.shape[0]
+        # source covariance
+        xm = torch.mean(source, 0, keepdim=True) - source
+        xc = xm.t() @ xm / (ns - 1)
 
-    d = source.data.shape[1]
-    ns, nt = source.data.shape[0], target.data.shape[0]
-    # source covariance
-    xm = torch.mean(source, 0, keepdim=True) - source
-    xc = xm.t() @ xm / (ns - 1)
+        # target covariance
+        xmt = torch.mean(target, 0, keepdim=True) - target
+        xct = xmt.t() @ xmt / (nt - 1)
 
-    # target covariance
-    xmt = torch.mean(target, 0, keepdim=True) - target
-    xct = xmt.t() @ xmt / (nt - 1)
+        # frobenius norm between source and target
+        loss = torch.mul((xc - xct), (xc - xct))
+        loss = torch.sum(loss) / (4*d*d)
 
-    # frobenius norm between source and target
-    loss = torch.mul((xc - xct), (xc - xct))
-    loss = torch.sum(loss) / (4*d*d)
+        retloss.append(loss)
 
-    return loss
+    return retloss
 
 def weights_init(net, init_type='normal', init_gain=0.02):
     def init_func(m):
