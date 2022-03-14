@@ -307,7 +307,7 @@ if __name__ == "__main__":
                 ret_val = fit_one_epoch(model_train, model, loss_history, optimizer, epoch,
                                       epoch_step, epoch_step_val, dataloads, end_epoch, Cuda,
                                       dice_loss, focal_loss, cls_weights, num_classes, tfwriter, best_val_loss)
-            lr_scheduler.step(ret_val[1])
+            lr_scheduler.step()
 
             # 如果验证集损失下降则保存模型
             if ret_val[2] <= best_val_loss:
@@ -369,7 +369,7 @@ if __name__ == "__main__":
                 ret_val = fit_one_epoch(model_train, model, loss_history, optimizer, epoch,
                                         epoch_step, epoch_step_val, dataloads, end_epoch, Cuda,
                                         dice_loss, focal_loss, cls_weights, num_classes, tfwriter, best_val_loss)
-            lr_scheduler.step(ret_val[1])
+            lr_scheduler.step()
 
             # 如果验证集损失下降则保存模型
             if ret_val[2] <= best_val_loss:
