@@ -55,8 +55,8 @@ def Dice_loss(inputs, target, beta=1, smooth = 1e-5):
 def CORAL(source, target, **kwargs):
     """迁移损失
     """
-    n,   c,  h, w = source.size()
-    nt, ct, ht, wt = target.size()
+    in_future, nclass = source.size()
+    in_future, nclass = target.size()
 
     d = source.data.shape[1]
     ns, nt = source.data.shape[0], target.data.shape[0]

@@ -51,25 +51,25 @@ def fit_one_epoch_transform(model_train, model, loss_history,
             optimizer.zero_grad()
 
             # 网络预测结果
-            outputs, source_out = model_train(source_imgs)
-            _      , target_out = model_train(target_imgs)
+            source_outputs, source_out = model_train(source_imgs)
+            target_outputs, target_out = model_train(target_imgs)
             # 计算CE loss
             if focal_loss:
-                loss = Focal_Loss(outputs, source_pngs, weights, num_classes = num_classes)
+                loss = Focal_Loss(source_outputs, source_pngs, weights, num_classes = num_classes)
             else:
-                loss = CE_Loss(outputs, source_pngs, weights, num_classes = num_classes)
+                loss = CE_Loss(source_outputs, source_pngs, weights, num_classes = num_classes)
 
             # 将celoss结果保存下来
             ce_loss_item    += loss.item()
             # 计算Dice loss
             if dice_loss:
-                main_dice = Dice_loss(outputs, source_labels)
+                main_dice = Dice_loss(source_outputs, source_labels)
                 loss      = loss + main_dice
                 # 将diceloss结果保存下来
                 dice_loss_item  += main_dice.item()
 
             # 计算CORAL loss
-            coral_loss = CORAL(source_out, target_out)
+            coral_loss = CORAL(source_outputs, target_outputs)
             loss = loss + coral_loss
             coral_loss_item += coral_loss.item()
 
@@ -77,7 +77,7 @@ def fit_one_epoch_transform(model_train, model, loss_history,
                 #-------------------------------#
                 #   计算f_score
                 #-------------------------------#
-                _f_score = f_score(outputs, source_labels)
+                _f_score = f_score(source_outputs, source_labels)
 
             loss.backward()
             optimizer.step()
@@ -123,29 +123,29 @@ def fit_one_epoch_transform(model_train, model, loss_history,
                     target_imgs_val    = target_imgs_val.cuda()
                     weights = weights.cuda()
 
-                outputs, source_out = model_train(source_imgs_val)
-                _      , traget_out = model_train(target_imgs_val)
+                source_outputs, source_out = model_train(source_imgs_val)
+                traget_outputs, traget_out = model_train(target_imgs_val)
                 if focal_loss:
-                    loss = Focal_Loss(outputs, source_pngs_val, weights, num_classes = num_classes)
+                    loss = Focal_Loss(source_outputs, source_pngs_val, weights, num_classes = num_classes)
                 else:
-                    loss = CE_Loss(outputs, source_pngs_val, weights, num_classes = num_classes)
+                    loss = CE_Loss(source_outputs, source_pngs_val, weights, num_classes = num_classes)
 
                 # 将celoss结果保存下来
                 val_ce_loss_item += loss.item()
 
                 if dice_loss:
-                    main_dice = Dice_loss(outputs, source_labels_val)
+                    main_dice = Dice_loss(source_outputs, source_labels_val)
                     loss  = loss + main_dice
                     # 将celoss结果保存下来
                     val_dice_loss_item += main_dice.item()
 
                 # 计算CORAL loss
-                coral_loss = CORAL(source_out, target_out)
+                coral_loss = CORAL(source_outputs, traget_outputs)
                 loss = loss + coral_loss
                 coral_loss_item += coral_loss.item()
 
                 # 计算f_score
-                _f_score    = f_score(outputs, source_labels_val)
+                _f_score    = f_score(source_outputs, source_labels_val)
 
                 val_loss    += loss.item()
                 val_f_score += _f_score.item()
