@@ -274,21 +274,29 @@ if __name__ == "__main__":
         #                                                        factor=0.75, patience=1, cooldown=1, \
         #                                                        eps=1e-8)
 
-        source_train_dataset = UnetDataset(source_train_lines, input_shape, num_classes, True, VOCdevkit_path, VOCfile_name_source, IsUseTransformLayer)
-        source_val_dataset   = UnetDataset(source_val_lines, input_shape, num_classes, False, VOCdevkit_path, VOCfile_name_source, IsUseTransformLayer)
-        source_gen           = DataLoader(source_train_dataset, shuffle = True, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
+        source_train_dataset = UnetDataset(source_train_lines, input_shape, num_classes, True,
+                                           VOCdevkit_path, VOCfile_name_source, IsUseTransformLayer=False)
+        source_val_dataset   = UnetDataset(source_val_lines, input_shape, num_classes, False,
+                                           VOCdevkit_path, VOCfile_name_source, IsUseTransformLayer=False)
+        source_gen           = DataLoader(source_train_dataset, shuffle = True, batch_size = batch_size,
+                                          num_workers = num_workers, pin_memory=True,
                                           drop_last = True, collate_fn = unet_dataset_collate)
-        source_gen_val       = DataLoader(source_val_dataset, shuffle = True, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
+        source_gen_val       = DataLoader(source_val_dataset, shuffle = True, batch_size = batch_size,
+                                          num_workers = num_workers, pin_memory=True,
                                           drop_last = True, collate_fn = unet_dataset_collate)
         # 拼接数据集tuple
         dataloads = [source_gen, source_gen_val]
 
         if IsUseTransformLayer: # 如果配置使用迁移网络层
-            target_train_dataset = UnetDataset(target_train_lines, input_shape, num_classes, True, VOCdevkit_path, VOCfile_name_target, IsUseTransformLayer)
-            target_val_dataset   = UnetDataset(target_val_lines, input_shape, num_classes, False, VOCdevkit_path, VOCfile_name_target, IsUseTransformLayer)
-            target_gen           = DataLoader(target_train_dataset, shuffle = True, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
+            target_train_dataset = UnetDataset(target_train_lines, input_shape, num_classes, True,
+                                               VOCdevkit_path, VOCfile_name_target, IsUseTransformLayer=True)
+            target_val_dataset   = UnetDataset(target_val_lines, input_shape, num_classes, False,
+                                               VOCdevkit_path, VOCfile_name_target, IsUseTransformLayer=True)
+            target_gen           = DataLoader(target_train_dataset, shuffle = True, batch_size = batch_size,
+                                              num_workers = num_workers, pin_memory=True,
                                               drop_last = True, collate_fn = unet_dataset_collate)
-            target_gen_val       = DataLoader(target_val_dataset, shuffle = True, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
+            target_gen_val       = DataLoader(target_val_dataset, shuffle = True, batch_size = batch_size,
+                                              num_workers = num_workers, pin_memory=True,
                                               drop_last = True, collate_fn = unet_dataset_collate)
             # 拼接目标域数据集tuple
             dataloads.extend([target_gen, target_gen_val])
@@ -336,18 +344,24 @@ if __name__ == "__main__":
         optimizer       = optim.Adam(model_train.parameters(), lr)
         lr_scheduler    = optim.lr_scheduler.StepLR(optimizer, step_size = 2, gamma = 0.96)
 
-        source_train_dataset   = UnetDataset(source_train_lines, input_shape, num_classes, True, VOCdevkit_path, VOCfile_name_source)
-        source_val_dataset     = UnetDataset(source_val_lines, input_shape, num_classes, False, VOCdevkit_path, VOCfile_name_source)
-        source_gen             = DataLoader(source_train_dataset, shuffle = True, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
+        source_train_dataset   = UnetDataset(source_train_lines, input_shape, num_classes, True,
+                                             VOCdevkit_path, VOCfile_name_source, IsUseTransformLayer=False)
+        source_val_dataset     = UnetDataset(source_val_lines, input_shape, num_classes, False,
+                                             VOCdevkit_path, VOCfile_name_source, IsUseTransformLayer=False)
+        source_gen             = DataLoader(source_train_dataset, shuffle = True, batch_size = batch_size,
+                                            num_workers = num_workers, pin_memory=True,
                                             drop_last = True, collate_fn = unet_dataset_collate)
-        source_gen_val         = DataLoader(source_val_dataset, shuffle = True, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
+        source_gen_val         = DataLoader(source_val_dataset, shuffle = True, batch_size = batch_size,
+                                            num_workers = num_workers, pin_memory=True,
                                             drop_last = True, collate_fn = unet_dataset_collate)
         # 拼接数据集tuple
         dataloads = [source_gen, source_gen_val]
 
         if IsUseTransformLayer: # 如果配置使用迁移网络层
-            target_train_dataset = UnetDataset(target_train_lines, input_shape, num_classes, True, VOCdevkit_path, VOCfile_name_target)
-            target_val_dataset   = UnetDataset(target_val_lines, input_shape, num_classes, False, VOCdevkit_path, VOCfile_name_target)
+            target_train_dataset = UnetDataset(target_train_lines, input_shape, num_classes, True,
+                                               VOCdevkit_path, VOCfile_name_target, IsUseTransformLayer=True)
+            target_val_dataset   = UnetDataset(target_val_lines, input_shape, num_classes, False,
+                                               VOCdevkit_path, VOCfile_name_target, IsUseTransformLayer=True)
             target_gen           = DataLoader(target_train_dataset, shuffle = True, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
                                               drop_last = True, collate_fn = unet_dataset_collate)
             target_gen_val       = DataLoader(target_val_dataset, shuffle = True, batch_size = batch_size, num_workers = num_workers, pin_memory=True,

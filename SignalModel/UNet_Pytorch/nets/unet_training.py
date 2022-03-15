@@ -56,7 +56,8 @@ def CORAL(source_UPFreturMap, target_UPFreturMap, **kwargs):
     """迁移损失
     """
     count = len(source_UPFreturMap)
-    retloss = []  # up4,up3,up2,up1
+    # retloss = []  # up4,up3,up2,up1
+    ret_loss_val = 0
     for index in range(count):
         source = source_UPFreturMap[index]
         target = target_UPFreturMap[index]
@@ -81,9 +82,9 @@ def CORAL(source_UPFreturMap, target_UPFreturMap, **kwargs):
         loss = torch.mul((xc - xct), (xc - xct))
         loss = torch.sum(loss) / (4*d*d)
 
-        retloss.append(loss)
+        ret_loss_val += loss
 
-    return retloss
+    return ret_loss_val
 
 def weights_init(net, init_type='normal', init_gain=0.02):
     def init_func(m):
