@@ -59,14 +59,23 @@ def CORAL(source_UPFreturMap, target_UPFreturMap, **kwargs):
     # retloss = []  # up4,up3,up2,up1
     ret_loss_val = 0
     for index in range(count):
+        if index > 3:
+            break
         source = source_UPFreturMap[index]
         target = target_UPFreturMap[index]
         # n*c*h*w
         n,  c,   h, w  = source.size()
-        nt, ht, wt, ct = target.size()
+        nt, ct, ht, wt = target.size()
         # n*h*w,c
-        source = source.transpose(1, 2).transpose(2, 3).contiguous().view(-1, c)
-        target = target.transpose(1, 2).transpose(2, 3).contiguous().view(-1, c)
+        # a = source.detach()
+        # b = source.detach()
+        # source = source.transpose(1, 2).transpose(2, 3).contiguous().view(-1, c)
+        # target = target.transpose(1, 2).transpose(2, 3).contiguous().view(-1, c)
+        # a = a.transpose(1, 2).transpose(2, 3).contiguous().view(n, -1)
+        # b = b.transpose(1, 2).transpose(2, 3).contiguous().view(nt, -1)
+        source = torch.flatten(source, start_dim=1, end_dim=3)
+        target = torch.flatten(target, start_dim=1, end_dim=3)
+
         # 计算损失
         d = source.data.shape[1]
         ns, nt = source.data.shape[0], target.data.shape[0]
