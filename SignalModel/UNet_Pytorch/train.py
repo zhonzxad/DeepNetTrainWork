@@ -151,23 +151,23 @@ if __name__ == "__main__":
     #----------------------------------------------------#
     Init_Epoch          = 0
     Freeze_Epoch        = 15
-    Freeze_batch_size   = 1
+    Freeze_batch_size   = 2
     Freeze_lr           = 1e-4
     #----------------------------------------------------#
     #   解冻阶段训练参数
     #   此时模型的主干不被冻结了，特征提取网络会发生改变
     #   占用的显存较大，网络所有的参数都会发生改变
     #----------------------------------------------------#
-    UnFreeze_Epoch      = 30
-    Unfreeze_batch_size = 1
+    UnFreeze_Epoch      = 40
+    Unfreeze_batch_size = 2
     Unfreeze_lr         = 1e-5
     #------------------------------#
     #   数据集路径
     #------------------------------#
     VOCdevkit_path      = 'VOCdevkit'
-    VOCfile_name_source = 'Target' #'Source'
+    VOCfile_name_source = 'Source' #'Source'
     VOCfile_name_target = 'Target'
-    IsUseTransformLayer = False
+    IsUseTransformLayer = True
     #---------------------------------------------------------------------# 
     #   建议选项：
     #   种类少（几类）时，设置为True
@@ -178,7 +178,7 @@ if __name__ == "__main__":
     #---------------------------------------------------------------------# 
     #   是否使用focal loss来防止正负样本不平衡
     #---------------------------------------------------------------------# 
-    focal_loss      = False
+    focal_loss      = True
     #---------------------------------------------------------------------# 
     #   是否给不同种类赋予不同的损失权值，默认是平衡的。
     #   设置的话，注意设置成numpy形式的，长度和num_classes一样。
