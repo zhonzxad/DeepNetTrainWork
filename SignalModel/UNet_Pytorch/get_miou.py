@@ -4,7 +4,7 @@ from PIL import Image
 from tqdm import tqdm
 
 from predict_unet import Unet
-from utils.utils_metrics import compute_mIoU, show_results
+from utils_f.utils_metrics import compute_mIoU, show_results
 
 '''
 进行指标评估需要注意以下几点：

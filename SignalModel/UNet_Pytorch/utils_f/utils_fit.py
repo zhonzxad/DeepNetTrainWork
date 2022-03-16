@@ -2,8 +2,8 @@ import torch
 from tqdm import tqdm
 
 from nets.unet_training import CE_Loss, Dice_loss, Focal_Loss
-from utils.utils import get_lr
-from utils.utils_metrics import f_score
+from utils_f.utils import get_lr
+from utils_f.utils_metrics import f_score
 
 
 def fit_one_epoch(model_train, model, loss_history,

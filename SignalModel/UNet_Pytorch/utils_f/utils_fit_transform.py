@@ -4,8 +4,9 @@ import torch
 from tqdm import tqdm
 
 from nets.unet_training import CE_Loss, Dice_loss, Focal_Loss, CORAL
-from utils.utils import get_lr
-from utils.utils_metrics import f_score
+from utils_f.trans_dann import DAANLoss
+from utils_f.utils import get_lr
+from utils_f.utils_metrics import f_score
 
 
 def fit_one_epoch_transform(model_train, model, loss_history,
@@ -26,12 +27,23 @@ def fit_one_epoch_transform(model_train, model, loss_history,
 
     source_gen, source_gen_val, target_gen, target_gen_val = dataloads
 
+    sorce_iter = iter(source_gen)
+
     model_train.train()
     print('Start Train')
     with tqdm(total=epoch_step,desc=f'Epoch {epoch + 1}/{Epoch}',postfix=dict,mininterval=0.3) as pbar:
-        for iteration, (source_batch, target_batch) in enumerate(zip(cycle(source_gen), target_gen)):
+        # for iteration, (source_batch, target_batch) in enumerate(zip(cycle(source_gen), target_gen)):
+        for iteration, target_batch in enumerate(target_gen):
+            # 冻结训练结束标致
             if iteration >= epoch_step:
                 break
+            # 如果较小的数据集遍历完毕，重新iter再次遍历
+            try:
+                source_batch = next(sorce_iter)
+            except StopIteration:
+                sorce_iter = iter(source_gen)
+                source_batch = next(sorce_iter)
+
             source_imgs, source_pngs, source_labels = source_batch
             target_imgs, _, _ = target_batch
 
@@ -51,16 +63,17 @@ def fit_one_epoch_transform(model_train, model, loss_history,
             optimizer.zero_grad()
 
             # 网络预测结果
-            source_outputs, source_out = model_train(source_imgs)
-            target_outputs, target_out = model_train(target_imgs)
+            source_outputs, source_UPFreturMap = model_train(source_imgs)
+            target_outputs, target_UPFreturMap = model_train(target_imgs)
+
             # 计算CE loss
             if focal_loss:
                 loss = Focal_Loss(source_outputs, source_pngs, weights, num_classes = num_classes)
             else:
                 loss = CE_Loss(source_outputs, source_pngs, weights, num_classes = num_classes)
-
             # 将celoss结果保存下来
             ce_loss_item    += loss.item()
+
             # 计算Dice loss
             if dice_loss:
                 main_dice = Dice_loss(source_outputs, source_labels)
@@ -69,9 +82,11 @@ def fit_one_epoch_transform(model_train, model, loss_history,
                 dice_loss_item  += main_dice.item()
 
             # 计算CORAL loss
-            coral_loss = CORAL(source_outputs, target_outputs)
-            loss = loss + coral_loss
+            coral_loss = CORAL(source_UPFreturMap, target_UPFreturMap)
+            coral_loss_class = CORAL(source_outputs, target_outputs)
+            loss = loss + coral_loss + coral_loss_class
             coral_loss_item += coral_loss.item()
+            dann_loss = DAANLoss(source_imgs, target_imgs, source_outputs, target_outputs)
 
             with torch.no_grad():
                 #-------------------------------#
@@ -85,11 +100,11 @@ def fit_one_epoch_transform(model_train, model, loss_history,
             total_loss      += loss.item()
             total_f_score   += _f_score.item()
 
-            pbar.set_postfix(**{'total_loss' : total_loss / (iteration + 1),
-                                'f_score'    : total_f_score / (iteration + 1),
-                                'Dice'    : dice_loss_item / (iteration + 1),
-                                'coral' : coral_loss_item / (iteration + 1),
-                                'lr'         : get_lr(optimizer)})
+            pbar.set_postfix(**{'total'  : total_loss / (iteration + 1),
+                                'fscore' : total_f_score / (iteration + 1),
+                                'coral'  : coral_loss_item / (iteration + 1),
+                                'dice'   : dice_loss_item / (iteration + 1),
+                                'lr'     : get_lr(optimizer)})
             pbar.update(1)
 
             with torch.no_grad():
@@ -101,12 +116,23 @@ def fit_one_epoch_transform(model_train, model, loss_history,
 
     print('Finish Train')
 
+    # 将较小的数据集iter
+    sorce_iter_val = iter(source_gen_val)
     model_train.eval()
     print('Start Validation')
     with tqdm(total=epoch_step_val, desc=f'Epoch {epoch + 1}/{Epoch}',postfix=dict,mininterval=0.3) as pbar:
-        for iteration, (source_batch_val, target_batch_val) in enumerate(zip(cycle(source_gen_val), target_gen_val)):
+        # for iteration, (source_batch, target_batch) in enumerate(zip(cycle(source_gen_val), target_gen_val)):
+        for iteration, target_batch_val in enumerate(target_gen_val):
+            # 冻结训练结束标致
             if iteration >= epoch_step_val:
                 break
+            # 如果较小的数据集遍历完毕，重新iter再次遍历
+            try:
+                source_batch_val = next(sorce_iter_val)
+            except StopIteration:
+                sorce_iter_val = iter(source_gen_val)
+                source_batch_val = next(sorce_iter_val)
+
             source_imgs_val, source_pngs_val, source_labels_val = source_batch_val
             target_imgs_val, _, _ = target_batch_val
 
@@ -123,37 +149,41 @@ def fit_one_epoch_transform(model_train, model, loss_history,
                     target_imgs_val    = target_imgs_val.cuda()
                     weights = weights.cuda()
 
-                source_outputs, source_out = model_train(source_imgs_val)
-                traget_outputs, traget_out = model_train(target_imgs_val)
-                if focal_loss:
-                    loss = Focal_Loss(source_outputs, source_pngs_val, weights, num_classes = num_classes)
-                else:
-                    loss = CE_Loss(source_outputs, source_pngs_val, weights, num_classes = num_classes)
+                # 进行预测
+                source_outputs_val, source_UPFreturMap_val = model_train(source_imgs_val)
+                traget_outputs_val, traget_UPFreturMap_val = model_train(target_imgs_val)
 
-                # 将celoss结果保存下来
+                # 计算CEloss
+                if focal_loss:
+                    loss = Focal_Loss(source_outputs_val, source_pngs_val, weights, num_classes = num_classes)
+                else:
+                    loss = CE_Loss(source_outputs_val, source_pngs_val, weights, num_classes = num_classes)
+                # 将diceloss结果保存下来
                 val_ce_loss_item += loss.item()
 
                 if dice_loss:
-                    main_dice = Dice_loss(source_outputs, source_labels_val)
+                    main_dice = Dice_loss(source_outputs_val, source_labels_val)
                     loss  = loss + main_dice
-                    # 将celoss结果保存下来
+                    # 将dice结果保存下来
                     val_dice_loss_item += main_dice.item()
 
                 # 计算CORAL loss
-                coral_loss = CORAL(source_outputs, traget_outputs)
-                loss = loss + coral_loss
-                coral_loss_item += coral_loss.item()
+                coral_loss = CORAL(source_UPFreturMap_val, traget_UPFreturMap_val)
+                coral_loss_class = CORAL(source_outputs_val, traget_outputs_val)
+                loss = loss + coral_loss + coral_loss_class
+                val_coral_loss += coral_loss.item()
 
                 # 计算f_score
-                _f_score    = f_score(source_outputs, source_labels_val)
+                _f_score    = f_score(source_outputs_val, source_labels_val)
 
                 val_loss    += loss.item()
                 val_f_score += _f_score.item()
 
-            pbar.set_postfix(**{'total_loss': val_loss / (iteration + 1),
-                                'f_score'   : val_f_score / (iteration + 1),
-                                'coral' : coral_loss_item / (iteration + 1),
-                                'Dice'    : dice_loss_item / (iteration + 1)})
+            pbar.set_postfix(**{'total'  : val_loss / (iteration + 1),
+                                'fscore' : val_f_score / (iteration + 1),
+                                'coral'  : val_coral_loss / (iteration + 1),
+                                'dice'   : val_dice_loss_item / (iteration + 1),
+                                'lr'     : get_lr(optimizer)})
             pbar.update(1)
 
             tfwriter.add_scalar('val/DiceLoss',  val_dice_loss_item / (iteration + 1), (epoch + 1) * (iteration + 1),)
