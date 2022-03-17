@@ -1,4 +1,4 @@
-from trans_dan import *
+from utils_funtion.transform.trans_dan import *
 
 class DAANLoss(AdversarialLoss):
     def __init__(self, num_class, gamma=1.0, max_iter=1000, **kwargs):
