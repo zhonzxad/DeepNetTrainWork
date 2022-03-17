@@ -55,17 +55,16 @@ def Dice_loss(inputs, target, beta=1, smooth = 1e-5):
 def CORAL(source_UPFreturMap, target_UPFreturMap, **kwargs):
     """迁移损失
     """
-    count = len(source_UPFreturMap)
     # retloss = []  # up4,up3,up2,up1
     ret_loss_val = 0
-    for index in range(count):
+    for index in range(len(source_UPFreturMap)):
         if index > 3:
             break
         source = source_UPFreturMap[index]
         target = target_UPFreturMap[index]
         # n*c*h*w
-        n,  c,   h, w  = source.size()
-        nt, ct, ht, wt = target.size()
+        # n,  c,   h, w  = source.size()
+        # nt, ct, ht, wt = target.size()
         # n*h*w,c
         # a = source.detach()
         # b = source.detach()

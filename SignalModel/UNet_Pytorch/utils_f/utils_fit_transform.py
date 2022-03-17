@@ -83,7 +83,7 @@ def fit_one_epoch_transform(model_train, model, loss_history,
 
             # 计算CORAL loss
             coral_loss = CORAL(source_UPFreturMap, target_UPFreturMap)
-            coral_loss_class = CORAL(source_outputs, target_outputs)
+            coral_loss_class = CORAL([source_outputs], [target_outputs])
             loss = loss + coral_loss + coral_loss_class
             coral_loss_item += coral_loss.item()
             # dann_loss = DAANLoss(num_class=3)(source_imgs, target_imgs, source_outputs, target_outputs)
@@ -169,7 +169,7 @@ def fit_one_epoch_transform(model_train, model, loss_history,
 
                 # 计算CORAL loss
                 coral_loss = CORAL(source_UPFreturMap_val, traget_UPFreturMap_val)
-                coral_loss_class = CORAL(source_outputs_val, traget_outputs_val)
+                coral_loss_class = CORAL([source_outputs_val], [traget_outputs_val])
                 loss = loss + coral_loss + coral_loss_class
                 val_coral_loss += coral_loss.item()
                 # dann_loss = DAANLoss(num_class=3)(source_imgs, target_imgs, source_outputs, target_outputs)
