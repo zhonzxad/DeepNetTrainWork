@@ -24,8 +24,9 @@ def fit_one_epoch_transform(model_train, model, loss_history,
     val_dice_loss_item  = 0
     val_loss            = 0
     val_coral_loss      = 0
-    val_f_score         =
+    val_f_score         = 0
 
+    # coral权重调整系数
     coral_loss_weight   = 10.0
 
     source_gen, source_gen_val, target_gen, target_gen_val = dataloads
