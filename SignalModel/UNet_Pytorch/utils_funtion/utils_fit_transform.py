@@ -4,9 +4,10 @@ import torch
 from tqdm import tqdm
 
 from nets.unet_training import CE_Loss, Dice_loss, Focal_Loss, CORAL
-from utils_f.trans_dann import DAANLoss
-from utils_f.utils import get_lr
-from utils_f.utils_metrics import f_score
+from utils_funtion.transform.trans_dann import DAANLoss
+from utils_funtion.transform.mmd import MMDLoss
+from utils_funtion.utils import get_lr
+from utils_funtion.utils_metrics import f_score
 
 
 def fit_one_epoch_transform(model_train, model, loss_history,
@@ -82,10 +83,10 @@ def fit_one_epoch_transform(model_train, model, loss_history,
                 dice_loss_item  += main_dice.item()
 
             # 计算CORAL loss
-            coral_loss = CORAL(source_UPFreturMap, target_UPFreturMap)
+            # coral_loss = CORAL(source_UPFreturMap, target_UPFreturMap)
             coral_loss_class = CORAL([source_outputs], [target_outputs])
-            loss = loss + coral_loss + coral_loss_class
-            coral_loss_item += coral_loss.item()
+            loss = loss + (10.0 * coral_loss_class)
+            coral_loss_item += (10.0 * coral_loss_class).item()
             # dann_loss = DAANLoss(num_class=3)(source_imgs, target_imgs, source_outputs, target_outputs)
 
             with torch.no_grad():
@@ -168,10 +169,10 @@ def fit_one_epoch_transform(model_train, model, loss_history,
                     val_dice_loss_item += main_dice.item()
 
                 # 计算CORAL loss
-                coral_loss = CORAL(source_UPFreturMap_val, traget_UPFreturMap_val)
+                # coral_loss = CORAL(source_UPFreturMap_val, traget_UPFreturMap_val)
                 coral_loss_class = CORAL([source_outputs_val], [traget_outputs_val])
-                loss = loss + coral_loss + coral_loss_class
-                val_coral_loss += coral_loss.item()
+                loss = loss + (10.0 * coral_loss_class)
+                val_coral_loss += (10.0 * coral_loss_class).item()
                 # dann_loss = DAANLoss(num_class=3)(source_imgs, target_imgs, source_outputs, target_outputs)
 
                 # 计算f_score

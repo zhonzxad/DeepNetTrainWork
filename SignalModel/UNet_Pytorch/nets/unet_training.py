@@ -72,8 +72,8 @@ def CORAL(source_UPFreturMap, target_UPFreturMap, **kwargs):
         # target = target.transpose(1, 2).transpose(2, 3).contiguous().view(-1, c)
         # a = a.transpose(1, 2).transpose(2, 3).contiguous().view(n, -1)
         # b = b.transpose(1, 2).transpose(2, 3).contiguous().view(nt, -1)
-        source = torch.flatten(source, start_dim=1, end_dim=3)
-        target = torch.flatten(target, start_dim=1, end_dim=3)
+        # source = torch.flatten(source, start_dim=1, end_dim=3)
+        # target = torch.flatten(target, start_dim=1, end_dim=3)
 
         # 计算损失
         d = source.data.shape[1]

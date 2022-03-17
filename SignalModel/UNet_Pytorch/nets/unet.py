@@ -65,6 +65,12 @@ class Unet(nn.Module):
 
         self.final = nn.Conv2d(out_filters[0], num_classes, 1)
 
+        # self.Conv4 = nn.Conv2d(num_classes, 1, 1)
+        self.fc4   = nn.Sequential(
+            nn.Linear((3*768*768), 3*256),
+            nn.ReLU(),
+        )
+
         self.backbone = backbone
 
     def forward(self, inputs):
@@ -83,7 +89,12 @@ class Unet(nn.Module):
 
         final = self.final(up1)
 
-        return final, [up4, up3, up2, up1]
+        # ret   = self.Conv4(final)
+        ret   = final.view(final.size(0), -1)
+        ret   = self.fc4(ret)
+
+        return final, [ret]
+        # return final, [up4, up3, up2, up1]
 
     def freeze_backbone(self):
         if self.backbone == "vgg":
