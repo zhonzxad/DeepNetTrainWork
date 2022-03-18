@@ -322,10 +322,14 @@ if __name__ == "__main__":
             if ret_val[2] <= best_val_loss:
                 best_val_loss = ret_val[2]
                 save_path     = makedir("logs/pth/")
-                save_filename = "Freeze_ep{:03d}-loss{:.3f}-val_loss{:.3f}.pth".format(
+                save_filename = "Freeze_ep{:03d}-loss{:.3f}-val_loss{:.3f}_best.pth".format(
                 ret_val[0], ret_val[1], ret_val[2])
                 torch.save(model.state_dict(), os.path.join(save_path, save_filename))
             else:
+                save_path     = makedir("logs/pth/")
+                save_filename = "Freeze_ep{:03d}-loss{:.3f}-val_loss{:.3f}.pth".format(
+                ret_val[0], ret_val[1], ret_val[2])
+                torch.save(model.state_dict(), os.path.join(save_path, save_filename))
                 print('冻结训练过程中,验证集损失没有降低，不保存参数，进入下一轮次{}'.format(epoch + 2))
 
     # 进入非冻结训练过程
@@ -390,10 +394,14 @@ if __name__ == "__main__":
             if ret_val[2] <= best_val_loss:
                 best_val_loss = ret_val[2]
                 save_path     = makedir("logs/pth/")
-                save_filename = "UNFreeze_ep{:03d}-loss{:.3f}-val_loss{:.3f}.pth".format(
+                save_filename = "UNFreeze_ep{:03d}-loss{:.3f}-val_loss{:.3f}_best.pth".format(
                 ret_val[0], ret_val[1], ret_val[2])
                 torch.save(model.state_dict(), os.path.join(save_path, save_filename))
             else:
-                print('非冻结训练过程中,验证集损失没有降低，不保存参数，进入下一轮次{}'.format(epoch + 2))
+                save_path     = makedir("logs/pth/")
+                save_filename = "UNFreeze_ep{:03d}-loss{:.3f}-val_loss{:.3f}.pth".format(
+                ret_val[0], ret_val[1], ret_val[2])
+                torch.save(model.state_dict(), os.path.join(save_path, save_filename))
+                print('非冻结训练过程中,验证集损失没有降低，进入下一轮次{}'.format(epoch + 2))
 
 

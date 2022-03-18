@@ -54,7 +54,7 @@ class Unet(nn.Module):
 
         if backbone == 'resnet50':
             self.up_conv = nn.Sequential(
-                nn.UpsamplingBilinear2d(scale_factor = 2), 
+                nn.UpsamplingBilinear2d(scale_factor = 2),
                 nn.Conv2d(out_filters[0], out_filters[0], kernel_size = 3, padding = 1),
                 nn.ReLU(),
                 nn.Conv2d(out_filters[0], out_filters[0], kernel_size = 3, padding = 1),
@@ -79,6 +79,7 @@ class Unet(nn.Module):
             # nn.Dropout(p=0.4),
             # nn.ReLU(),
             nn.Linear((1024*12*12), 512),
+            nn.Dropout(p=0.4),
             nn.ReLU(),
         )
 

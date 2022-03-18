@@ -27,7 +27,7 @@ def fit_one_epoch_transform(model_train, model, loss_history,
     val_f_score         = 0
 
     # coral权重调整系数
-    coral_loss_weight   = 10.0
+    coral_loss_weight   = 100.0
 
     source_gen, source_gen_val, target_gen, target_gen_val = dataloads
 
@@ -95,7 +95,7 @@ def fit_one_epoch_transform(model_train, model, loss_history,
                 # 将diceloss结果保存下来
                 dice_loss_item  += main_dice.item()
                 # 每100个图片，验证一回目标域dice loss
-                if (iteration % 100) == 0 :
+                if (iteration % 40) == 0 :
                     target_dice = Dice_loss(target_outputs, target_labels)
                     loss += target_dice
 
@@ -195,7 +195,7 @@ def fit_one_epoch_transform(model_train, model, loss_history,
                     # 将dice结果保存下来
                     val_dice_loss_item += main_dice.item()
                     # 每100个图片，验证一回目标域dice loss
-                    if (iteration % 100) == 0 :
+                    if (iteration % 40) == 0 :
                         target_dice_val = Dice_loss(traget_outputs_val, target_labels_val)
                         loss += target_dice_val
 
