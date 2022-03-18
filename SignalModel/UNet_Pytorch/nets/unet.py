@@ -66,10 +66,17 @@ class Unet(nn.Module):
         self.final = nn.Conv2d(out_filters[0], num_classes, 1)
 
         self.Conv4 = nn.Sequential(
-            nn.Conv2d(2048, 4096, kernel_size = 3, padding = 1),
+            # 2048*24*24  -> 1024*12*12
+            nn.Conv2d(2048, 1024, kernel_size=4, stride=2, padding=1),
+            # # 2048*24*24  -> 1024*24*24
+            # nn.Conv2d(2048, 1024, kernel_size=3),
         )
         self.fc4   = nn.Sequential(
-            nn.Linear((4096*12*12), 1024),
+            nn.Linear((1024*12*12), 1024*12),
+            nn.Dropout(p=0.4),
+            nn.ReLU(),
+            nn.Linear((1024*12), 256),
+            nn.Dropout(p=0.4),
             nn.ReLU(),
         )
 
