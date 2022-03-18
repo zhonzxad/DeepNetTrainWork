@@ -72,11 +72,13 @@ class Unet(nn.Module):
             # nn.Conv2d(2048, 1024, kernel_size=3),
         )
         self.fc4   = nn.Sequential(
-            nn.Linear((1024*12*12), 1024*12),
-            nn.Dropout(p=0.4),
-            nn.ReLU(),
-            nn.Linear((1024*12), 256),
-            nn.Dropout(p=0.4),
+            # nn.Linear((1024*12*12), 1024*12),
+            # nn.Dropout(p=0.4),
+            # nn.ReLU(),
+            # nn.Linear((1024*12), 256),
+            # nn.Dropout(p=0.4),
+            # nn.ReLU(),
+            nn.Linear((1024*12*12), 512),
             nn.ReLU(),
         )
 
@@ -98,8 +100,8 @@ class Unet(nn.Module):
 
         final = self.final(up1)
 
-        ret   = self.Conv4(final)
-        ret   = ret.view(final.size(0), -1)
+        ret   = self.Conv4(feat5)
+        ret   = ret.view(feat5.size(0), -1)
         ret   = self.fc4(ret)
 
         return final, [ret]

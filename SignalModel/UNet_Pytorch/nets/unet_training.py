@@ -58,8 +58,8 @@ def CORAL(source_UPFreturMap, target_UPFreturMap, **kwargs):
     # retloss = []  # up4,up3,up2,up1
     ret_loss_val = 0
     for index in range(len(source_UPFreturMap)):
-        if index > 3:
-            break
+        # if index > 3:
+            # break
         source = source_UPFreturMap[index]
         target = target_UPFreturMap[index]
         # n*c*h*w

@@ -15,7 +15,8 @@ from nets.unet_training import weights_init
 from utils_funtion.callbacks import LossHistory
 from utils_funtion.dataloader import UnetDataset, unet_dataset_collate
 from utils_funtion.utils_fit import fit_one_epoch
-from utils_funtion.utils_fit_transform import fit_one_epoch_transform
+# from utils_funtion.utils_fit_transform import fit_one_epoch_transform
+from utils_funtion.utils_fit_transform_uselab import fit_one_epoch_transform
 
 # 在Windows下使用vscode运行时 添加上这句话就会使用正确的相对路径设置
 # 需要import os和sys两个库
@@ -289,9 +290,9 @@ if __name__ == "__main__":
 
         if IsUseTransformLayer: # 如果配置使用迁移网络层
             target_train_dataset = UnetDataset(target_train_lines, input_shape, num_classes, True,
-                                               VOCdevkit_path, VOCfile_name_target, IsUseTransformLayer=True)
+                                               VOCdevkit_path, VOCfile_name_target, IsUseTransformLayer=False)
             target_val_dataset   = UnetDataset(target_val_lines, input_shape, num_classes, False,
-                                               VOCdevkit_path, VOCfile_name_target, IsUseTransformLayer=True)
+                                               VOCdevkit_path, VOCfile_name_target, IsUseTransformLayer=False)
             target_gen           = DataLoader(target_train_dataset, shuffle = True, batch_size = batch_size,
                                               num_workers = num_workers, pin_memory=True,
                                               drop_last = True, collate_fn = unet_dataset_collate)
@@ -359,9 +360,9 @@ if __name__ == "__main__":
 
         if IsUseTransformLayer: # 如果配置使用迁移网络层
             target_train_dataset = UnetDataset(target_train_lines, input_shape, num_classes, True,
-                                               VOCdevkit_path, VOCfile_name_target, IsUseTransformLayer=True)
+                                               VOCdevkit_path, VOCfile_name_target, IsUseTransformLayer=False)
             target_val_dataset   = UnetDataset(target_val_lines, input_shape, num_classes, False,
-                                               VOCdevkit_path, VOCfile_name_target, IsUseTransformLayer=True)
+                                               VOCdevkit_path, VOCfile_name_target, IsUseTransformLayer=False)
             target_gen           = DataLoader(target_train_dataset, shuffle = True, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
                                               drop_last = True, collate_fn = unet_dataset_collate)
             target_gen_val       = DataLoader(target_val_dataset, shuffle = True, batch_size = batch_size, num_workers = num_workers, pin_memory=True,
