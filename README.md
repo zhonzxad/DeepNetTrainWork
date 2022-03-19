@@ -31,9 +31,11 @@
 `profile&store 下 pip-requirements.txt && conda-requirements.txt`
 
 ## 鸣谢以下开源工程
-![transferlearning](https://github.com/jindongwang/transferlearning/tree/master/code/DeepDA)
-![SmaAt-UNet](https://github.com/HansBambel/SmaAt-UNet/tree/master/models)
-![unet](https://github.com/bubbliiiing/unet-pytorch)
+[transferlearning](https://github.com/jindongwang/transferlearning/tree/master/code/DeepDA)
+
+[SmaAt-UNet](https://github.com/HansBambel/SmaAt-UNet/tree/master/models)
+
+[unet](https://github.com/bubbliiiing/unet-pytorch)
 
 ---
 ## LICENSE
