@@ -4,7 +4,7 @@ from PIL import Image
 from tqdm import tqdm
 
 from predict_unet import Unet
-from funtion.utils_metrics import compute_mIoU, show_results
+from utils_funtion.utils_metrics import compute_mIoU, show_results
 
 '''
 进行指标评估需要注意以下几点：
@@ -23,7 +23,7 @@ if __name__ == "__main__":
     #------------------------------#
     #   分类个数+1、如2+1
     #------------------------------#
-    num_classes     = 21
+    num_classes     = 3
     #--------------------------------------------#
     #   区分的种类，和json_to_dataset里面的一样
     #--------------------------------------------#

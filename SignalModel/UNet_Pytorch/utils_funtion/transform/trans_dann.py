@@ -12,8 +12,8 @@ class DAANLoss(AdversarialLoss):
         self.dynamic_factor = 0.5
 
     def forward(self, source, target, source_logits, target_logits):
-        lamb = self.lamb()
-        self.step()
+        lamb = self.lambda_scheduler.lamb()
+        self.lambda_scheduler.step()
         source_loss_g = self.get_adversarial_result(source, True, lamb)
         target_loss_g = self.get_adversarial_result(target, False, lamb)
         source_loss_l = self.get_local_adversarial_result(source, source_logits, True, lamb)
