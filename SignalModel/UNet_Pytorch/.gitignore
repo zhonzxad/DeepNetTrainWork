@@ -11,6 +11,7 @@ predict.py
 DeepNetTrainWork0312.zip
 *.zip
 *.7z
+get_miou.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
