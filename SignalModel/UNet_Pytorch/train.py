@@ -204,6 +204,11 @@ if __name__ == "__main__":
     tfwriter = SummaryWriter(logdir=makedir("logs/tfboard/"), comment="unet")
 
     model  = Unet(num_classes=num_classes, pretrained=pretrained, backbone=backbone).train()
+
+    # 将测试模型参数量挪到刚创建模型之后，防止后续使用CUDA报错超内存
+    # paramcount_1 = count_param(model=model_train)
+    summary(model.to("cpu"), input_size=(3, input_shape[0], input_shape[1]), device='cpu')
+
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     if not pretrained:
         weights_init(model)
@@ -224,9 +229,6 @@ if __name__ == "__main__":
         model_train = torch.nn.DataParallel(model)
         cudnn.benchmark = True
         model_train = model_train.to(device)
-
-    # paramcount_1 = count_param(model=model_train)
-    # summary(model_train, input_size=(3, input_shape[0], input_shape[1]), device='cpu')
 
     loss_history = LossHistory(makedir("logs/losshistory/"))
     

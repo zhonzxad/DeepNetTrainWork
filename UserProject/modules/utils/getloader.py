@@ -77,7 +77,7 @@ class GetLoader():
         self.tag_img = r"G:/DataBase/userdata/BXG/CutFromData-4/train/img-resize-3/"
 
         self.VOCdevkit_path = r"G:/Py_Debug/GraduationProject/SignalModel/UNet_Pytorch/VOCdevkit/"
-        self.VOCFileName    = "VOC2007"
+        self.VOCFileName    = "Target"
 
 
     def makedataUser(self):

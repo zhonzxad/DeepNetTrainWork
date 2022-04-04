@@ -224,6 +224,12 @@ def main():
     # 创建自定义模型参数
     modeler = GetModel(args)
     model = modeler.Createmodel(is_train=True)
+
+    # 将测试模型参数量挪到刚创建模型之后，防止后续使用CUDA报错超内存
+    # 测试网络结构
+    summary(model, input_size=(args.IMGSIZE[2], args.IMGSIZE[0], args.IMGSIZE[1]), device=this_device.type)
+    # count = count_param(model=model)
+
     # 初始化权重
     modeler.init_weights(model, "kaiming")
     # 是否使用预训练参数权重继续训练
@@ -268,10 +274,6 @@ def main():
 
     # tfwriter.add_graph(model=model, input_to_model=args.IMGSIZE)
     logger.success("模型初始化完毕")
-
-    # 测试网络结构
-    # summary(model, input_size=(args.IMGSIZE[2], args.IMGSIZE[0], args.IMGSIZE[1]), device=this_device.type)
-    # count = count_param(model=model)
 
     # 创建优化器
     optimizer, scheduler = GetOptim(model, lr=args.lr[0])
