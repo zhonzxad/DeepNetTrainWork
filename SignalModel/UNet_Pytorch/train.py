@@ -103,7 +103,7 @@ if __name__ == "__main__":
     #   训练自己的数据集必须要修改的
     #   自己需要的分类个数+1，如2 + 1
     #-------------------------------#
-    num_classes = 3 # 2+1=3
+    num_classes = 2 # 2+1=3
     #-------------------------------#
     #   主干网络选择
     #   vgg、resnet50
@@ -152,15 +152,15 @@ if __name__ == "__main__":
     #----------------------------------------------------#
     Init_Epoch          = 0
     Freeze_Epoch        = 15
-    Freeze_batch_size   = 1
+    Freeze_batch_size   = 2
     Freeze_lr           = 1e-4
     #----------------------------------------------------#
     #   解冻阶段训练参数
     #   此时模型的主干不被冻结了，特征提取网络会发生改变
     #   占用的显存较大，网络所有的参数都会发生改变
     #----------------------------------------------------#
-    UnFreeze_Epoch      = 40
-    Unfreeze_batch_size = 1
+    UnFreeze_Epoch      = 30
+    Unfreeze_batch_size = 2
     Unfreeze_lr         = 1e-5
     #------------------------------#
     #   数据集路径
@@ -168,7 +168,7 @@ if __name__ == "__main__":
     VOCdevkit_path      = 'VOCdevkit'
     VOCfile_name_source = 'Source' #'Source'
     VOCfile_name_target = 'Target'
-    IsUseTransformLayer = True
+    IsUseTransformLayer = False
     #---------------------------------------------------------------------# 
     #   建议选项：
     #   种类少（几类）时，设置为True
@@ -179,7 +179,7 @@ if __name__ == "__main__":
     #---------------------------------------------------------------------# 
     #   是否使用focal loss来防止正负样本不平衡
     #---------------------------------------------------------------------# 
-    focal_loss      = True
+    focal_loss      = False
     #---------------------------------------------------------------------# 
     #   是否给不同种类赋予不同的损失权值，默认是平衡的。
     #   设置的话，注意设置成numpy形式的，长度和num_classes一样。
@@ -203,11 +203,11 @@ if __name__ == "__main__":
     #------------------------------------------------------#
     tfwriter = SummaryWriter(logdir=makedir("logs/tfboard/"), comment="unet")
 
-    model  = Unet(num_classes=num_classes, pretrained=pretrained, backbone=backbone).train()
+    model  = Unet(num_classes=num_classes, pretrained=pretrained, backbone=backbone, IsUseTransformLayer=IsUseTransformLayer).train()
 
     # 将测试模型参数量挪到刚创建模型之后，防止后续使用CUDA报错超内存
     # paramcount_1 = count_param(model=model_train)
-    summary(model.to("cpu"), input_size=(3, input_shape[0], input_shape[1]), device='cpu')
+    # summary(model.to("cpu"), input_size=(3, input_shape[0], input_shape[1]), device='cpu')
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     if not pretrained:

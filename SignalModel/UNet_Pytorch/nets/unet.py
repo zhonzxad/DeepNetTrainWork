@@ -30,8 +30,9 @@ class unetUp(nn.Module):
         return outputs
 
 class Unet(nn.Module):
-    def __init__(self, num_classes = 21, pretrained = False, backbone = 'vgg'):
+    def __init__(self, num_classes = 21, pretrained = False, backbone = 'vgg', IsUseTransformLayer="False"):
         super(Unet, self).__init__()
+        self.use_trans = IsUseTransformLayer
         if backbone == 'vgg':
             self.vgg    = VGG16(pretrained = pretrained)
             in_filters  = [192, 384, 768, 1024]
@@ -101,9 +102,11 @@ class Unet(nn.Module):
 
         final = self.final(up1)
 
-        ret   = self.Conv4(feat5)
-        ret   = ret.view(feat5.size(0), -1)
-        ret   = self.fc4(ret)
+        ret   = None
+        if not self.use_trans:
+            ret   = self.Conv4(feat5)
+            ret   = ret.view(feat5.size(0), -1)
+            ret   = self.fc4(ret)
 
         return final, [ret]
         # return final, [up4, up3, up2, up1]
