@@ -103,7 +103,7 @@ class Unet(nn.Module):
         final = self.final(up1)
 
         ret   = None
-        if not self.use_trans:
+        if self.use_trans:
             ret   = self.Conv4(feat5)
             ret   = ret.view(feat5.size(0), -1)
             ret   = self.fc4(ret)
