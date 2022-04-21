@@ -27,13 +27,14 @@ def get_lr(optimizer):
 
 def set_tqdm_post_avg(vals, optimizer):
     """按照固定的顺序对loss相关信息进行输出"""
-    names = ["Loss", "CEloss", "BCEloss", "Diceloss", "F_SOCRE", ]
     info = ""
+    name_lists = ["Loss", "CEloss", "BCEloss", "Diceloss", "F_SOCRE", ]
+
     for i in range(len(vals)):
         if vals[i] > 0:
-            info += ("{}={:.5f},".format(names[i], vals[i]))
+            info += ("{}={:.5f},".format(name_lists[i], vals[i]))
         elif vals[i] < 0:
-            logger.warning("序列化损失函数时发生错误,存在{}损失值小于0的情况".format(names[i]))
+            logger.warning("序列化损失函数时发生错误,存在{}损失值小于0的情况".format(name_lists[i]))
         else:
             pass
 
@@ -43,9 +44,10 @@ def set_tqdm_post_avg(vals, optimizer):
 
 
 def set_tqdm_post(vals, batch_indx, optimizer):
-    """按照固定的顺序对loss相关信息进行输出"""
-    names = ["Loss", "CEloss", "BCEloss", "Diceloss", "F_SOCRE", ]
+    """按照固定的顺序对loss相关信息进行输出_已废弃"""
     info = ""
+    names = ["Loss", "CEloss", "BCEloss", "Diceloss", "F_SOCRE", ]
+
     for i in range(len(vals)):
         if vals[i] > 0:
             info += ("{}={:.5f},".format(names[i], (vals[i] / batch_indx)))
