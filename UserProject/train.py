@@ -57,10 +57,11 @@ def format_time(timecount: float) -> str:
 
 def makedir(path: str = "") -> str:
     """创建文件夹"""
-    # python里的str是不可变对象，因此不存在修改一个字符串这个说法，任何对字符串的运算都会产生一个新字符串作为结果
-    # 特例判断
-    if path == "": return ""
     hope_path = path
+    # 特例判断
+    # python里的str是不可变对象，因此不存在修改一个字符串这个说法，任何对字符串的运算都会产生一个新字符串作为结果
+    if hope_path == "":
+        return ""
 
     # 获取绝对路径
     # workpath = os.getcwd()
@@ -137,6 +138,8 @@ def get_args():
                         help='true save mode false save dic', default=True)
     parser.add_argument('--resume', type=bool,
                         help='user resume weight', default=False)
+    parser.add_argument('--start_epoch', type=int,
+                        help='the epoch start', default=0)# 起始的批次
     parser.add_argument('--UseGPU', type=bool,
                         help='is use cuda as env', default=True)
     parser.add_argument('--UseMultiGPU', type=bool,
@@ -158,29 +161,27 @@ def get_args():
 
 def main():
     args = get_args()
-    start_epoch = 0  # 起始的批次
 
     # 使用window平台还是Linux平台, 为True表示为Windows平台
     args.systemtype = True if platform.system().lower() == 'windows' else False
     args.is_use_sysmac = True if platform.mac_ver()[0] != "" else False
 
-    # 根据平台的不同，设置不同batch的大小
+    # 根据平台的不同，设置不同batch的大小，以及是否使用GPU加速
     # True表示Windows平台
     if args.systemtype:
         args.batch_size = 1
         args.load_tread = 1
         args.UseTfBoard = False
         # args.amp        = False
-        # 当前是否使用cuda来进行加速
         args.UseGPU = False
     else:
         args.batch_size = 6
         args.load_tread = 16
         args.UseTfBoard = True
         # args.amp        = False
-        # 当前是否使用cuda来进行加速
         args.UseGPU = True
 
+    # 判断是否使用GPU加速
     this_device = torch.device("cuda:0" if torch.cuda.is_available() and args.UseGPU else "cpu")
 
     # 不期望使用amp混合精度的列表
@@ -222,6 +223,7 @@ def main():
     # print(vars(args))
     logger.info(vars(args))
 
+    # 创建数据迭代器dataloader
     loader = GetLoader(args)
     gen, gen_val = loader.makedata()
     gen_target = [1, ]  # loader.makedataTarget()
@@ -244,7 +246,7 @@ def main():
         path = "savepoint/model_data/SmarUNEt_DiceCELoss_KMInit____.pth"
         if os.path.exists(path) and os.path.isfile(path):
             checkpoint = torch.load(path)
-            start_epoch = checkpoint['epoch'] if checkpoint['epoch'] != -1 else 0
+            args.start_epoch = checkpoint['epoch'] if checkpoint['epoch'] != -1 else 0
             if args.save_mode:
                 model = checkpoint['model']
             else:
@@ -313,14 +315,15 @@ def main():
         "optimizer" : optimizer,
         "amp"       : args.amp,
         "cls_weight": cls_weights,
-        "this_epoch": int,
+        "this_epoch": int,          # args.start_epoch,
     }
 
     # 开始训练
-    tqbar = tqdm(range(start_epoch + 1, args.nepoch + 1))
+    tqbar = tqdm(range(args.start_epoch + 1, args.nepoch + 1))
     logger.success("开始训练")
     for epoch in tqbar:
-        # loss, loss_cls, loss_lmmd = train_epoch(epoch, model, [tra_source_dataloader,tra_target_dataloader] , optimizer, scheduler)
+        # loss, loss_cls, loss_lmmd =
+        # train_epoch(epoch, model, [tra_source_dataloader,tra_target_dataloader] , optimizer, scheduler)
         # t_correct = test(model, test_dataloader)
         para_kargs["this_epoch"] = epoch
 

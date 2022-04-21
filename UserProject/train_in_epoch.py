@@ -18,10 +18,12 @@ from UserProject.modules.utils.funtion.averagemeter import AverageMeter
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
 
+
 def get_lr(optimizer):
     """获取学习率"""
     for param_group in optimizer.param_groups:
         return param_group['lr']
+
 
 def set_tqdm_post_avg(vals, optimizer):
     """按照固定的顺序对loss相关信息进行输出"""
@@ -38,6 +40,7 @@ def set_tqdm_post_avg(vals, optimizer):
     info += ("lr={:.7f}".format(get_lr(optimizer)))
 
     return info
+
 
 def set_tqdm_post(vals, batch_indx, optimizer):
     """按照固定的顺序对loss相关信息进行输出"""
@@ -61,6 +64,7 @@ def set_tqdm_post(vals, batch_indx, optimizer):
     #                     F_SOCRE=("{:5f}". format(total_f_score / (batch_idx + 1))),
     #                     lr=("{:7f}".      format(get_lr(optimizer))))
 
+
 def train_in_epoch(net, gens, **kargs):
     """"定义训练每一个epoch的步骤"""
     total_ce_loss   = AverageMeter()
@@ -81,8 +85,10 @@ def train_in_epoch(net, gens, **kargs):
     model_train = net.train()
 
     # 创建混合精度训练
-    if amp:
+    if amp is True:
         grad_scaler = torch.cuda.amp.GradScaler(enabled=amp)
+    else:
+        grad_scaler = None
 
     # 分发数据集
     gen_source = gens[0]
@@ -166,7 +172,7 @@ def train_in_epoch(net, gens, **kargs):
         # tq_str = set_tqdm_post((total_loss, total_ce_loss, total_bce_loss, total_dice_loss, total_f_score),
         #                        (batch_idx + 1), optimizer)
         tq_str = set_tqdm_post_avg((total_loss.get_avg(), total_ce_loss.get_avg(), total_bce_loss.get_avg(),
-                                total_dice_loss.get_avg(), total_f_score.get_avg()), optimizer)
+                                    total_dice_loss.get_avg(), total_f_score.get_avg()), optimizer)
         tqdm_bar.set_postfix_str(tq_str)
         # tqdm_bar.update(1)
 
@@ -175,6 +181,7 @@ def train_in_epoch(net, gens, **kargs):
     # 返回值按照 0/总loss(float), 1/count(int), 2/[loss], 3/lr
     # loss = tensor格式 0/总loss, 1/celoss, 2/bceloss, 3/diceloss, 4/floss
     return [total_loss.avg_val(), total_loss.get_count(), loss, get_lr(optimizer)]
+
 
 def test_in_epoch(net, gen_vals, **kargs):
     """测试方法"""
@@ -202,6 +209,8 @@ def test_in_epoch(net, gen_vals, **kargs):
     # 创建混合精度训练
     if amp:
         grad_scaler_val = torch.cuda.amp.GradScaler(enabled=amp)
+    else:
+        grad_scaler_val = None
 
     # 分发数据集
     gen_val_source = gen_vals[0]
@@ -272,11 +281,11 @@ def test_in_epoch(net, gen_vals, **kargs):
             tfwriter.add_scalar(tags[4], total_f_score.get_avg(), this_epoch*(batch_idx_val + 1))
             tfwriter.add_scalar(tags[5], get_lr(optimizer), this_epoch*(batch_idx_val + 1))
 
-        #设置进度条右边显示的信息
+        # 设置进度条右边显示的信息
         # tq_str = set_tqdm_post((total_loss, total_ce_loss, total_bce_loss, total_dice_loss, total_f_score),
         #                        (batch_idx_val + 1), optimizer)
         tq_str_val = set_tqdm_post_avg((total_loss.get_avg(), total_ce_loss.get_avg(), total_bce_loss.get_avg(),
-                                    total_dice_loss.get_avg(), total_f_score.get_avg()), optimizer)
+                                        total_dice_loss.get_avg(), total_f_score.get_avg()), optimizer)
         tqdm_bar_val.set_postfix_str(tq_str_val)
         # tqdm_bar_val.update(1)
 
