@@ -30,18 +30,19 @@ from UserProject.modules.utils.getlog import GetWriteLog
 from UserProject.modules.utils.getoptim import GetOptim
 
 
-def set_lr(optimizer, value:float):
+def set_lr(optimizer, value: float):
     """optimizer.param_groups:是长度为2的list,0表示params/lr/eps等参数，1表示优化器状态"""
     optimizer.param_groups[0]['lr'] = value
 
-def format_time(timecount:float) -> str:
+
+def format_time(timecount: float) -> str:
     """将浮点秒转化为字符串时间"""
     _time = int(timecount)
-    hour   = -1
+    hour = -1
     minute = _time // 60
     second = _time % 60
     if minute >= 60:
-        hour   = minute // 60
+        hour = minute // 60
         minute = minute % 60
     if hour == -1:
         if minute == 0:
@@ -53,7 +54,8 @@ def format_time(timecount:float) -> str:
 
     return time_str
 
-def makedir(path:str="") -> str:
+
+def makedir(path: str = "") -> str:
     """创建文件夹"""
     # python里的str是不可变对象，因此不存在修改一个字符串这个说法，任何对字符串的运算都会产生一个新字符串作为结果
     # 特例判断
@@ -87,15 +89,16 @@ def makedir(path:str="") -> str:
 
     return hope_path
 
+
 def get_gpu_info() -> Tuple[List[str], List[int]]:
     """处理显卡相关参数的信息"""
     pynvml.nvmlInit()
-    device_count = pynvml.nvmlDeviceGetCount()           # 几块显卡
+    device_count = pynvml.nvmlDeviceGetCount()  # 几块显卡
     numbers_list = []
-    gpu_ids      = []
+    gpu_ids = []
 
     for i in range(device_count):
-        handle = pynvml.nvmlDeviceGetHandleByIndex(i)    # 这里的0是GPU id
+        handle = pynvml.nvmlDeviceGetHandleByIndex(i)  # 这里的0是GPU id
         meminfo = pynvml.nvmlDeviceGetMemoryInfo(handle)
         drive_name = str(pynvml.nvmlDeviceGetName(handle))[2:-1]
         gpu_model_number = str(drive_name.rpartition(" ")[-1]) \
@@ -103,11 +106,13 @@ def get_gpu_info() -> Tuple[List[str], List[int]]:
         numbers_list.append(gpu_model_number)
         gpu_ids.append(i)
         logger.info("当前显卡为:{}.".format(drive_name) +
-                    "总显存大小{:.0f} G,已用{:.0f} G,剩余{:.0f} G".format((meminfo.total / 1024**2),
-                    (meminfo.used / 1024**2), (meminfo.free / 1024**2))) #第二块显卡总的显存大小
-        break # 只考虑存在所有宿主机都存在的是同一种显卡的情况
+                    "总显存大小{:.0f} G,已用{:.0f} G,剩余{:.0f} G".format((meminfo.total / 1024 ** 2),
+                                                                 (meminfo.used / 1024 ** 2),
+                                                                 (meminfo.free / 1024 ** 2)))  # 第二块显卡总的显存大小
+        break  # 只考虑存在所有宿主机都存在的是同一种显卡的情况
 
     return numbers_list, gpu_ids
+
 
 def get_args():
     """定义命令行参数"""
@@ -120,14 +125,14 @@ def get_args():
                         help='load data thread', default=1)
     parser.add_argument('--nepoch', type=int,
                         help='Total epoch num', default=50)
-    parser.add_argument('--IMGSIZE', type=list, 
+    parser.add_argument('--IMGSIZE', type=list,
                         help='IMGSIZE', default=[768, 768, 3])
-    parser.add_argument('--lr', type=list, 
+    parser.add_argument('--lr', type=list,
                         help='Learning rate', default=[0.001, 0.01])
     parser.add_argument('--early_stop', type=int,
                         help='Early stoping number', default=5)
     parser.add_argument('--seed', type=int,
-                        help='Seed', default=42)    # 迷信数字
+                        help='Seed', default=42)  # 迷信数字
     parser.add_argument('--save_mode', type=bool,
                         help='true save mode false save dic', default=True)
     parser.add_argument('--resume', type=bool,
@@ -150,12 +155,13 @@ def get_args():
 
     return args
 
+
 def main():
-    args        = get_args()
-    start_epoch = 0                   # 起始的批次
+    args = get_args()
+    start_epoch = 0  # 起始的批次
 
     # 使用window平台还是Linux平台, 为True表示为Windows平台
-    args.systemtype    = True if platform.system().lower() == 'windows' else False
+    args.systemtype = True if platform.system().lower() == 'windows' else False
     args.is_use_sysmac = True if platform.mac_ver()[0] != "" else False
 
     # 根据平台的不同，设置不同batch的大小
@@ -202,7 +208,7 @@ def main():
     cls_weights = np.ones([args.n_class], np.float32)
 
     # 加载日志对象
-    #logger = GetWriteLog(writerpath=MakeDir("logs/log/"))  # 需注释掉最前方引用的logger库
+    # logger = GetWriteLog(writerpath=MakeDir("logs/log/"))  # 需注释掉最前方引用的logger库
     log_file_path = makedir("logs/log/")
     logger.add(log_file_path + "/logfile_{time:MM-DD_HH:mm}.txt",
                format="{time:DD Day HH:mm:ss} | {level} | {message}", filter="",
@@ -218,7 +224,7 @@ def main():
 
     loader = GetLoader(args)
     gen, gen_val = loader.makedata()
-    gen_target   = [1,] # loader.makedataTarget()
+    gen_target = [1, ]  # loader.makedataTarget()
     logger.success("数据集加载完毕")
 
     # 创建自定义模型参数
@@ -227,7 +233,7 @@ def main():
 
     # 将测试模型参数量挪到刚创建模型之后，防止后续使用CUDA报错超内存
     # 测试网络结构
-    summary(model, input_size=(args.IMGSIZE[2], args.IMGSIZE[0], args.IMGSIZE[1]), device=this_device.type)
+    # summary(model, input_size=(args.IMGSIZE[2], args.IMGSIZE[0], args.IMGSIZE[1]), device=this_device.type)
     # count = count_param(model=model)
 
     # 初始化权重
@@ -252,8 +258,8 @@ def main():
         model_pretrain_path = r'G:\Py_Debug\GraduationProject\SignalModel\UNet_Pytorch\model_data\unet_resnet_voc.pth'
         if os.path.exists(model_pretrain_path):
             logger.info('Load weights {}.'.format(model_pretrain_path))
-            model_dict      = model.state_dict()
-            pre_trained_dict = torch.load(model_pretrain_path, map_location = this_device)
+            model_dict = model.state_dict()
+            pre_trained_dict = torch.load(model_pretrain_path, map_location=this_device)
             pre_trained_dict = {k: v for k, v in pre_trained_dict.items() if np.shape(model_dict[k]) == np.shape(v)}
             model_dict.update(pre_trained_dict)
             model.load_state_dict(model_dict)
@@ -279,7 +285,7 @@ def main():
     optimizer, scheduler = GetOptim(model, lr=args.lr[0])
 
     # 初始化 early_stopping 对象
-    patience = args.early_stop # 当验证集损失在连续20次训练周期中都没有得到降低时，停止模型训练，以防止模型过拟合
+    patience = args.early_stop  # 当验证集损失在连续20次训练周期中都没有得到降低时，停止模型训练，以防止模型过拟合
     path = makedir("logs/savepoint/early_stopp/")
     early_stopping = GetEarlyStopping(patience, path=os.path.join(path, "checkpoint.pth"),
                                       verbose=True, savemode=args.save_mode)
@@ -299,23 +305,23 @@ def main():
     # 用于输出相关的日志信息
     para_kargs = {
         "tf_writer" : tfwriter,
-        "device" : this_device,
-        "gpuids" : gpu_ids,
-        "log" : logger,
-        "CLASSNUM" : args.n_class,
-        "IMGSIZE" : args.IMGSIZE,
+        "device"    : this_device,
+        "gpuids"    : gpu_ids,
+        "log"       : logger,
+        "CLASSNUM"  : args.n_class,
+        "IMGSIZE"   : args.IMGSIZE,
         "optimizer" : optimizer,
-        "amp" : args.amp,
-        "cls_weight" : cls_weights,
-        "this_epoch" : int,
+        "amp"       : args.amp,
+        "cls_weight": cls_weights,
+        "this_epoch": int,
     }
 
     # 开始训练
     tqbar = tqdm(range(start_epoch + 1, args.nepoch + 1))
     logger.success("开始训练")
     for epoch in tqbar:
-        #loss, loss_cls, loss_lmmd = train_epoch(epoch, model, [tra_source_dataloader,tra_target_dataloader] , optimizer, scheduler)
-        #t_correct = test(model, test_dataloader)
+        # loss, loss_cls, loss_lmmd = train_epoch(epoch, model, [tra_source_dataloader,tra_target_dataloader] , optimizer, scheduler)
+        # t_correct = test(model, test_dataloader)
         para_kargs["this_epoch"] = epoch
 
         # 训练
@@ -341,7 +347,8 @@ def main():
         time_end = time.time()
 
         val_time = (time_end - time_start)
-        logger.info("本轮训练总耗时{}, 最终测试集损失为{},验证集损失{}".format(format_time(train_time + val_time), ret_train[0], ret_val[0]))
+        logger.info(
+            "本轮训练总耗时{}, 最终测试集损失为{},验证集损失{}".format(format_time(train_time + val_time), ret_train[0], ret_val[0]))
 
         # 判断是否满足早停
         early_stopping(ret_val[0], model.eval)
@@ -353,10 +360,10 @@ def main():
 
         # 一些保存的参数
         checkpoint = {
-            'epoch': epoch,
-            'model': model,
+            'epoch'    : epoch,
+            'model'    : model,
             'optimizer': optimizer,
-            'loss' : ret_val,
+            'loss'     : ret_val,
         }
         saveparafilepath = makedir("logs/savepoint/model_data/")
         file_name = "SmarUNet_20220223.pth"
@@ -389,8 +396,8 @@ def main():
 
     # 任务已经结束了，保存一个最终版本的参数
     checkpoint = {
-        'epoch': para_kargs["this_epoch"],
-        'model': model,
+        'epoch'    : para_kargs["this_epoch"],
+        'model'    : model,
         'optimizer': optimizer,
     }
     path = makedir("logs/savepoint/model_data/")
@@ -398,12 +405,12 @@ def main():
     torch.save(checkpoint, saveparafilepath)
     logger.success("保存检查点完成，当前批次{}, 当然权重文件保存地址{}".format(para_kargs["this_epoch"], saveparafilepath))
 
-    os.system('shutdown /s /t 0')       # 0秒之后Windows关机
+    os.system('shutdown /s /t 0')  # 0秒之后Windows关机
     # os.system('/root/shutdown.sh')    # 极客云停机代码
     # os.system("export $(cat /proc/1/environ |tr '\\0' '\\n' | grep MATCLOUD_CANCELTOKEN)&&/public/script/matncli node cancel -url https://matpool.com/api/public/node -save -name RTX2080Ti")    # 矩池云停机代码(包含保存相应环境)
     # 若释放前不需要保存环境
     # os.system("export $(cat /proc/1/environ |tr '\\0' '\\n' | grep MATCLOUD_CANCELTOKEN)&&/public/script/matncli node cancel -url https://matpool.com/api/public/node")
 
+
 if __name__ == '__main__':
     main()
-
