@@ -2,7 +2,6 @@
 # @Time     : 2021/12/20 下午 09:26
 # @Author   : zhonzxad
 # @File     : train_fun.py
-import argparse
 import os
 import sys
 import torch
