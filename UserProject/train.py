@@ -107,7 +107,7 @@ def get_gpu_info() -> Tuple[List[str], List[int]]:
         numbers_list.append(gpu_model_number)
         gpu_ids.append(i)
         logger.info("当前显卡为:{}.".format(drive_name) +
-                    "总显存大小{:.0f} G,已用{:.0f} G,剩余{:.0f} G".format((meminfo.total / 1024 ** 2),
+                    "总显存大小{:.0f} MB,已用{:.0f} MB,剩余{:.0f} MB".format((meminfo.total / 1024 ** 2),
                                                                  (meminfo.used / 1024 ** 2),
                                                                  (meminfo.free / 1024 ** 2)))  # 第二块显卡总的显存大小
         break  # 只考虑存在所有宿主机都存在的是同一种显卡的情况
@@ -173,9 +173,9 @@ def main():
         args.load_tread = 1
         args.UseTfBoard = False
         # args.amp        = False
-        args.UseGPU = False
+        args.UseGPU = True
     # mac平台
-    if args.is_use_sysmac:
+    elif args.is_use_sysmac:
         args.batch_size = 1
         args.load_tread = 1
         args.UseTfBoard = False
@@ -192,24 +192,29 @@ def main():
     # 判断是否使用GPU加速
     this_device = torch.device("cuda:0" if torch.cuda.is_available() and args.UseGPU else "cpu")
     if this_device.type != "cuda" and args.is_use_sysmac == True:
-        this_device = torch.device("mps")
+        this_device = torch.device(args.mac_device)
 
-    # 不期望使用amp混合精度的列表
-    hope_gpu_not_use_amp = ["960", "2080", "T4", ]
-    hope_gpu_use_amp = ["3080", "9000", "A5000", ]
-    # 获取当前GPU名称
-    gpu_name, gpu_ids = get_gpu_info()
-    for i in range(len(gpu_name)):
-        name = gpu_name[i]
-        # # 如果不在期望列表，使用amp混合训练
-        # if name not in hope_gpu_not_use_amp:
-        #     args.amp = True
-        # 如果在期望列表，使用amp混合训练
-        if name in hope_gpu_use_amp:
-            args.amp = True
-    # 当设备中存在的GPU数量大于1时，开启GPU并行计算
-    if torch.cuda.device_count() > 1:
-        args.UseMultiGPU = True
+    # 判断是否使用amp加速
+    if this_device.type == "cuda" or args.amp == True:
+        # 不期望使用amp混合精度的列表
+        hope_gpu_not_use_amp = ["960", "2080", "T4", ]
+        hope_gpu_use_amp = ["3080", "9000", "A5000", ]
+        # 获取当前GPU名称
+        gpu_name, gpu_ids = get_gpu_info()
+        for i in range(len(gpu_name)):
+            name = gpu_name[i]
+            # # 如果不在期望列表，使用amp混合训练
+            # if name not in hope_gpu_not_use_amp:
+            #     args.amp = True
+            # 如果在期望列表，使用amp混合训练
+            if name in hope_gpu_use_amp:
+                args.amp = True
+        # 当设备中存在的GPU数量大于1时，开启GPU并行计算
+        if torch.cuda.device_count() > 1:
+            args.UseMultiGPU = True
+    else:
+        gpu_name = ""
+        gpu_ids = 0
 
     # 为CPU设定随机种子使结果可靠，就是每个人的随机结果都尽可能保持一致
     np.random.seed(args.seed)
@@ -226,8 +231,7 @@ def main():
                enqueue=True, encoding='utf-8', rotation="50 MB")
 
     # 加载tensorboard记录日志对象
-    tfwriter = SummaryWriter(logdir=makedir("logs/tfboard/"), comment="unet") \
-        if args.systemtype == False or (args.systemtype == True and args.UseTfBoard) else None
+    tfwriter = SummaryWriter(logdir=makedir("logs/tfboard/"), comment="unet") if args.UseTfBoard else None
 
     # 打印列表参数
     # print(vars(args))
@@ -267,7 +271,8 @@ def main():
         else:
             logger.info("没有找到检查点，从(epoch 1)开始")
     else:
-        model_pretrain_path = r'G:\Py_Debug\GraduationProject\SignalModel\UNet_Pytorch\model_data\unet_resnet_voc.pth'
+        # G:\Py_Debug\GraduationProject\SignalModel\UNet_Pytorch\model_data\unet_resnet_voc.pth
+        model_pretrain_path = r''
         if os.path.exists(model_pretrain_path):
             logger.info('Load weights {}.'.format(model_pretrain_path))
             model_dict = model.state_dict()
@@ -277,14 +282,15 @@ def main():
             model.load_state_dict(model_dict)
     logger.success("模型创建及初始化完毕")
 
+    if this_device.type != "cpu":
+        # 将模型设置为GPU
+        model = model.to(this_device)
     if this_device.type == "cuda":
         # 为GPU设定随机种子，以便确信结果是可靠的
         # os.environ["CUDA_VISIBLE_DEVICES"] = "cuda:0"
         torch.cuda.manual_seed(args.seed)
         # 那么cuDNN使用的非确定性算法就会自动寻找最适合当前配置的高效算法，来达到优化运行效率的问题
         torch.backends.cudnn.benchmark = True
-        # 将模型设置为GPU
-        model = model.to(this_device)
         if args.UseMultiGPU:
             # 开启GPU并行化处理
             torch.backends.cudnn.deterministic = True
@@ -305,7 +311,7 @@ def main():
 
     logger.info("注意: 没有使用tfboard记录数据") if tfwriter is None else logger.success("注意: 使用tfboard记录数据")
     logger.success("注意: 使用了amp混合精度训练") if args.amp else logger.info("注意: 没有使用amp混合精度训练")
-    logger.success("注意: 使用了GPU加速训练") if this_device.type == "cuda" else logger.info("注意: 没有使用GPU加速训练")
+    logger.success("注意: 使用了GPU加速训练") if this_device.type != "cpu" else logger.info("注意: 没有使用GPU加速训练")
     logger.info("注意: 系统检测多GPU，并行训练") if args.UseMultiGPU == True else logger.success("注意: 单卡训练")
 
     # 将最优损失设置为无穷大
