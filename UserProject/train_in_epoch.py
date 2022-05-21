@@ -115,7 +115,7 @@ def train_in_epoch(net, gens, **kargs):
             weights = torch.from_numpy(cls_weights)
             # logger.write("\n img shape is {} || png shape is {} || seg_labels shape is {}".format(img.shape, png.shape, seg_labels.shape))
 
-            if this_device.type == "cuda":
+            if this_device.type != "cpu":
                 img     = img.to(this_device)
                 png     = png.to(this_device)
                 label   = label.to(this_device)
@@ -239,7 +239,7 @@ def test_in_epoch(net, gen_vals, **kargs):
             # seg_labels = torch.autograd.Variable(seg_labels).type(torch.FloatTensor)
             # seg_labels = seg_labels.transpose(1, 3).transpose(2, 3)
 
-            if this_device.type == "cuda":
+            if this_device.type != "cpu":
                 img     = img.to(this_device)
                 png     = png.to(this_device)
                 label   = label.to(this_device)

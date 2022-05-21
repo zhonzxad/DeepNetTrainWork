@@ -174,6 +174,14 @@ def main():
         args.UseTfBoard = False
         # args.amp        = False
         args.UseGPU = False
+    # mac平台
+    if args.is_use_sysmac:
+        args.batch_size = 1
+        args.load_tread = 1
+        args.UseTfBoard = False
+        # args.amp        = False
+        args.UseGPU = False
+        args.mac_device = "mps"
     else:
         args.batch_size = 6
         args.load_tread = 16
@@ -183,6 +191,8 @@ def main():
 
     # 判断是否使用GPU加速
     this_device = torch.device("cuda:0" if torch.cuda.is_available() and args.UseGPU else "cpu")
+    if this_device.type != "cuda" and args.is_use_sysmac == True:
+        this_device = torch.device("mps")
 
     # 不期望使用amp混合精度的列表
     hope_gpu_not_use_amp = ["960", "2080", "T4", ]

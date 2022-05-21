@@ -23,7 +23,7 @@ def loss_func(output, png, label, cls_weights, this_device):
     # floss    = FocalLoss(cls_weights)
     loss = None
     
-    if this_device.type == 'cuda':
+    if this_device.type != 'cpu':
         diceloss = diceloss.to(this_device)
         celoss   = celoss.to(this_device)
         # loss = lossF.to(this_device)
